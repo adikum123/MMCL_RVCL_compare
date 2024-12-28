@@ -18,9 +18,9 @@ def compute_kernel_new(X,Y,gamma=0.1):
     return kernel
 
 class MMCL_inv(nn.Module):
-    def __init__(self, sigma=0.07, batch_size=256, anchor_count=2, C=1.0):
+    def __init__(self, sigma=0.07, batch_size=256, anchor_count=2, C=1.0, device=None):
         super(MMCL_inv, self).__init__()
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') if device is None else device
         self.sigma = sigma
         self.C = C
 
@@ -115,10 +115,11 @@ class MMCL_pgd(nn.Module):
         eta=1E-3,
         stop_condition=0.01,
         solver_type='nesterov',
-        use_norm='false'
+        use_norm='false',
+        device=None
     ):
         super(MMCL_pgd, self).__init__()
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') if device is None else device
         self.sigma = sigma
         self.C = C
 

@@ -21,7 +21,8 @@ class MMCL_Encoder(nn.Module):
                 sigma=self.hparams.gamma,
                 batch_size=self.hparams.batch_size,
                 anchor_count=2,
-                C=self.hparams.C
+                C=self.hparams.C,
+                device=device
             )
         elif self.hparams.criterion_to_use == 'mmcl_pgd':
             self.crit = MMCL_pgd(
@@ -30,7 +31,8 @@ class MMCL_Encoder(nn.Module):
                 anchor_count=2,
                 C=self.hparams.C,
                 solver_type=self.hparams.solver_type,
-                use_norm=self.hparams.use_norm
+                use_norm=self.hparams.use_norm,
+                device=device
             )
         self.device = device
         self.model = utils.load_model_contrastive(args=self.hparams, weights_loaded=False)
