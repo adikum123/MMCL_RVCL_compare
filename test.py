@@ -81,6 +81,6 @@ parser.add_argument('--gamma', type=str, default="50")
 
 args = parser.parse_args()
 setattr(args, 'device', 'gpu' if torch.cuda.is_available() else 'cpu')
-print(f'Running on: {device}')
+print(f'Running on: {args.device}')
 model = MMCL_Encoder(hparams=args, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
 model.train()
