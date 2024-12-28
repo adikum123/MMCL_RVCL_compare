@@ -34,7 +34,7 @@ parser.add_argument("--sigma", default=0.07, type=float, help="Sigma")
 parser.add_argument("--reg", default=0.1, type=float, help="Regularization")
 
 parser.add_argument(
-    "--num_iters", default=1000, type=int, help="Num iters - PGD Solver"
+    "--num_iters", default=100, type=int, help="Num iters - PGD Solver"
 )
 parser.add_argument("--eta", default=1e-5, type=float, help="Eta - PGD Solver")
 parser.add_argument(
