@@ -15,6 +15,9 @@ def get_dataset(args):
     rnd_gray = transforms.RandomGrayscale(p=0.2)
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.225, 0.225, 0.225])
 
+
+    print(f'Args: {args.dataset}, {args.train_type}')
+
     learning_type = args.train_type
     if learning_type == 'supervised':
         learning_type = 'linear_eval'

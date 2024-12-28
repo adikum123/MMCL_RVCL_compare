@@ -60,6 +60,10 @@ class MMCL_Encoder(nn.Module):
     def forward(self, *args, **kwargs):
         return self.model(*args, **kwargs)
 
+    def get_lr(self, optimizer):
+    for param_group in optimizer.param_groups:
+        return param_group["lr"]
+
     def train_step(self, batch, it=None):
         logs = self.step(batch)
 
@@ -91,7 +95,8 @@ class MMCL_Encoder(nn.Module):
         self.scheduler.step()
         metrics = {
             'total_loss':total_loss / total_num,
-            'epoch': epoch
+            'epoch': epoch,
+            'lr': get_lr(self.optimizer)
         }
         return metrics
 
