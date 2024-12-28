@@ -1,8 +1,7 @@
 import argparse
 
 import torch
-
-from mmcl.mmcl import MMCL_Encoder
+from encoder import MMCL_Encoder
 
 parser = argparse.ArgumentParser(description="unsupervised verification")
 
