@@ -78,11 +78,11 @@ parser.add_argument('--lr', default=1e-5, type=float, help='learning rate')
 parser.add_argument('--step_size', default=10, type=int, help='scheduler step size')
 parser.add_argument('--criterion_to_use', default='mmcl_pgd', type=str, help='choose which mmcl svm solver to use')
 parser.add_argument('--gamma', type=str, default="50")
-
+parser.add_argument('--device', type=str, default='gpu')
 args = parser.parse_args()
-setattr(args, 'device', 'gpu' if torch.cuda.is_available() else 'cpu')
 
-model = MMCL_Encoder(hparams=args, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+print(f'Running on: {args.device}')
+model = MMCL_Encoder(hparams=args, device=torch.device('cuda' if torch.cuda.is_available() and args.device == 'gpu' else 'cpu'))
 model.train()
 
 torch.save(model.state_dict(), f'models/unsupervised/mmcl_{args.model}')
