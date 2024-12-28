@@ -71,7 +71,7 @@ class MMCL_Encoder(nn.Module):
         self.model.train()
         total_loss, total_num, train_bar = 0.0, 0, tqdm(self.trainloader)
         kxz_losses,kyz_losses = 0.0, 0.0
-        for iii, (pos_1, pos_2, target, index) in enumerate(train_bar):
+        for iii, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
             pos_1, pos_2 = pos_1.to(self.device,non_blocking=True), pos_2.to(self.device,non_blocking=True)
             feature_1 = self.model(pos_1)
             feature_2 = self.model(pos_2)
@@ -96,5 +96,4 @@ class MMCL_Encoder(nn.Module):
     def train(self):
         for epoch in range(self.hparams.num_iters):
             metrics = self.train_epoch(epoch=epoch)
-            metrics['epoch'] = epoch
             print(f'Epoch: {epoch+1}, metrics: {json.dumps(metrics, indent=4)}')
