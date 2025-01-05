@@ -76,7 +76,7 @@ parser.add_argument('--color_jitter_strength', default=0.5, type=float, help='0.
 parser.add_argument('--lr', default=1e-5, type=float, help='learning rate')
 parser.add_argument('--step_size', default=10, type=int, help='scheduler step size')
 parser.add_argument('--criterion_to_use', default='mmcl_pgd', type=str, help='choose which mmcl svm solver to use')
-parser.add_argument('--gamma', type=str, default="50")
+parser.add_argument('--gamma', type=str, default="auto")
 parser.add_argument('--device', type=str, default='gpu')
 args = parser.parse_args()
 

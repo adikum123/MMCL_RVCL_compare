@@ -3,6 +3,7 @@ from typing import Union
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from tqdm import tqdm
 
@@ -16,13 +17,16 @@ class MMCL_Encoder(nn.Module):
     def __init__(self, hparams, device):
         super(MMCL_Encoder, self).__init__()
         self.hparams = hparams
+        if self.hparams.criterion_to_use == 'ntxent':
+            pass
         if self.hparams.criterion_to_use == 'mmcl_inv':
             self.crit = MMCL_inv(
                 sigma=self.hparams.gamma,
                 batch_size=self.hparams.batch_size,
                 anchor_count=2,
                 C=self.hparams.C,
-                device=device
+                device=device,
+                kernel_type=self.hparams.kernel_type
             )
         elif self.hparams.criterion_to_use == 'mmcl_pgd':
             self.crit = MMCL_pgd(
@@ -32,7 +36,8 @@ class MMCL_Encoder(nn.Module):
                 C=self.hparams.C,
                 solver_type=self.hparams.solver_type,
                 use_norm=self.hparams.use_norm,
-                device=device
+                device=device,
+                kernel_type=self.hparams.kernel_type
             )
         self.device = device
         self.model = utils.load_model_contrastive(args=self.hparams, weights_loaded=False)
@@ -58,10 +63,10 @@ class MMCL_Encoder(nn.Module):
         }
 
     def forward(self, *args, **kwargs):
-        return self.model(*args, **kwargs)
+        return F.normalize(self.model(*args, **kwargs), dim=-1)
 
-    def get_lr(self, optimizer):
-        for param_group in optimizer.param_groups:
+    def get_lr(self):
+        for param_group in self.optimizer.param_groups:
             return param_group["lr"]
 
     def train_step(self, batch, it=None):
@@ -74,7 +79,6 @@ class MMCL_Encoder(nn.Module):
         return logs
 
     def train_epoch(self, epoch):
-        self.model.train()
         total_loss, total_num, train_bar = 0.0, 0, tqdm(self.trainloader)
         kxz_losses,kyz_losses = 0.0, 0.0
         for iii, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
@@ -91,16 +95,18 @@ class MMCL_Encoder(nn.Module):
 
             total_num += self.hparams.batch_size
             total_loss += loss.item() * self.hparams.batch_size
-            train_bar.set_description('Train Epoch: [{}/{}] Loss: {:.4e}'.format(epoch, self.hparams.num_iters, total_loss / total_num))
+            train_bar.set_description('Train Epoch: [{}/{}] Total Loss: {:.4e}, loss: {}'.format(epoch, self.hparams.num_iters, total_loss / total_num, loss))
         self.scheduler.step()
         metrics = {
             'total_loss':total_loss / total_num,
             'epoch': epoch,
-            'lr': get_lr(self.optimizer)
+            'lr': get_lr()
         }
         return metrics
 
     def train(self):
+        torch.autograd.set_detect_anomaly(True)
+        self.model.train()
         for epoch in range(self.hparams.num_iters):
             metrics = self.train_epoch(epoch=epoch)
             print(f'Epoch: {epoch+1}, metrics: {json.dumps(metrics, indent=4)}')

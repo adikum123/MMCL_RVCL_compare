@@ -6,21 +6,38 @@ import numpy as np
 import torch
 import torch.autograd
 import torch.nn as nn
+from solvers import *
 from torch.autograd import Variable
 
-from mmcl.solvers import *
 
+def compute_kernel(X, Y, kernel_type, gamma=0.1):
+    if kernel_type == "linear":
+        kernel = torch.mm(X, Y.T)
+    elif kernel_type == "rbf":
+        if gamma == "auto":
+            gamma = 1 / X.shape[-1]
+        gamma = 1.0 / float(gamma)
+        # distances = torch.cdist(X, Y)
+        distances = -gamma * (2 - 2.0 * torch.mm(X, Y.T))
+        kernel = torch.exp(distances)
 
-def compute_kernel_new(X,Y,gamma=0.1):
-    gamma = 1./float(gamma)
-    distances = -gamma*(2-2.*torch.mm(X,Y.T))
-    kernel = torch.exp(distances)
+    elif kernel_type == "poly":
+        kernel = torch.pow(torch.mm(X, Y.T) + 0.5, 3.0)
+    elif kernel_type == "tanh":
+        kernel = torch.tanh(gamma * torch.mm(X, Y.T))
+    elif kernel_type == "min":
+        # kernel = torch.minimum(torch.relu(X), torch.relu(Y))
+        kernel = torch.min(
+            torch.relu(X).unsqueeze(1), torch.relu(Y).unsqueeze(1).transpose(1, 0)
+        ).sum(2)
+
     return kernel
 
 class MMCL_inv(nn.Module):
-    def __init__(self, sigma=0.07, batch_size=256, anchor_count=2, C=1.0, device=None):
+    def __init__(self, kernel_type, sigma=0.07, batch_size=256, anchor_count=2, C=1.0, device=None):
         super(MMCL_inv, self).__init__()
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') if device is None else device
+        self.device = torch.device('cuda' if torch.cuda().is_available() else 'cpu') if device is None else device
+        self.kernel_type = kernel_type
         self.sigma = sigma
         self.C = C
 
@@ -70,13 +87,14 @@ class MMCL_inv(nn.Module):
         nn = bs - 1
 
         F = torch.cat(torch.unbind(features, dim=1), dim=0)
-        K = compute_kernel_new(F[:nn+1], F, gamma=self.sigma)
+        K = compute_kernel(F[:nn+1], F, gamma=self.sigma, type=self.hparams.kernel_type)
 
 
         with torch.no_grad():
             KK = torch.masked_select(K.detach(), self.block).reshape(bs, bs)
 
             KK_d0 = KK*self.no_diag
+
             KXY = -KK_d0.unsqueeze(1).repeat(1,bs,1)
             KXY = KXY + KXY.transpose(2,1)
             Delta = (self.oneone + KK).unsqueeze(0) + KXY
@@ -104,9 +122,9 @@ class MMCL_inv(nn.Module):
 
 
 class MMCL_pgd(nn.Module):
-
     def __init__(
         self,
+        kernel_type,
         sigma=0.07,
         batch_size=256,
         anchor_count=2,
@@ -119,7 +137,8 @@ class MMCL_pgd(nn.Module):
         device=None
     ):
         super(MMCL_pgd, self).__init__()
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') if device is None else device
+        self.device = torch.device('cuda' if torch.cuda().is_available() else 'cpu') if device is None else device
+        self.kernel_type=kernel_type
         self.sigma = sigma
         self.C = C
 
@@ -175,17 +194,17 @@ class MMCL_pgd(nn.Module):
         nn = bs - 1
 
         F = torch.cat(torch.unbind(features, dim=1), dim=0)
-        K = compute_kernel_new(F[:nn+1], F, gamma=self.sigma)
+        K = compute_kernel(F[:nn+1], F, gamma=self.sigma, kernel_type=self.kernel_type)
 
 
         with torch.no_grad():
             KK = torch.masked_select(K.detach(), self.block).reshape(bs, bs)
             KK_d0 = KK*self.no_diag
+            KK_d0[torch.isnan(KK_d0)] = 0.0
             KXY = -KK_d0.unsqueeze(1).repeat(1,bs,1)
             KXY = KXY + KXY.transpose(2,1)
             Delta = (self.oneone + KK).unsqueeze(0) + KXY
             DD = torch.masked_select(Delta, self.KMASK).reshape(bs, nn, nn)
-
 
             if self.C == -1:
                 alpha_y = torch.relu(torch.randn(bs,nn,1,device=DD.device))
@@ -193,9 +212,27 @@ class MMCL_pgd(nn.Module):
                 alpha_y = torch.relu(torch.randn(bs,nn,1,device=DD.device)).clamp(min=0, max=self.C)
 
             if self.solver_type == 'nesterov':
-                alpha_y,iter_no,abs_rel_change,rel_change_init = pgd_with_nesterov(self.eta,self.num_iters,DD,2*self.one_bs,alpha_y.clone(),self.C,use_norm=self.use_norm,stop_condition=self.stop_condition)
+                alpha_y,iter_no,abs_rel_change,rel_change_init = pgd_with_nesterov(
+                    eta=self.eta,
+                    num_iter=self.num_iters,
+                    Q=DD,
+                    p=1*self.one_bs,
+                    alpha_y=alpha_y.clone(),
+                    C=self.C,
+                    use_norm=self.use_norm,
+                    stop_condition=self.stop_condition
+                )
             elif self.solver_type == 'vanilla':
-                alpha_y,iter_no,abs_rel_change,rel_change_init = pgd_simple_short(self.eta,self.num_iters,DD,2*self.one_bs,alpha_y.clone(),self.C,use_norm=self.use_norm,stop_condition=self.stop_condition)
+                alpha_y,iter_no,abs_rel_change,rel_change_init = pgd_simple_short(
+                    self.eta,
+                    self.num_iters,
+                    DD,
+                    2*self.one_bs,
+                    alpha_y.clone(),
+                    self.C,
+                    use_norm=self.use_norm,
+                    stop_condition=self.stop_condition
+                )
 
             alpha_y = alpha_y.squeeze(2)
 
@@ -205,14 +242,11 @@ class MMCL_pgd(nn.Module):
                 alpha_y = torch.relu(alpha_y).clamp(min=0, max=self.C).detach()
             alpha_x = alpha_y.sum(1)
 
-
         Ks = torch.masked_select(K, self.block12).reshape(bs, bs)
         Kn = torch.masked_select(Ks.T, self.neg_mask).reshape(bs,nn).T
-
-        pos_loss = (alpha_x*(Ks*self.pos_mask).sum(1)).mean()
+        pos_loss = (alpha_x*(Ks*self.pos_mask).sum(1)).mean()/bs
         neg_loss = (alpha_y.T*Kn).sum()/bs
         loss = neg_loss - pos_loss
-
         return loss
 
 

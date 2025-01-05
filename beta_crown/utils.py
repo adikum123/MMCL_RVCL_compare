@@ -152,7 +152,6 @@ def load_model_contrastive(args, weights_loaded=True, contrastive=True, linear=F
     Load the model architectures and weights
     """
     model_ori = eval(args.model)()
-    print(f'Type of model after eval: {type(model_ori)}')
     if not weights_loaded:
         return cut_model(model_ori, contrastive, linear)
     print('loading weight...')

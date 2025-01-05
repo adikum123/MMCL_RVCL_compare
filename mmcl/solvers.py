@@ -1,7 +1,8 @@
-import torch
-import numpy as np
-from torch.autograd import Variable
 import time
+
+import numpy as np
+import torch
+from torch.autograd import Variable
 
 
 def pgd_simple_short(eta,num_iter,Q,p,alpha_y,C,use_norm=False,stop_condition=0.01):
@@ -34,7 +35,7 @@ def pgd_simple_short(eta,num_iter,Q,p,alpha_y,C,use_norm=False,stop_condition=0.
 
 def pgd_with_nesterov(eta,num_iter,Q,p,alpha_y,C,use_norm=False,stop_condition=0.01):
     if use_norm:
-        eta_to_use = 1.0/torch.norm(Q,dim=(1,2),p=2,keepdim=True)        
+        eta_to_use = 1.0/torch.norm(Q,dim=(1,2),p=2,keepdim=True)
     else:
         eta_to_use = eta
 
@@ -44,9 +45,8 @@ def pgd_with_nesterov(eta,num_iter,Q,p,alpha_y,C,use_norm=False,stop_condition=0
     y = alpha_y
     rel_change_init = -1.0
     for iter_no in range(num_iter):
-
         x_new = torch.bmm(theta1,y) + theta2
-
+        x_new[torch.isnan(x_new)] = 0.0
         if C == -1:
             alpha_y_new = torch.relu(x_new).detach()
         else:
@@ -57,7 +57,6 @@ def pgd_with_nesterov(eta,num_iter,Q,p,alpha_y,C,use_norm=False,stop_condition=0
         beta_k = (alpha0*(1-alpha0))/(alpha0**2 + alpha0_new)
         y = alpha_y_new + beta_k*(alpha_y_new - alpha_y)
         alpha0 = alpha0_new
-
         abs_rel_change = ((alpha_y_new-alpha_y)/(alpha_y + 1E-7)).abs().mean()
         if iter_no == 0:
             rel_change_init = abs_rel_change
@@ -67,4 +66,3 @@ def pgd_with_nesterov(eta,num_iter,Q,p,alpha_y,C,use_norm=False,stop_condition=0
         alpha_y = alpha_y_new
 
     return alpha_y,iter_no,abs_rel_change,rel_change_init
-
