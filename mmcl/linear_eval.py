@@ -1,8 +1,8 @@
+import torch.nn
 from tqdm import tqdm
 
-import torch.nn
 
-class LinearEval(nn.Module)
+class LinearEval(nn.Module):
 
     def __init__(self, hparams, encoder, feature_dim=100, num_classes=10, freeze_encoder=True):
         self.encoder = encoder
