@@ -2,6 +2,7 @@ import argparse
 
 import torch
 from encoder import MMCL_Encoder
+from linear_eval import LinearEval
 
 parser = argparse.ArgumentParser(description="unsupervised verification")
 
@@ -80,8 +81,13 @@ parser.add_argument('--gamma', type=str, default="auto")
 parser.add_argument('--device', type=str, default='gpu')
 args = parser.parse_args()
 
+# Train model
 print(f'Running on: {args.device}')
 model = MMCL_Encoder(hparams=args, device=torch.device('cuda' if torch.cuda.is_available() and args.device == 'gpu' else 'cpu'))
 model.train()
 
-torch.save(model.state_dict(), f'models/unsupervised/mmcl_{args.model}')
+# Test model
+model.eval()
+linear_eval = LinearEval(hparams=args, encoder=model)
+linear_eval.train()
+linear_eval.test()

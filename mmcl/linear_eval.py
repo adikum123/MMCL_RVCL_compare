@@ -4,12 +4,12 @@ import torch.nn
 
 class LinearEval(nn.Module)
 
-    def __init__(self, hparams, device, encoder, feature_dim=100, num_classes=10, freeze_encoder=True):
+    def __init__(self, hparams, encoder, feature_dim=100, num_classes=10, freeze_encoder=True):
         self.encoder = encoder
         if freeze_encoder:
             self.freeze_encoder()
         self.classifier = nn.LinearEval(feature_dim, num_classes)
-        self.device = device
+        self.device = self.hparams.device
         self.trainloader, self.traindst, self.testloader, self.testdst = data_loader.get_dataset(self.hparams)
         self.optimizer = optim.SGD(
             self.model.parameters(),
@@ -47,7 +47,7 @@ class LinearEval(nn.Module)
             # rest ...
             total_num += self.hparams.batch_size
             total_loss += loss.item() * self.hparams.batch_size
-            train_bar.set_description('Train Epoch: [{}/{}] Loss: {:.4e}'.format(epoch, self.hparams.num_iters, total_loss / total_num))
+            train_bar.set_description('Train Epoch: [{}/{}] Total Loss: {:.4e}, loss: {}'.format(epoch, self.hparams.num_iters, total_loss / total_num, loss))
         self.scheduler.step()
         metrics = {
             'total_loss':total_loss / total_num,
@@ -59,3 +59,45 @@ class LinearEval(nn.Module)
         for epoch in range(self.hparams.num_iters):
             metrics = self.train_epoch(epoch=epoch)
             print(f'Epoch: {epoch+1}, metrics: {json.dumps(metrics, indent=4)}')
+
+    def test(self):
+        """Evaluate the model on the test dataset."""
+        self.classifier.eval()  # Set the classifier to evaluation mode
+        total_correct, total_samples = 0, 0
+        total_loss = 0.0
+        test_bar = tqdm(self.testloader, desc="Testing")
+        criterion = nn.CrossEntropyLoss()
+
+        with torch.no_grad():  # No gradients required during evaluation
+            for images, _, _, targets in test_bar:
+                # Move data to device
+                images, targets = images.to(self.device), targets.to(self.device)
+
+                # Forward pass
+                logits = self.forward(images)
+                loss = criterion(logits, targets)
+
+                # Predictions
+                predictions = torch.argmax(logits, dim=1)
+                correct = (predictions == targets).sum().item()
+
+                # Update metrics
+                total_correct += correct
+                total_samples += targets.size(0)
+                total_loss += loss.item() * targets.size(0)
+
+                # Update progress bar
+                test_bar.set_description("Test: Loss: {:.4e}, Acc: {:.2f}%".format(
+                    total_loss / total_samples,
+                    100 * total_correct / total_samples
+                ))
+
+        # Final metrics
+        metrics = {
+            'accuracy': total_correct / total_samples,
+            'loss': total_loss / total_samples,
+            'total_correct': total_correct,
+            'total_samples': total_samples
+        }
+        print(f'Test Results: {json.dumps(metrics, indent=4)}')
+        return metrics

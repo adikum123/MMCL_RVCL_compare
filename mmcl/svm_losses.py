@@ -192,10 +192,16 @@ class MMCL_pgd(nn.Module):
 
         bs = features.shape[0]
         nn = bs - 1
+        # Dynamically adjust self.block
+        block = torch.zeros(bs, 2 * bs, dtype=torch.bool, device=self.device)
+        block[:bs, :bs] = True
+        # Dynamically adjust self.block12
+        block12 = torch.zeros(bs, 2 * bs, dtype=torch.bool, device=self.device)
+        block12[:bs, bs:] = True
 
         F = torch.cat(torch.unbind(features, dim=1), dim=0)
         K = compute_kernel(F[:nn+1], F, gamma=self.sigma, kernel_type=self.kernel_type)
-
+        self.block = self.block[:bs, :bs]
 
         with torch.no_grad():
             KK = torch.masked_select(K.detach(), self.block).reshape(bs, bs)
