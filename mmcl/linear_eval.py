@@ -8,14 +8,14 @@ import rocl.data_loader as data_loader
 
 class LinearEval(nn.Module):
 
-    def __init__(self, hparams, encoder, feature_dim=100, num_classes=10, freeze_encoder=True):
+    def __init__(self, hparams, encoder, device, feature_dim=100, num_classes=10, freeze_encoder=True):
         super(LinearEval, self).__init__()
         self.hparams = hparams
         self.encoder = encoder
+        self.device = device
         if freeze_encoder:
             self.freeze_encoder()
-        self.classifier = nn.Linear(feature_dim, num_classes)
-        self.device = self.hparams.device
+        self.classifier = nn.Linear(feature_dim, num_classes).to(self.device)
         self.trainloader, self.traindst, self.testloader, self.testdst = data_loader.get_dataset(self.hparams)
         self.optimizer = optim.Adam(
             self.classifier.parameters(),
@@ -45,6 +45,7 @@ class LinearEval(nn.Module):
         self.classifier.train()
         total_loss, total_num, train_bar = 0.0, 0, tqdm(self.trainloader)
         for i, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
+            ori_image = ori_image.to(self.device)
             # compute logits and loss
             logits = self.forward(x=ori_image)
             loss = nn.CrossEntropyLoss()(logits, target)
