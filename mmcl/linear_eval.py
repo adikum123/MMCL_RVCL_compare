@@ -45,7 +45,7 @@ class LinearEval(nn.Module):
         self.classifier.train()
         total_loss, total_num, train_bar = 0.0, 0, tqdm(self.trainloader)
         for i, (ori_image, _, _, target) in enumerate(train_bar):
-            ori_image = ori_image.to(self.device)
+            ori_image, target = ori_image.to(self.device), target.to(self.device)
             # compute logits and loss
             logits = self.forward(x=ori_image)
             loss = nn.CrossEntropyLoss()(logits, target)
