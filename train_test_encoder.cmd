@@ -14,7 +14,7 @@ PYTHON_SCRIPT="mmcl/train_test_encoder.py"
 REQUIREMENTS_FILE="requirements.txt"
 
 enroot create --name $CONTAINER_NAME $CONTAINER_IMAGE
-enroot start --m MMCL_RVCL_compare << EOF
+enroot start --m MMCL_RVCL_compare/ $CONTAINER_NAME << EOF
     cd ..
     cd MMCL_RVCL_compare/
     pip install --upgrade pip
