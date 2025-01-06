@@ -42,7 +42,7 @@ class MMCL_Encoder(nn.Module):
                 eta=self.hparams.svm_lr
             )
         self.device = device
-        self.model = utils.load_model_contrastive(args=self.hparams, weights_loaded=False)
+        self.model = utils.load_model_contrastive(args=self.hparams, weights_loaded=False).to(self.device)
         self.trainloader, self.traindst, self.testloader, self.testdst = data_loader.get_dataset(self.hparams)
         self.optimizer = optim.SGD(
             self.model.parameters(),
