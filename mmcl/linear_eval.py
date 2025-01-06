@@ -18,6 +18,7 @@ class LinearEval(nn.Module):
         if freeze_encoder:
             self.freeze_encoder()
         self.classifier = nn.Linear(feature_dim, num_classes).to(self.device)
+        self.criterion = nn.CrossEntropyLoss()
         self.trainloader, self.traindst, self.testloader, self.testdst = data_loader.get_dataset(self.hparams)
         self.optimizer = optim.Adam(
             self.classifier.parameters(),
@@ -86,7 +87,7 @@ class LinearEval(nn.Module):
 
                 # Forward pass
                 logits = self.forward(images)
-                loss = nn.CrossEntropyLoss(logits, targets)
+                loss = self.criterion(logits, targets)
 
                 # Predictions
                 predictions = torch.argmax(logits, dim=1)
