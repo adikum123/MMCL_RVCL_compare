@@ -9,13 +9,15 @@ class LinearEval(nn.Module):
         self.encoder = encoder
         if freeze_encoder:
             self.freeze_encoder()
-        self.classifier = nn.LinearEval(feature_dim, num_classes)
+        self.classifier = nn.Linear(feature_dim, num_classes)
         self.device = self.hparams.device
         self.trainloader, self.traindst, self.testloader, self.testdst = data_loader.get_dataset(self.hparams)
-        self.optimizer = optim.SGD(
+        self.optimizer = torch.optim.Adam(
             self.model.parameters(),
-            lr=self.hparams.linear_eval_lr,
-            weight_decay=1e-6
+            lr=self.hparams.encoder_lr,
+            weight_decay=1e-6,
+            betas=(0.9, 0.999),  # Default values for the Adam optimizer
+            eps=1e-8  # Small value to prevent division by zero
         )
         self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=self.hparams.step_size, gamma=self.hparams.gamma)
 
