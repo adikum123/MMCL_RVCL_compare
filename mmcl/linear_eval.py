@@ -44,7 +44,7 @@ class LinearEval(nn.Module):
     def train_epoch(self, epoch):
         self.classifier.train()
         total_loss, total_num, train_bar = 0.0, 0, tqdm(self.trainloader)
-        for i, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
+        for i, (ori_image, _, _, target) in enumerate(train_bar):
             ori_image = ori_image.to(self.device)
             # compute logits and loss
             logits = self.forward(x=ori_image)
