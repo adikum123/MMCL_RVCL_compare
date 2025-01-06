@@ -21,7 +21,7 @@ class LinearEval(nn.Module):
         self.trainloader, self.traindst, self.testloader, self.testdst = data_loader.get_dataset(self.hparams)
         self.optimizer = optim.Adam(
             self.classifier.parameters(),
-            lr=self.hparams.encoder_lr,
+            lr=self.hparams.linear_eval_lr,
             weight_decay=1e-6,
             betas=(0.9, 0.999),  # Default values for the Adam optimizer
             eps=1e-8  # Small value to prevent division by zero
