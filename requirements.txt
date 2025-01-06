@@ -5,3 +5,4 @@ pandas==1.2.4
 diffdist==0.1
 appdirs==1.4.4
 oslo.config==8.7.0
+tqdm
