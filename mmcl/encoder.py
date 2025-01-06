@@ -113,5 +113,5 @@ class MMCL_Encoder(nn.Module):
             try:
                 metrics = self.train_epoch(epoch=epoch)
                 print(f'Epoch: {epoch+1}, metrics: {json.dumps(metrics, indent=4)}')
-            except Exception:
-                continue
+            except Exception as e:
+                print(f'Iteration {epoch+1} failed due to {e}')
