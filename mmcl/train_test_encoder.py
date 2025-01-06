@@ -48,7 +48,7 @@ parser.add_argument(
     "--solver_type", default="nesterov", type=str, help="Type of PGD Solver"
 )
 parser.add_argument(
-    "--use_norm", default="true", type=str, help="Use Norm - PGD Solver"
+    "--use_norm", default="false", type=str, help="Use Norm - PGD Solver"
 )
 
 # data params
