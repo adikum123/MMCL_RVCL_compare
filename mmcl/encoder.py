@@ -44,10 +44,12 @@ class MMCL_Encoder(nn.Module):
         self.device = device
         self.model = utils.load_model_contrastive(args=self.hparams, weights_loaded=False).to(self.device)
         self.trainloader, self.traindst, self.testloader, self.testdst = data_loader.get_dataset(self.hparams)
-        self.optimizer = optim.SGD(
-            self.model.parameters(),
+        self.optimizer = optim.Adam(
+            self.classifier.parameters(),
             lr=self.hparams.encoder_lr,
-            weight_decay=1e-6
+            weight_decay=1e-6,
+            betas=(0.9, 0.999),  # Default values for the Adam optimizer
+            eps=1e-8  # Small value to prevent division by zero
         )
         self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=self.hparams.step_size, gamma=self.hparams.gamma)
 

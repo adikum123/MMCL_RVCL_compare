@@ -1,5 +1,9 @@
+import torch
 import torch.nn as nn
+import torch.optim as optim
 from tqdm import tqdm
+
+import rocl.data_loader as data_loader
 
 
 class LinearEval(nn.Module):
@@ -13,8 +17,8 @@ class LinearEval(nn.Module):
         self.classifier = nn.Linear(feature_dim, num_classes)
         self.device = self.hparams.device
         self.trainloader, self.traindst, self.testloader, self.testdst = data_loader.get_dataset(self.hparams)
-        self.optimizer = torch.optim.Adam(
-            self.model.parameters(),
+        self.optimizer = optim.Adam(
+            self.classifier.parameters(),
             lr=self.hparams.encoder_lr,
             weight_decay=1e-6,
             betas=(0.9, 0.999),  # Default values for the Adam optimizer
@@ -42,7 +46,7 @@ class LinearEval(nn.Module):
         total_loss, total_num, train_bar = 0.0, 0, tqdm(self.trainloader)
         for i, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
             # compute logits and loss
-            logits = self.forward(x=ori_img)
+            logits = self.forward(x=ori_image)
             loss = nn.CrossEntropyLoss()(logits, target)
             # do optimizer step
             self.optimizer.zero_grad()
