@@ -5,6 +5,7 @@ from tqdm import tqdm
 class LinearEval(nn.Module):
 
     def __init__(self, hparams, encoder, feature_dim=100, num_classes=10, freeze_encoder=True):
+        super(LinearEval, self).__init__()
         self.encoder = encoder
         if freeze_encoder:
             self.freeze_encoder()
