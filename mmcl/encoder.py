@@ -45,7 +45,7 @@ class MMCL_Encoder(nn.Module):
         self.model = utils.load_model_contrastive(args=self.hparams, weights_loaded=False).to(self.device)
         self.trainloader, self.traindst, self.testloader, self.testdst = data_loader.get_dataset(self.hparams)
         self.optimizer = optim.Adam(
-            self.classifier.parameters(),
+            self.model.parameters(),
             lr=self.hparams.encoder_lr,
             weight_decay=1e-6,
             betas=(0.9, 0.999),  # Default values for the Adam optimizer
