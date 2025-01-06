@@ -69,13 +69,13 @@ class LinearEval(nn.Module):
         criterion = nn.CrossEntropyLoss()
 
         with torch.no_grad():  # No gradients required during evaluation
-            for images, _, _, targets in test_bar:
+            for image, label in test_bar:
                 # Move data to device
-                images, targets = images.to(self.device), targets.to(self.device)
+                image, label = images.to(self.device), targets.to(self.device)
 
                 # Forward pass
                 logits = self.forward(images)
-                loss = criterion(logits, targets)
+                loss = nn.CrossEntropyLoss(logits, targets)
 
                 # Predictions
                 predictions = torch.argmax(logits, dim=1)
