@@ -245,7 +245,7 @@ class MMCL_pgd(nn.Module):
         Kn = torch.masked_select(Ks.T, self.neg_mask).reshape(bs,nn).T
         pos_loss = (alpha_x*(Ks*self.pos_mask).sum(1)).mean()
         neg_loss = (alpha_y.T*Kn).sum()
-        loss = neg_loss - pos_loss
+        loss = (neg_loss - pos_loss) / bs
         return loss
 
 

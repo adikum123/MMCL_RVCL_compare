@@ -89,7 +89,6 @@ model = MMCL_Encoder(hparams=args, device=torch.device('cuda' if torch.cuda.is_a
 model.train()
 
 # Test model
-model.eval()
-linear_eval = LinearEval(hparams=args, encoder=model)
+linear_eval = LinearEval(hparams=args, encoder=model, freeze_encoder=True)
 linear_eval.train()
 linear_eval.test()
