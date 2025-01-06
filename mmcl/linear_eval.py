@@ -68,7 +68,7 @@ class LinearEval(nn.Module):
         return metrics
 
     def train(self):
-        for epoch in range(self.hparams.num_iters):
+        for epoch in range(self.hparams.linear_eval_num_iters):
             metrics = self.train_epoch(epoch=epoch)
             print(f'Epoch: {epoch+1}, metrics: {json.dumps(metrics, indent=4)}')
 

@@ -111,7 +111,7 @@ class MMCL_Encoder(nn.Module):
     def train(self):
         torch.autograd.set_detect_anomaly(True)
         self.model.train()
-        for epoch in range(self.hparams.num_iters):
+        for epoch in range(self.hparams.encoder_num_iters):
             try:
                 metrics = self.train_epoch(epoch=epoch)
                 print(f'Epoch: {epoch+1}, metrics: {json.dumps(metrics, indent=4)}')
