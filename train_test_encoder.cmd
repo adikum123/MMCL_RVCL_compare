@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -p lrz-dgx-1-v100x8
 #SBATCH --gres=gpu:1
-#SBATCH --time=3-00:00:00
+#SBATCH --time=1-00:00:00
 #SBATCH -o outs/100k.out
 #SBATCH -e errs/100k.err
 
@@ -22,6 +22,6 @@ enroot start --m MMCL_RVCL_compare << EOF
     export PYTHONPATH=$(pwd):$PYTHONPATH
 EOF
 
-python $PYTHON_SCRIPT
+python $PYTHON_SCRIPT --kernel_type rbf
 
 enroot remove $CONTAINER_NAME
