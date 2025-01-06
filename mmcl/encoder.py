@@ -26,7 +26,8 @@ class MMCL_Encoder(nn.Module):
                 anchor_count=2,
                 C=self.hparams.C,
                 device=device,
-                kernel_type=self.hparams.kernel_type
+                kernel_type=self.hparams.kernel_type,
+                eta=self.hparams.svm_lr
             )
         elif self.hparams.criterion_to_use == 'mmcl_pgd':
             self.crit = MMCL_pgd(
@@ -37,14 +38,15 @@ class MMCL_Encoder(nn.Module):
                 solver_type=self.hparams.solver_type,
                 use_norm=self.hparams.use_norm,
                 device=device,
-                kernel_type=self.hparams.kernel_type
+                kernel_type=self.hparams.kernel_type,
+                eta=self.hparams.svm_lr
             )
         self.device = device
         self.model = utils.load_model_contrastive(args=self.hparams, weights_loaded=False)
         self.trainloader, self.traindst, self.testloader, self.testdst = data_loader.get_dataset(self.hparams)
         self.optimizer = optim.SGD(
             self.model.parameters(),
-            lr=self.hparams.lr,
+            lr=self.hparams.encoder_lr,
             weight_decay=1e-6
         )
         self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=self.hparams.step_size, gamma=self.hparams.gamma)

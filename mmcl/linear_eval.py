@@ -13,7 +13,7 @@ class LinearEval(nn.Module):
         self.trainloader, self.traindst, self.testloader, self.testdst = data_loader.get_dataset(self.hparams)
         self.optimizer = optim.SGD(
             self.model.parameters(),
-            lr=self.hparams.lr,
+            lr=self.hparams.linear_eval_lr,
             weight_decay=1e-6
         )
         self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=self.hparams.step_size, gamma=self.hparams.gamma)
