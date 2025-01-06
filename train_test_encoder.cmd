@@ -5,9 +5,6 @@
 #SBATCH -o outs/100k.out
 #SBATCH -e errs/100k.err
 
-module load slurm_setup
-module load enroot
-
 CONTAINER_IMAGE="nvidia+tensorflow+20.12-tf1-py3.sqsh"
 CONTAINER_NAME="mmcl_rvcl"
 PYTHON_SCRIPT="mmcl/train_test_encoder.py"
