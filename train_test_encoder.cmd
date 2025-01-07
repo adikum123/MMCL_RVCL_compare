@@ -5,48 +5,50 @@
 #SBATCH -o outs/100k.out
 #SBATCH -e errs/100k.err
 
-enroot remove $CONTAINER_NAME
-
 CONTAINER_IMAGE="ubuntu.sqsh"
 CONTAINER_NAME="mmcl_rvcl"
 PYTHON_SCRIPT="mmcl/train_test_encoder.py"
 REQUIREMENTS_FILE="requirements.txt"
+WORKING_DIR="MMCL_RVCL_compare"
 
-echo "Ls command result"
-ls
-
-echo "Creating and starting conatiner"
+echo "Creating and starting the container..."
 enroot create --name $CONTAINER_NAME $CONTAINER_IMAGE
-enroot start --m MMCL_RVCL_compare/ $CONTAINER_NAME
+enroot start --mount $(pwd):/workspace -- $CONTAINER_NAME
+
 cd ..
 cd MMCL_RVCL_compare/
 
-echo "Installing necessary dependencies"
-apt-get update && apt-get install -y \
-    wget build-essential software-properties-common && \
-    add-apt-repository ppa:deadsnakes/ppa && apt-get update
+echo "Updating package lists..."
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -y && apt-get install -y \
+    wget build-essential software-properties-common
 
-echo "Installing python 3.7"
-apt-get install -y python3.7 python3.7-dev python3.7-venv && \
-    ln -s /usr/bin/python3.7 /usr/bin/python3 && \
-    ln -s /usr/bin/python3.7 /usr/bin/python
+echo "Adding Python 3.7 repository..."
+add-apt-repository -y ppa:deadsnakes/ppa && apt-get update -y
 
-echo "Installing pip"
-wget https://bootstrap.pypa.io/get-pip.py && python get-pip.py && rm get-pip.py
+echo "Installing Python 3.7..."
+apt-get install -y python3.7 python3.7-dev python3.7-venv
+ln -sf /usr/bin/python3.7 /usr/bin/python3
+ln -sf /usr/bin/python3.7 /usr/bin/python
 
-echo "Installing cuda"
-apt-get install -y cuda-toolkit-11-8 && \
-    echo "/usr/local/cuda/lib64" >> /etc/ld.so.conf.d/cuda.conf && ldconfig
+echo "Installing pip..."
+wget https://bootstrap.pypa.io/get-pip.py -O get-pip.py
+python3 get-pip.py && rm get-pip.py
+
+echo "Installing CUDA toolkit..."
+apt-get install -y cuda-toolkit-11-8
+echo "/usr/local/cuda/lib64" >> /etc/ld.so.conf.d/cuda.conf && ldconfig
 
 export PATH=/usr/local/cuda/bin:$PATH
 export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
-echo "Installing requirements"
+echo "Installing Python requirements..."
 pip install --upgrade pip
 pip install -r $REQUIREMENTS_FILE
 
-export PYTHONPATH=$(pwd):$PYTHONPATH
+export PYTHONPATH=/workspace/$WORKING_DIR:$PYTHONPATH
 
+echo "Running the Python script..."
 python $PYTHON_SCRIPT --kernel_type rbf
 
-enroot remove $CONTAINER_NAME
+echo "Script completed."
