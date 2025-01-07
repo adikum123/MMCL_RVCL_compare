@@ -5,12 +5,15 @@
 #SBATCH -o outs/100k.out
 #SBATCH -e errs/100k.err
 
+# Variables
 CONTAINER_IMAGE="ubuntu.sqsh"
 CONTAINER_NAME="mmcl_rvcl"
 PYTHON_SCRIPT="mmcl/train_test_encoder.py"
 REQUIREMENTS_FILE="requirements.txt"
 WORKING_DIR="MMCL_RVCL_compare"
-VENV_DIR="venv"
+PYTHON_VERSION="3.7.9"
+VENV_NAME="mmcl_rvcl"
+TORCH_URL="https://download.pytorch.org/whl/torch-1.6.0%2Bcu101-cp37-cp37m-linux_x86_64.whl"
 
 echo "Creating and starting the container..."
 enroot create --name $CONTAINER_NAME $CONTAINER_IMAGE
@@ -18,33 +21,42 @@ enroot start --mount $(pwd):/workspace -- $CONTAINER_NAME
 
 cd $WORKING_DIR
 
-echo "Setting up Python 3.7 virtual environment..."
-export DEBIAN_FRONTEND=noninteractive
-apt-get update -y && apt-get install -y \
-    wget build-essential software-properties-common \
-    python3.7 python3.7-dev python3.7-venv
-
-if [ ! -d "$VENV_DIR" ]; then
-    echo "Creating virtual environment..."
-    python3.7 -m venv $VENV_DIR
+if ! command -v pyenv &>/dev/null; then
+    echo "Installing pyenv and pyenv-virtualenv..."
+    curl https://pyenv.run | bash
+    export PATH="$HOME/.pyenv/bin:$PATH"
+    eval "$(pyenv init --path)"
+    eval "$(pyenv virtualenv-init -)"
 fi
 
-source $VENV_DIR/bin/activate
+if ! pyenv versions | grep -q $PYTHON_VERSION; then
+    echo "Installing Python $PYTHON_VERSION with pyenv..."
+    pyenv install $PYTHON_VERSION
+fi
 
-echo "Installing Python dependencies..."
+if ! pyenv virtualenvs | grep -q $VENV_NAME; then
+    echo "Creating virtual environment '$VENV_NAME' with pyenv-virtualenv..."
+    pyenv virtualenv $PYTHON_VERSION $VENV_NAME
+fi
+
+echo "Activating virtual environment '$VENV_NAME'..."
+pyenv activate $VENV_NAME
+
+echo "Upgrading pip..."
 pip install --upgrade pip
-pip install -r $REQUIREMENTS_FILE
 
-echo "Installing CUDA toolkit..."
-apt-get install -y cuda-toolkit-11-8
-export PATH=/usr/local/cuda/bin:$PATH
-export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+echo "Installing PyTorch 1.6.0 manually..."
+pip install $TORCH_URL
+
+echo "Installing dependencies from requirements.txt..."
+pip install -r $REQUIREMENTS_FILE
 
 export PYTHONPATH=$(pwd):$PYTHONPATH
 
 echo "Running the Python script..."
 python $PYTHON_SCRIPT --kernel_type rbf
 
-deactivate
+echo "Deactivating virtual environment..."
+pyenv deactivate
 
 echo "Script completed."
