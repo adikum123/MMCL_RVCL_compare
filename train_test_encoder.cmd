@@ -12,9 +12,8 @@ CONTAINER_NAME="mmcl_rvcl"
 PYTHON_SCRIPT="mmcl/train_test_encoder.py"
 REQUIREMENTS_FILE="requirements.txt"
 
-enroot import docker://ubuntu
-echo "After enroot import"
-echo ($ls)
+echo "Ls command result"
+ls
 
 echo "Creating and starting conatiner"
 enroot create --name $CONTAINER_NAME $CONTAINER_IMAGE
