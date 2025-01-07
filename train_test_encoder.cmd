@@ -14,7 +14,7 @@ REQUIREMENTS_FILE="requirements.txt"
 
 enroot import docker://r/ohjho/py37_cuda
 echo "After enroot import"
-enroot ($ls)
+echo ($ls)
 enroot create --name $CONTAINER_NAME $CONTAINER_IMAGE
 enroot start --m MMCL_RVCL_compare/ $CONTAINER_NAME
 cd ..
