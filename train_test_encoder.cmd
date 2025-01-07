@@ -12,7 +12,7 @@ CONTAINER_NAME="mmcl_rvcl"
 PYTHON_SCRIPT="mmcl/train_test_encoder.py"
 REQUIREMENTS_FILE="requirements.txt"
 
-enroot import docker://r/ohjho/py37_cuda
+enroot import docker://ubuntu
 echo "After enroot import"
 echo ($ls)
 enroot create --name $CONTAINER_NAME $CONTAINER_IMAGE
