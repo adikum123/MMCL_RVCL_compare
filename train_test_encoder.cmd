@@ -10,45 +10,41 @@ CONTAINER_NAME="mmcl_rvcl"
 PYTHON_SCRIPT="mmcl/train_test_encoder.py"
 REQUIREMENTS_FILE="requirements.txt"
 WORKING_DIR="MMCL_RVCL_compare"
+VENV_DIR="venv"
 
 echo "Creating and starting the container..."
 enroot create --name $CONTAINER_NAME $CONTAINER_IMAGE
 enroot start --mount $(pwd):/workspace -- $CONTAINER_NAME
 
-cd ..
-cd MMCL_RVCL_compare/
+cd $WORKING_DIR
 
-echo "Updating package lists..."
+echo "Setting up Python 3.7 virtual environment..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y && apt-get install -y \
-    wget build-essential software-properties-common
+    wget build-essential software-properties-common \
+    python3.7 python3.7-dev python3.7-venv
 
-echo "Adding Python 3.7 repository..."
-add-apt-repository -y ppa:deadsnakes/ppa && apt-get update -y
+if [ ! -d "$VENV_DIR" ]; then
+    echo "Creating virtual environment..."
+    python3.7 -m venv $VENV_DIR
+fi
 
-echo "Installing Python 3.7..."
-apt-get install -y python3.7 python3.7-dev python3.7-venv
-ln -sf /usr/bin/python3.7 /usr/bin/python3
-ln -sf /usr/bin/python3.7 /usr/bin/python
+source $VENV_DIR/bin/activate
 
-echo "Installing pip..."
-wget https://bootstrap.pypa.io/get-pip.py -O get-pip.py
-python3 get-pip.py && rm get-pip.py
-
-echo "Installing CUDA toolkit..."
-apt-get install -y cuda-toolkit-11-8
-echo "/usr/local/cuda/lib64" >> /etc/ld.so.conf.d/cuda.conf && ldconfig
-
-export PATH=/usr/local/cuda/bin:$PATH
-export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-
-echo "Installing Python requirements..."
+echo "Installing Python dependencies..."
 pip install --upgrade pip
 pip install -r $REQUIREMENTS_FILE
 
-export PYTHONPATH=/workspace/$WORKING_DIR:$PYTHONPATH
+echo "Installing CUDA toolkit..."
+apt-get install -y cuda-toolkit-11-8
+export PATH=/usr/local/cuda/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+
+export PYTHONPATH=$(pwd):$PYTHONPATH
 
 echo "Running the Python script..."
 python $PYTHON_SCRIPT --kernel_type rbf
+
+deactivate
 
 echo "Script completed."
