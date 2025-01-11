@@ -86,12 +86,13 @@ parser.add_argument('--gamma', type=str, default="auto")
 args = parser.parse_args()
 
 # Train model
-print(f'Running on: {args.device}')
-model = MMCL_Encoder(hparams=args, device=torch.device('cuda' if torch.cuda.is_available() and args.device == 'gpu' else 'cpu'))
+device=torch.device('cuda' if torch.cuda.is_available() and args.device == 'gpu' else 'cpu')
+print(f'Running on: {device}')
+model = MMCL_Encoder(hparams=args, device=device)
 model.train()
 
 # Test model
 args.train_type = 'linear_eval'
-linear_eval = LinearEval(hparams=args, device=torch.device('cuda' if torch.cuda.is_available() and args.device == 'gpu' else 'cpu'), encoder=model)
+linear_eval = LinearEval(hparams=args, device=device, encoder=model)
 linear_eval.train()
 linear_eval.test()
