@@ -71,14 +71,14 @@ def get_dataset(args):
                 )
             train_loader = torch.utils.data.DataLoader(train_dst,batch_size=args.batch_size,num_workers=4,
                     pin_memory=False,
-                    shuffle=(train_sampler is None),
+                    shuffle=True,
                     sampler=train_sampler,
                 )
 
             val_loader = torch.utils.data.DataLoader(val_dst,batch_size=100,
                     num_workers=4,
                     pin_memory=False,
-                    shuffle=False,
+                    shuffle=True,
                 )
             return train_loader, train_dst, val_loader, val_dst, train_sampler
 
@@ -94,7 +94,7 @@ def get_dataset(args):
             else:
                 val_batch = 100
                 val_loader = torch.utils.data.DataLoader(val_dst, batch_size=val_batch,
-                                                    shuffle=False, num_workers=4)
+                                                    shuffle=True, num_workers=4)
 
             return train_loader, train_dst, val_loader, val_dst
 
@@ -158,7 +158,7 @@ def get_dataset(args):
                 train_dst,batch_size=args.batch_size,
                 num_workers=4,
                 pin_memory=False,
-                shuffle=(train_sampler is None),
+                shuffle=True,
                 sampler=train_sampler,
             )
             val_loader = torch.utils.data.DataLoader(
@@ -166,7 +166,7 @@ def get_dataset(args):
                     batch_size=100,
                     num_workers=4,
                     pin_memory=False,
-                    shuffle=False,
+                    shuffle=True,
                 )
             return train_loader, train_dst, val_loader, val_dst, train_sampler
 
@@ -179,7 +179,7 @@ def get_dataset(args):
             else:
                 val_batch = 100
                 val_loader = torch.utils.data.DataLoader(val_dst, batch_size=val_batch,
-                                                    shuffle=False, num_workers=4)
+                                                    shuffle=True, num_workers=4)
 
             return train_loader, train_dst, val_loader, val_dst
 
@@ -236,7 +236,7 @@ def get_dataset(args):
                 )
             train_loader = torch.utils.data.DataLoader(train_dst,batch_size=args.batch_size,num_workers=4,
                     pin_memory=True,
-                    shuffle=(train_sampler is None),
+                    shuffle=True,
                     sampler=train_sampler,
                 )
 
@@ -251,7 +251,7 @@ def get_dataset(args):
                                                   shuffle=True, num_workers=4)
 
             val_loader = torch.utils.data.DataLoader(val_dst, batch_size=100,
-                                                 shuffle=False, num_workers=4)
+                                                 shuffle=True, num_workers=4)
 
             return train_loader, train_dst, val_loader, val_dst
 
