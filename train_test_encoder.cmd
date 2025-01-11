@@ -46,6 +46,6 @@ pip install -r $REQUIREMENTS_FILE
 export PYTHONPATH=$(pwd):$PYTHONPATH
 
 echo "Running the Python script..."
-python $PYTHON_SCRIPT --kernel_type rbf
+python $PYTHON_SCRIPT --kernel_type rbf --encoder_num_iters 1000 --linear_eval_num_iters 200 --encoder_lr 1e-4 --svm_lr 1e-4 --linear_eval_lr 1e-4
 
 echo "Script completed."
