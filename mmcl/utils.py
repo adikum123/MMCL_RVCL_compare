@@ -132,6 +132,12 @@ def mnist_cnn_4layer():
         nn.Linear(100, 10),
     )
 
+def cut_model(model, contrastive=True, linear=False):
+    if contrastive:
+        return nn.Sequential(*list(model.children())[:-2])
+    if linear:
+        return nn.Sequential(*list(model.children())[-1])
+    return model
 
 def load_model_contrastive(args, weights_loaded=True, contrastive=True, linear=False):
     """
