@@ -132,12 +132,6 @@ def mnist_cnn_4layer():
         nn.Linear(100, 10),
     )
 
-def cut_model(model, contrastive=True, linear=False):
-    if contrastive:
-        return nn.Sequential(*list(model.children())[:-2])
-    if linear:
-        return nn.Sequential(*list(model.children())[-1])
-    return model
 
 def load_model_contrastive(args, weights_loaded=True, contrastive=True, linear=False):
     """
@@ -158,3 +152,14 @@ def load_model_contrastive(args, weights_loaded=True, contrastive=True, linear=F
         model_ori.load_state_dict(torch.load(model_path(args), map_location))
 
     return cut_model(model_ori, contrastive, linear)
+
+
+def load_model_contrastive_test(model, model_path, device, weights_loaded=True, contrastive=True, linear=False):
+    map_location = device
+    # Directly load the model since the checkpoint is not a state_dict
+    try:
+        return torch.load(model_path, map_location)
+    except Exception as e:
+        print(f"Error loading model: {e}")
+        raise
+    return model_ori

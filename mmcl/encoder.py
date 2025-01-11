@@ -99,7 +99,7 @@ class MMCL_Encoder(nn.Module):
 
             total_num += self.hparams.batch_size
             total_loss += loss.item() * self.hparams.batch_size
-            train_bar.set_description('Train Epoch: [{}/{}] Total Loss: {:.4e}, loss: {}'.format(epoch, self.hparams.num_iters, total_loss / total_num, loss))
+            train_bar.set_description('Train Epoch: [{}/{}] Total Loss: {:.4e}, loss: {}'.format(epoch, self.hparams.encoder_num_iters, total_loss / total_num, loss))
         self.scheduler.step()
         metrics = {
             'total_loss':total_loss / total_num,
