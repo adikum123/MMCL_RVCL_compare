@@ -18,6 +18,9 @@ TORCH_URL="https://download.pytorch.org/whl/torch-1.6.0%2Bcu101-cp37-cp37m-linux
 echo "Creating and starting the container..."
 enroot create --name $CONTAINER_NAME $CONTAINER_IMAGE
 enroot start --mount $(pwd):/workspace -- $CONTAINER_NAME
+echo "Result of ls command inside the container:"
+ls
+
 
 cd $WORKING_DIR
 
