@@ -7,7 +7,6 @@ CONTAINER_NAME="mmcl_rvcl"
 PYTHON_SCRIPT="mmcl/train_test_encoder.py"
 REQUIREMENTS_FILE="requirements.txt"
 WORKING_DIR="/workspace/MMCL_RVCL_compare"  # Ensure this is absolute
-PYTHON_VERSION="3.7"
 
 echo "Creating and starting the container..."
 
@@ -23,31 +22,54 @@ fi
 enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     set -e  # Stop execution inside the container if any command fails
 
-    # Install prerequisites
+    # Install prerequisites for pyenv
     apt update
-    apt install -y python3.7 python3.7-venv python3.7-distutils curl
+    apt install -y git curl build-essential gcc make libffi-dev zlib1g-dev \
+                libssl-dev libreadline-dev libbz2-dev libsqlite3-dev libncurses5-dev \
+                libgdbm-dev libnss3-dev liblzma-dev tk-dev uuid-dev
 
-    # Verify Python 3.7 installation
-    echo "Verifying Python 3.7 installation..."
-    python3.7 --version || { echo "Python 3.7 not found. Exiting."; exit 1; }
+    # Configure pyenv environment
+    export PYENV_ROOT="$HOME/.pyenv"
+    export PATH="$PYENV_ROOT/bin:$PATH"
 
-    # Create and activate a virtual environment
-    echo "Creating and activating virtual environment..."
-    python3.7 -m venv /workspace/venv
-    source /workspace/venv/bin/activate
+    # Install pyenv
+    if [ ! -d "$HOME/.pyenv" ]; then
+        echo "Installing pyenv..."
+        curl https://pyenv.run | bash
+    else
+        echo "Pyenv already exists"
+    fi
+
+    eval "$(pyenv init --path)"
+    eval "$(pyenv virtualenv-init -)"
+
+    # Install and activate Python version
+    if ! pyenv versions | grep -q "$PYTHON_VERSION"; then
+        echo "Installing Python $PYTHON_VERSION..."
+        pyenv install --version $PYTHON_VERSION
+    else
+        echo "Python $PYTHON_VERSION already exists"
+    fi
+
+    pyenv global $PYTHON_VERSION
+
+    # start a virtual enviroment with pyenv version
+    pyenv virtualenv 3.7 mmcl_rvcl_venv
+    pyenv activate mmcl_rvcl_venv
 
     # Move to the working directory
     cd $WORKING_DIR
 
     # Ensure pip is installed and upgraded
-    echo "Installing and upgrading pip..."
-    curl https://bootstrap.pypa.io/get-pip.py | python
+    echo "Ensuring pip is installed..."
+    if ! command -v pip &>/dev/null; then
+        echo "Pip not found. Installing pip..."
+        apt install -y python3-pip
+        ln -sf /usr/bin/pip3 /usr/bin/pip
+    fi
 
     echo "Installing dependencies from requirements.txt..."
     pip install -r $REQUIREMENTS_FILE
-
-    # Save dependencies (optional, for sharing environments)
-    pip freeze > requirements.txt
 
     # Set Python path and run the script
     export PYTHONPATH=$(pwd):$PYTHONPATH
