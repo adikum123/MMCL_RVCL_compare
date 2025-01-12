@@ -59,7 +59,7 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
 
     # Verify Python installation
     echo "Verifying Python installation..."
-    python --version || { echo "Python not found }
+    python --version || { echo "Python not found" }
     python3 --version || { echo "Python 3 not found" }
 
     # Create and activate virtual environment
