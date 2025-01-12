@@ -55,6 +55,11 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
 
     pyenv global $PYTHON_VERSION
 
+    # Create and activate virtual environment
+    echo "Creating and activating virtual environment..."
+    python -m venv /workspace/venv
+    source /workspace/venv/bin/activate
+
     # Move to the working directory
     cd $WORKING_DIR
 
