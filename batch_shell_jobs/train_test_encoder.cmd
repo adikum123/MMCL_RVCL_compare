@@ -12,7 +12,11 @@ enroot remove mmcl_rvcl
 enroot create --name mmcl_rvcl ../nvidia+tensorflow+20.12-tf1-py3.sqsh
 echo "Starting container"
 enroot start --root --mount $(pwd):/workspace mmcl_rvcl
+
+apt install python3.10-venv
 python --version
+
+ls
 
 cd MMCL_RVCL_compare/
 
