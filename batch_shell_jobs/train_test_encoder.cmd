@@ -12,14 +12,19 @@ enroot remove mmcl_rvcl
 enroot create --name mmcl_rvcl ../nvidia+tensorflow+20.12-tf1-py3.sqsh
 echo "Starting container"
 enroot start --root --mount $(pwd):/workspace mmcl_rvcl
-    python --version
+python --version
 
-    echo "Installing dependencies from requirements.txt..."
-    pip install --upgrade pip
-    pip install -r requirements.txt
+cd workspace/MMCL_RVCL_compare
 
-    export PYTHONPATH=$(pwd):$PYTHONPATH
-    echo "Running the Python script..."
-    python mmcl/train_test_encoder.py --batch_size 256 --kernel_type rbf --encoder_num_iters 500 --linear_eval_num_iters 200 --encoder_lr 1e-4 --svm_lr 1e-4 --linear_eval_lr 1e-4
+python3 -m venv venv
+source venv/bin/activate
 
-    echo "Script completed."
+echo "Installing dependencies from requirements.txt..."
+pip install --upgrade pip
+pip install -r requirements.txt
+
+export PYTHONPATH=$(pwd):$PYTHONPATH
+echo "Running the Python script..."
+python mmcl/train_test_encoder.py --batch_size 256 --kernel_type rbf --encoder_num_iters 500 --linear_eval_num_iters 200 --encoder_lr 1e-4 --svm_lr 1e-4 --linear_eval_lr 1e-4
+
+echo "Script completed."
