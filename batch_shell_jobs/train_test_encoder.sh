@@ -28,6 +28,10 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     apt install -y git curl build-essential gcc make libffi-dev zlib1g-dev \
                 libssl-dev libreadline-dev libbz2-dev libsqlite3-dev
 
+    # Configure pyenv environment
+    export PYENV_ROOT="$HOME/.pyenv"
+    export PATH="$PYENV_ROOT/bin:$PATH"
+
     # Install pyenv
     if [ ! -d "$HOME/.pyenv" ]; then
         echo "Installing pyenv..."
@@ -36,9 +40,6 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
         echo "Pyenv already exists"
     fi
 
-    # Configure pyenv environment
-    export PYENV_ROOT="$HOME/.pyenv"
-    export PATH="$PYENV_ROOT/bin:$PATH"
     eval "$(pyenv init --path)"
     eval "$(pyenv virtualenv-init -)"
 
