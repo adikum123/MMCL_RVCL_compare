@@ -19,10 +19,11 @@ else
 fi
 
 # Start the container and run commands
+echo "Starting container"
 enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     set -e  # Stop execution inside the container if any command fails
 
-    PYTHON_VERSION="3.7.16"
+    PYTHON_VERSION="3.7.17"
 
     # Install prerequisites for pyenv
     apt update
@@ -35,17 +36,15 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     export PATH="$PYENV_ROOT/bin:$PATH"
 
     # Install pyenv
-    if [ ! -d "$HOME/.pyenv" ]; then
-        echo "Installing pyenv..."
-        curl https://pyenv.run | bash
-    else
-        echo "Pyenv already exists"
-    fi
+    set +e
+    rm -rf ~./pyenv
+    set -e
+    echo "Installing pyenv..."
+    curl https://pyenv.run | bash
 
-    eval "$(pyenv init --path)"
-    eval "$(pyenv virtualenv-init -)"
-
-    pyenv install --list
+    export PYENV_ROOT="$HOME/.pyenv"
+    [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+    eval "$(pyenv init - bash)"
 
     # Install and activate Python version
     if ! pyenv versions | grep -q "$PYTHON_VERSION"; then
@@ -58,19 +57,11 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     pyenv global $PYTHON_VERSION
 
     # start a virtual enviroment with pyenv version
-    pyenv virtualenv 3.7 mmcl_rvcl_venv
+    pyenv virtualenv $PYTHON_VERSION mmcl_rvcl_venv
     pyenv activate mmcl_rvcl_venv
 
     # Move to the working directory
     cd $WORKING_DIR
-
-    # Ensure pip is installed and upgraded
-    echo "Ensuring pip is installed..."
-    if ! command -v pip &>/dev/null; then
-        echo "Pip not found. Installing pip..."
-        apt install -y python3-pip
-        ln -sf /usr/bin/pip3 /usr/bin/pip
-    fi
 
     echo "Installing dependencies from requirements.txt..."
     pip install -r $REQUIREMENTS_FILE
