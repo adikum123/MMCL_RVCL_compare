@@ -23,6 +23,8 @@ echo "Starting container"
 enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     set +e  # Stop execution inside the container if any command fails
 
+    PYTHON_VERSION=3.7.17
+
     # Install prerequisites for pyenv
     apt update
     apt install -y git curl build-essential gcc make libffi-dev zlib1g-dev \
@@ -44,8 +46,8 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
 
     # Install and activate Python version
     if ! pyenv versions | grep -q "$PYTHON_VERSION"; then
-        echo "Installing Python 3.7.17..."
-        pyenv install --version 3.7.17
+        echo "Installing Python $PYTHON_VERSION..."
+        pyenv install --version $PYTHON_VERSION
     else
         echo "Python $PYTHON_VERSION already exists"
     fi
@@ -53,7 +55,7 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     pyenv global $PYTHON_VERSION
 
     # start a virtual enviroment with pyenv version
-    pyenv virtualenv 3.7.17 mmcl_rvcl_venv
+    pyenv virtualenv $PYTHON_VERSION mmcl_rvcl_venv
     pyenv activate mmcl_rvcl_venv
 
     # Move to the working directory
