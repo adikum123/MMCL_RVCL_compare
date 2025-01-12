@@ -14,7 +14,7 @@ echo "Starting container"
 enroot start --root --mount $(pwd):/workspace mmcl_rvcl
 python --version
 
-cd workspace/MMCL_RVCL_compare
+cd MMCL_RVCL_compare/
 
 python3 -m venv venv
 source venv/bin/activate
