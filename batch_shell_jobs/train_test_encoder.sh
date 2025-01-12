@@ -57,9 +57,13 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     # Move to the working directory
     cd $WORKING_DIR
 
-    # Upgrade pip and install dependencies
-    echo "Upgrading pip..."
-    pip install --upgrade pip
+    # Ensure pip is installed and upgraded
+    echo "Ensuring pip is installed..."
+    if ! command -v pip &>/dev/null; then
+        echo "Pip not found. Installing pip..."
+        apt install -y python3-pip
+        ln -sf /usr/bin/pip3 /usr/bin/pip
+    fi
 
     echo "Installing dependencies from requirements.txt..."
     pip install -r $REQUIREMENTS_FILE
