@@ -21,9 +21,7 @@ fi
 # Start the container and run commands
 echo "Starting container"
 enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
-    set -e  # Stop execution inside the container if any command fails
-
-    PYTHON_VERSION="3.7.17"
+    set +e  # Stop execution inside the container if any command fails
 
     # Install prerequisites for pyenv
     apt update
@@ -36,9 +34,7 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     export PATH="$PYENV_ROOT/bin:$PATH"
 
     # Install pyenv
-    set +e
     rm -rf /root/.pyenv
-    set -e
     echo "Installing pyenv..."
     curl https://pyenv.run | bash
 
@@ -48,8 +44,8 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
 
     # Install and activate Python version
     if ! pyenv versions | grep -q "$PYTHON_VERSION"; then
-        echo "Installing Python $PYTHON_VERSION..."
-        pyenv install --version $PYTHON_VERSION
+        echo "Installing Python 3.7.17..."
+        pyenv install --version 3.7.17
     else
         echo "Python $PYTHON_VERSION already exists"
     fi
@@ -57,7 +53,7 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     pyenv global $PYTHON_VERSION
 
     # start a virtual enviroment with pyenv version
-    pyenv virtualenv $PYTHON_VERSION mmcl_rvcl_venv
+    pyenv virtualenv 3.7.17 mmcl_rvcl_venv
     pyenv activate mmcl_rvcl_venv
 
     # Move to the working directory
