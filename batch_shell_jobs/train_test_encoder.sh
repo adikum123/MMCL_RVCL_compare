@@ -6,10 +6,11 @@ CONTAINER_IMAGE="ubuntu.sqsh"
 CONTAINER_NAME="mmcl_rvcl"
 PYTHON_SCRIPT="mmcl/train_test_encoder.py"
 REQUIREMENTS_FILE="requirements.txt"
-WORKING_DIR="workspace/MMCL_RVCL_compare"
+WORKING_DIR="/workspace/MMCL_RVCL_compare"  # Ensure this is absolute
 PYTHON_VERSION="3.7"
 
 echo "Creating and starting the container..."
+
 # Check if the container exists
 if ! enroot list | grep -q "^$CONTAINER_NAME$"; then
     echo "Container $CONTAINER_NAME does not exist. Creating it..."
@@ -17,34 +18,47 @@ if ! enroot list | grep -q "^$CONTAINER_NAME$"; then
 else
     echo "Container $CONTAINER_NAME already exists. Skipping creation."
 fi
-enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<EOF
-    [ -d ~/.pyenv ] && rm -rf ~/.pyenv
-    echo "Installing pyenv and pyenv-virtualenv..."
-    apt update
-    apt install git -y
-    apt install curl -y
-    apt install -y build-essential gcc make libffi-dev zlib1g-dev libssl-dev libreadline-dev libbz2-dev libsqlite3-dev
-    curl https://pyenv.run | bash
-    export PYENV_ROOT="$HOME/.pyenv"
-    [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-    eval "$(pyenv init - bash)"
 
-    if ! pyenv versions | grep -q $PYTHON_VERSION; then
-        echo "Installing Python $PYTHON_VERSION with pyenv..."
+# Start the container and run commands
+enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
+    set -e  # Stop execution inside the container if any command fails
+
+    # Install prerequisites for pyenv
+    apt update
+    apt install -y git curl build-essential gcc make libffi-dev zlib1g-dev \
+                libssl-dev libreadline-dev libbz2-dev libsqlite3-dev
+
+    # Install pyenv
+    if [ ! -d "$HOME/.pyenv" ]; then
+        echo "Installing pyenv..."
+        curl https://pyenv.run | bash
+    fi
+
+    # Configure pyenv environment
+    export PYENV_ROOT="$HOME/.pyenv"
+    export PATH="$PYENV_ROOT/bin:$PATH"
+    eval "$(pyenv init --path)"
+    eval "$(pyenv virtualenv-init -)"
+
+    # Install and activate Python version
+    if ! pyenv versions | grep -q "$PYTHON_VERSION"; then
+        echo "Installing Python $PYTHON_VERSION..."
         pyenv install $PYTHON_VERSION
     fi
     pyenv global $PYTHON_VERSION
 
+    # Move to the working directory
     cd $WORKING_DIR
 
+    # Upgrade pip and install dependencies
     echo "Upgrading pip..."
     pip install --upgrade pip
 
     echo "Installing dependencies from requirements.txt..."
     pip install -r $REQUIREMENTS_FILE
 
+    # Set Python path and run the script
     export PYTHONPATH=$(pwd):$PYTHONPATH
-
     echo "Running the Python script..."
     python $PYTHON_SCRIPT --kernel_type rbf --encoder_num_iters 1000 --linear_eval_num_iters 200 --encoder_lr 1e-4 --svm_lr 1e-4 --linear_eval_lr 1e-4
 
