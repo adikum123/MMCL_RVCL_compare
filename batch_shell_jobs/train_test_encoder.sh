@@ -32,7 +32,6 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     # Configure pyenv environment
     export PYENV_ROOT="$HOME/.pyenv"
     export PATH="$PYENV_ROOT/bin:$PATH"
-    export REQUIREMENTS_FILE="requirements.txt"
 
     # Install pyenv
     if [ ! -d "$HOME/.pyenv" ]; then
@@ -55,15 +54,12 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
 
     pyenv global $PYTHON_VERSION
 
-    # Ensure Python is in PATH
-    echo "Ensuring Python is available in PATH..."
+    # Add Python to PATH
     export PATH="$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
 
     # Verify Python installation
-    if ! command -v python &>/dev/null; then
-        echo "Error: Python not found. Exiting."
-        exit 1
-    fi
+    echo "Verifying Python installation..."
+    python --version || { echo "Python not found. Exiting."; exit 1; }
 
     # Create and activate virtual environment
     echo "Creating and activating virtual environment..."
