@@ -11,24 +11,25 @@ echo "Creating and starting the container..."
 enroot remove mmcl_rvcl
 enroot create --name mmcl_rvcl ../nvidia+tensorflow+20.12-tf1-py3.sqsh
 echo "Starting container"
-enroot start --root --mount $(pwd):/workspace mmcl_rvcl
+enroot start --root --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
+    apt install python3.10-venv
+    python --version
 
-apt install python3.10-venv
-python --version
+    ls
 
-ls
+    cd MMCL_RVCL_compare/
 
-cd MMCL_RVCL_compare/
+    python3 -m venv venv
+    source venv/bin/activate
 
-python3 -m venv venv
-source venv/bin/activate
+    echo "Installing dependencies from requirements.txt..."
+    pip install --upgrade pip
+    pip install -r requirements.txt
 
-echo "Installing dependencies from requirements.txt..."
-pip install --upgrade pip
-pip install -r requirements.txt
+    export PYTHONPATH=$(pwd):$PYTHONPATH
+    echo "Running the Python script..."
+    python mmcl/train_test_encoder.py --batch_size 256 --kernel_type rbf --encoder_num_iters 500 --linear_eval_num_iters 200 --encoder_lr 1e-4 --svm_lr 1e-4 --linear_eval_lr 1e-4
 
-export PYTHONPATH=$(pwd):$PYTHONPATH
-echo "Running the Python script..."
-python mmcl/train_test_encoder.py --batch_size 256 --kernel_type rbf --encoder_num_iters 500 --linear_eval_num_iters 200 --encoder_lr 1e-4 --svm_lr 1e-4 --linear_eval_lr 1e-4
+    echo "Script completed."
 
-echo "Script completed."
+EOF
