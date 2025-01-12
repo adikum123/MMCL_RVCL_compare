@@ -56,7 +56,9 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     pyenv activate mmcl_rvcl_venv
 
     # Move to the working directory
+    ls
     cd workspace/MMCL_RVCL_compare
+    ls
 
     echo "Installing dependencies from requirements.txt..."
     pip install -r requirements.txt
