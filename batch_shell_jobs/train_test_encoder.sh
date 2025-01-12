@@ -25,9 +25,9 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<EOF
     apt install curl -y
     apt install -y build-essential gcc make libffi-dev zlib1g-dev libssl-dev libreadline-dev libbz2-dev libsqlite3-dev
     curl https://pyenv.run | bash
-    export PATH="$HOME/.pyenv/bin:$PATH"
-    eval "$(pyenv init --path)"
-    eval "$(pyenv virtualenv-init -)"
+    export PYENV_ROOT="$HOME/.pyenv"
+    [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+    eval "$(pyenv init - bash)"
 
     if ! pyenv versions | grep -q $PYTHON_VERSION; then
         echo "Installing Python $PYTHON_VERSION with pyenv..."
