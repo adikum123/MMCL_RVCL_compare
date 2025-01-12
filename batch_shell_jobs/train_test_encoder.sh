@@ -26,7 +26,8 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     # Install prerequisites for pyenv
     apt update
     apt install -y git curl build-essential gcc make libffi-dev zlib1g-dev \
-                libssl-dev libreadline-dev libbz2-dev libsqlite3-dev
+                libssl-dev libreadline-dev libbz2-dev libsqlite3-dev libncurses5-dev \
+                libgdbm-dev libnss3-dev liblzma-dev tk-dev uuid-dev
 
     # Configure pyenv environment
     export PYENV_ROOT="$HOME/.pyenv"
@@ -47,7 +48,10 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     if ! pyenv versions | grep -q "$PYTHON_VERSION"; then
         echo "Installing Python $PYTHON_VERSION..."
         pyenv install $PYTHON_VERSION
+    else
+        echo "Python $PYTHON_VERSION already exists"
     fi
+
     pyenv global $PYTHON_VERSION
 
     # Move to the working directory
