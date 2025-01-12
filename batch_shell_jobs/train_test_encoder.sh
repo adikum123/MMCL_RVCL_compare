@@ -8,7 +8,6 @@ PYTHON_SCRIPT="mmcl/train_test_encoder.py"
 REQUIREMENTS_FILE="requirements.txt"
 WORKING_DIR="workspace/MMCL_RVCL_compare"
 PYTHON_VERSION="3.7"
-TORCH_URL="https://download.pytorch.org/whl/torch-1.6.0%2Bcu101-cp37-cp37m-linux_x86_64.whl"
 
 echo "Creating and starting the container..."
 # Check if the container exists
