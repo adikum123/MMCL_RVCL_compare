@@ -57,11 +57,6 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     # Add Python to PATH
     export PYTHONPATH="$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
 
-    # Verify Python installation
-    echo "Verifying Python installation..."
-    python --version || { echo "Python not found" }
-    python3 --version || { echo "Python 3 not found" }
-
     # Create and activate virtual environment
     echo "Creating and activating virtual environment..."
     python -m venv /workspace/venv
