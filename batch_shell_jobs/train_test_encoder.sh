@@ -53,13 +53,14 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     pyenv global $PYTHON_VERSION
 
     # start a virtual enviroment with pyenv version
+    echo "Creating and activating virtual enviroment"
     pyenv virtualenv $PYTHON_VERSION mmcl_rvcl_venv
     pyenv activate mmcl_rvcl_venv
 
     # Move to the working directory
-    ls
     cd workspace/MMCL_RVCL_compare
-    ls
+
+    python --version
 
     echo "Installing dependencies from requirements.txt..."
     pip install -r requirements.txt
