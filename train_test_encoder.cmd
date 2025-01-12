@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -p lrz-dgx-1-v100x8
+#SBATCH -p lrz-v100x2
 #SBATCH --gres=gpu:1
 #SBATCH --time=00:20:00
 #SBATCH -o outs/100k.out

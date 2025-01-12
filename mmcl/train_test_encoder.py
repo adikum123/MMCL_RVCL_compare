@@ -77,9 +77,9 @@ parser.add_argument(
     help="Syncronises BatchNorm layers between all processes if True",
 )
 parser.add_argument('--color_jitter_strength', default=0.5, type=float, help='0.5 for CIFAR, 1.0 for ImageNet')
-parser.add_argument('--encoder_lr', default=1e-5, type=float, help='learning rate for MMCL encoder')
-parser.add_argument('--svm_lr', default=1e-5, type=float, help='learning rate for SVM optimisation problem in MMCL')
-parser.add_argument('--linear_eval_lr', default=1e-5, type=float, help='learning rate for linear eval on top of MMCL encoder')
+parser.add_argument('--encoder_lr', default=1e-4, type=float, help='learning rate for MMCL encoder')
+parser.add_argument('--svm_lr', default=1e-4, type=float, help='learning rate for SVM optimisation problem in MMCL')
+parser.add_argument('--linear_eval_lr', default=1e-4, type=float, help='learning rate for linear eval on top of MMCL encoder')
 parser.add_argument('--step_size', default=10, type=int, help='scheduler step size')
 parser.add_argument('--criterion_to_use', default='mmcl_pgd', type=str, help='choose which mmcl svm solver to use')
 parser.add_argument('--gamma', type=str, default="auto")
