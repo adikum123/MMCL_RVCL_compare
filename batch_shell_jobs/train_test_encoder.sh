@@ -22,6 +22,8 @@ fi
 enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     set -e  # Stop execution inside the container if any command fails
 
+    PYTHON_VERSION="3.7"
+
     # Install prerequisites for pyenv
     apt update
     apt install -y git curl build-essential gcc make libffi-dev zlib1g-dev \
