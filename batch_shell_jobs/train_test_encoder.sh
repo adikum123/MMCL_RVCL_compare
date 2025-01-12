@@ -62,7 +62,7 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     cd $WORKING_DIR
 
     echo "Installing dependencies from requirements.txt..."
-    pip install -r $REQUIREMENTS_FILE
+    pip install -r requirements.txt
 
     # Set Python path and run the script
     export PYTHONPATH=$(pwd):$PYTHONPATH
