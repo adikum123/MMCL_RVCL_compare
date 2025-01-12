@@ -4,8 +4,6 @@ set +e  # Disable exit on error
 # Variables
 CONTAINER_IMAGE="ubuntu.sqsh"
 CONTAINER_NAME="mmcl_rvcl"
-PYTHON_SCRIPT="mmcl/train_test_encoder.py"
-REQUIREMENTS_FILE="requirements.txt"
 
 echo "Creating and starting the container..."
 
@@ -63,7 +61,7 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     # Set Python path and run the script
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Running the Python script..."
-    python $PYTHON_SCRIPT --kernel_type rbf --encoder_num_iters 1000 --linear_eval_num_iters 200 --encoder_lr 1e-4 --svm_lr 1e-4 --linear_eval_lr 1e-4
+    python mmcl/train_test_encoder.py --kernel_type rbf --encoder_num_iters 1000 --linear_eval_num_iters 200 --encoder_lr 1e-4 --svm_lr 1e-4 --linear_eval_lr 1e-4
 
     echo "Script completed."
 EOF
