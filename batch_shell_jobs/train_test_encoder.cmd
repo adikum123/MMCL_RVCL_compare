@@ -13,6 +13,8 @@ enroot create --name mmcl_rvcl ../nvidia+tensorflow+20.12-tf1-py3.sqsh
 echo "Starting container"
 enroot start --root --mount $(pwd):/workspace mmcl_rvcl
 
+python --version
+
 echo "Installing dependencies from requirements.txt..."
 pip install --upgrade pip
 pip install -r requirements.txt
