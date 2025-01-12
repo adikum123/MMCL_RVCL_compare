@@ -22,7 +22,7 @@ fi
 enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     set -e  # Stop execution inside the container if any command fails
 
-    PYTHON_VERSION="3.7"
+    PYTHON_VERSION="3.7.16"
 
     # Install prerequisites for pyenv
     apt update
