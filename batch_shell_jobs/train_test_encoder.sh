@@ -37,7 +37,7 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
 
     # Install pyenv
     set +e
-    rm -rf ~./pyenv
+    rm -rf /root/.pyenv
     set -e
     echo "Installing pyenv..."
     curl https://pyenv.run | bash
