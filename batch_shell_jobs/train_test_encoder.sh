@@ -1,3 +1,6 @@
+#!/bin/bash
+set +e  # Disable exit on error
+
 # Variables
 CONTAINER_IMAGE="ubuntu.sqsh"
 CONTAINER_NAME="mmcl_rvcl"
