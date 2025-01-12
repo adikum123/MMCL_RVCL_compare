@@ -45,6 +45,8 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     eval "$(pyenv init --path)"
     eval "$(pyenv virtualenv-init -)"
 
+    pyenv install --list
+
     # Install and activate Python version
     if ! pyenv versions | grep -q "$PYTHON_VERSION"; then
         echo "Installing Python $PYTHON_VERSION..."
