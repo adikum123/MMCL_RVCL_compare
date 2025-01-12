@@ -32,6 +32,7 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     # Configure pyenv environment
     export PYENV_ROOT="$HOME/.pyenv"
     export PATH="$PYENV_ROOT/bin:$PATH"
+    export REQUIREMENTS_FILE="requirements.txt"
 
     # Install pyenv
     if [ ! -d "$HOME/.pyenv" ]; then
