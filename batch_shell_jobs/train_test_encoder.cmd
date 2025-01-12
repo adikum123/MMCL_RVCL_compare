@@ -25,7 +25,6 @@ fi
 # Start the container and run commands
 echo "Starting container"
 enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME
-set +e  # Stop execution inside the container if any command fails
 
 # Install prerequisites for pyenv
 apt update

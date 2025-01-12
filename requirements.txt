@@ -1,5 +1,4 @@
 torch==1.13.1
-torchvision==0.7
 numpy==1.19.2
 pandas==1.2.4
 diffdist==0.1
