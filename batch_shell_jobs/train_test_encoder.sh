@@ -6,7 +6,6 @@ CONTAINER_IMAGE="ubuntu.sqsh"
 CONTAINER_NAME="mmcl_rvcl"
 PYTHON_SCRIPT="mmcl/train_test_encoder.py"
 REQUIREMENTS_FILE="requirements.txt"
-WORKING_DIR="/workspace/MMCL_RVCL_compare"  # Ensure this is absolute
 
 echo "Creating and starting the container..."
 
@@ -22,8 +21,6 @@ fi
 echo "Starting container"
 enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     set +e  # Stop execution inside the container if any command fails
-
-    PYTHON_VERSION=3.7.17
 
     # Install prerequisites for pyenv
     apt update
@@ -59,7 +56,7 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     pyenv activate mmcl_rvcl_venv
 
     # Move to the working directory
-    cd $WORKING_DIR
+    cd workspace/MMCL_RVCL_compare
 
     echo "Installing dependencies from requirements.txt..."
     pip install -r requirements.txt
