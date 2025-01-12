@@ -42,19 +42,14 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
     eval "$(pyenv init - bash)"
 
-    # Install and activate Python version
-    if ! pyenv versions | grep -q "$PYTHON_VERSION"; then
-        echo "Installing Python $PYTHON_VERSION..."
-        pyenv install 3.7.17
-    else
-        echo "Python $PYTHON_VERSION already exists"
-    fi
 
-    pyenv global $PYTHON_VERSION
+    echo "Installing Python 3.7.17..."
+    pyenv install 3.7.17
+    pyenv global 3.7.17
 
     # start a virtual enviroment with pyenv version
     echo "Creating and activating virtual enviroment"
-    pyenv virtualenv $PYTHON_VERSION mmcl_rvcl_venv
+    pyenv virtualenv 3.7.17 mmcl_rvcl_venv
     pyenv activate mmcl_rvcl_venv
 
     # Move to the working directory
