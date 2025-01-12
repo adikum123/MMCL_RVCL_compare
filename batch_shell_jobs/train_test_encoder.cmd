@@ -10,7 +10,7 @@ echo "Creating and starting the container..."
 
 enroot list
 enroot remove mmcl_rvcl
-enroot create --name mmcl_rvcl ../nvidia+tensorflow+20.12-tf1-py3.sqsh
+enroot create --name mmcl_rvcl nvidia+tensorflow+20.12-tf1-py3.sqsh
 echo "Starting container"
 enroot start --root --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     module avail
