@@ -47,7 +47,7 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     # Install and activate Python version
     if ! pyenv versions | grep -q "$PYTHON_VERSION"; then
         echo "Installing Python $PYTHON_VERSION..."
-        pyenv install --version $PYTHON_VERSION
+        pyenv install 3.7.17
     else
         echo "Python $PYTHON_VERSION already exists"
     fi
