@@ -11,7 +11,7 @@ PYTHON_VERSION="3.7"
 TORCH_URL="https://download.pytorch.org/whl/torch-1.6.0%2Bcu101-cp37-cp37m-linux_x86_64.whl"
 
 echo "Creating and starting the container..."
-enroot create --name $CONTAINER_NAME $CONTAINER_IMAGE
+enroot create --name $CONTAINER_NAME $CONTAINER_IMAGE || echo "Container already exists"
 enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME
 
 [ -d ~/.pyenv ] && rm -rf ~/.pyenv
