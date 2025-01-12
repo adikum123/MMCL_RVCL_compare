@@ -55,6 +55,16 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
 
     pyenv global $PYTHON_VERSION
 
+    # Ensure Python is in PATH
+    echo "Ensuring Python is available in PATH..."
+    export PATH="$PYENV_ROOT/versions/$PYTHON_VERSION/bin:$PATH"
+
+    # Verify Python installation
+    if ! command -v python &>/dev/null; then
+        echo "Error: Python not found. Exiting."
+        exit 1
+    fi
+
     # Create and activate virtual environment
     echo "Creating and activating virtual environment..."
     python -m venv /workspace/venv
