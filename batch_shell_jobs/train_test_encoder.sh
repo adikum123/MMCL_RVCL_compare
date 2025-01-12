@@ -32,6 +32,8 @@ enroot start --root --mount $(pwd):/workspace $CONTAINER_NAME <<'EOF'
     if [ ! -d "$HOME/.pyenv" ]; then
         echo "Installing pyenv..."
         curl https://pyenv.run | bash
+    else
+        echo "Pyenv already exists"
     fi
 
     # Configure pyenv environment
