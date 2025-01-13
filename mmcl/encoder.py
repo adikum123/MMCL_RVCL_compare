@@ -21,7 +21,7 @@ class MMCL_Encoder(nn.Module):
             pass
         if self.hparams.criterion_to_use == 'mmcl_inv':
             self.crit = MMCL_inv(
-                sigma=self.hparams.gamma,
+                sigma=self.hparams.kernel_gamma,
                 batch_size=self.hparams.batch_size,
                 anchor_count=2,
                 C=self.hparams.C,
@@ -31,7 +31,7 @@ class MMCL_Encoder(nn.Module):
             )
         elif self.hparams.criterion_to_use == 'mmcl_pgd':
             self.crit = MMCL_pgd(
-                sigma=self.hparams.gamma,
+                sigma=self.hparams.kernel_gamma,
                 batch_size=self.hparams.batch_size,
                 anchor_count=2,
                 C=self.hparams.C,
@@ -51,7 +51,7 @@ class MMCL_Encoder(nn.Module):
             betas=(0.9, 0.999),  # Default values for the Adam optimizer
             eps=1e-8  # Small value to prevent division by zero
         )
-        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=self.hparams.step_size, gamma=0.9)
+        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=self.hparams.step_size, gamma=self.hparams.scheduler_gamma)
 
     def step(self, batch):
         original_batch, transformed_batch, transformed_batch_2, target = batch
