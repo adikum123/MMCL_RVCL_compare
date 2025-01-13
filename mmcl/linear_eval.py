@@ -27,7 +27,7 @@ class LinearEval(nn.Module):
             betas=(0.9, 0.999),  # Default values for the Adam optimizer
             eps=1e-8  # Small value to prevent division by zero
         )
-        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=self.hparams.step_size, gamma=self.hparams.gamma)
+        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=self.hparams.step_size, gamma=self.hparams.scheduler_gamma)
 
     def forward(self, x):
         with torch.no_grad():
