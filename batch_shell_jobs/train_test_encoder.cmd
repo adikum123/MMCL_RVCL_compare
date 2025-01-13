@@ -3,7 +3,7 @@
 #SBATCH --gres=gpu:2
 #SBATCH --time=1-00:00:00
 #SBATCH -o outs/100k.out
-#SBATCH -e errs/100k.err
+#SBATCH -e outs/100k.out
 
 #!/bin/bash
 echo "Creating and starting the container..."
@@ -24,7 +24,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
 
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Running the Python script..."
-    python mmcl/train_test_encoder.py --batch_size 256 --kernel_type rbf --encoder_num_iters 100 --linear_eval_num_iters 50 --encoder_lr 1e-5 --svm_lr 1e-4 --linear_eval_lr 1e-4
+    python -u mmcl/train_test_encoder.py --batch_size 256 --kernel_type rbf --encoder_num_iters 100 --linear_eval_num_iters 50 --encoder_lr 1e-3 --step_size 5 --svm_lr 1e-3 --linear_eval_lr 1e-3
 
     echo "Script completed."
 

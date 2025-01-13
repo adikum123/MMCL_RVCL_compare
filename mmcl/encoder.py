@@ -86,25 +86,29 @@ class MMCL_Encoder(nn.Module):
         total_loss, total_num, train_bar = 0.0, 0, tqdm(self.trainloader)
         kxz_losses,kyz_losses = 0.0, 0.0
         for iii, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
-            pos_1, pos_2 = pos_1.to(self.device,non_blocking=True), pos_2.to(self.device,non_blocking=True)
-            feature_1 = self.model(pos_1)
-            feature_2 = self.model(pos_2)
+            try:
+                pos_1, pos_2 = pos_1.to(self.device,non_blocking=True), pos_2.to(self.device,non_blocking=True)
+                feature_1 = self.model(pos_1)
+                feature_2 = self.model(pos_2)
 
-            features = torch.cat([feature_1.unsqueeze(1), feature_2.unsqueeze(1)], dim=1)
+                features = torch.cat([feature_1.unsqueeze(1), feature_2.unsqueeze(1)], dim=1)
 
-            loss = self.crit(features)
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
+                loss = self.crit(features)
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
 
-            total_num += self.hparams.batch_size
-            total_loss += loss.item() * self.hparams.batch_size
-            train_bar.set_description('Train Epoch: [{}/{}] Total Loss: {:.4e}, loss: {}'.format(epoch, self.hparams.encoder_num_iters, total_loss / total_num, loss))
+                total_num += self.hparams.batch_size
+                total_loss += loss.item() * self.hparams.batch_size
+                train_bar.set_description('Train Epoch: [{}/{}] Total Loss: {:.4e}, loss: {}'.format(epoch, self.hparams.encoder_num_iters, total_loss / total_num, loss))
+            except Exception as e:
+                print(f'Iteration: {epoch+1} and batch pass: {iii} failed due to: {e}')
+                continue
         self.scheduler.step()
         metrics = {
             'total_loss':total_loss / total_num,
             'epoch': epoch,
-            'lr': get_lr()
+            'lr': self.get_lr()
         }
         return metrics
 
@@ -112,8 +116,5 @@ class MMCL_Encoder(nn.Module):
         torch.autograd.set_detect_anomaly(True)
         self.model.train()
         for epoch in range(self.hparams.encoder_num_iters):
-            try:
-                metrics = self.train_epoch(epoch=epoch)
-                print(f'Epoch: {epoch+1}, metrics: {json.dumps(metrics, indent=4)}')
-            except Exception as e:
-                print(f'Iteration {epoch+1} failed due to {e}')
+            metrics = self.train_epoch(epoch=epoch)
+            print(f'Epoch: {epoch+1}, metrics: {metrics}')
