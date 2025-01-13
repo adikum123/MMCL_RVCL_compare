@@ -51,7 +51,7 @@ class MMCL_Encoder(nn.Module):
             betas=(0.9, 0.999),  # Default values for the Adam optimizer
             eps=1e-8  # Small value to prevent division by zero
         )
-        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=self.hparams.step_size, gamma=self.hparams.gamma)
+        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=self.hparams.step_size, gamma=0.9)
 
     def step(self, batch):
         original_batch, transformed_batch, transformed_batch_2, target = batch
@@ -100,7 +100,7 @@ class MMCL_Encoder(nn.Module):
 
                 total_num += self.hparams.batch_size
                 total_loss += loss.item() * self.hparams.batch_size
-                train_bar.set_description('Train Epoch: [{}/{}] Total Loss: {:.4e}, loss: {}'.format(epoch, self.hparams.encoder_num_iters, total_loss / total_num, loss))
+                train_bar.set_description('Train Epoch: [{}/{}] Total Loss: {:.4e}, loss: {}'.format(epoch+1, self.hparams.encoder_num_iters, total_loss / total_num, loss))
             except Exception as e:
                 print(f'Iteration: {epoch+1} and batch pass: {iii} failed due to: {e}')
                 continue
