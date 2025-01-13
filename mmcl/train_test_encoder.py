@@ -82,7 +82,8 @@ parser.add_argument('--svm_lr', default=1e-4, type=float, help='learning rate fo
 parser.add_argument('--linear_eval_lr', default=1e-4, type=float, help='learning rate for linear eval on top of MMCL encoder')
 parser.add_argument('--step_size', default=10, type=int, help='scheduler step size')
 parser.add_argument('--criterion_to_use', default='mmcl_pgd', type=str, help='choose which mmcl svm solver to use')
-parser.add_argument('--gamma', type=str, default="auto")
+parser.add_argument('--kernel_gamma', type=str, default="auto")
+parser.add_argument('--scheduler_gamma', type=float, default=0.9)
 args = parser.parse_args()
 
 # Train model
