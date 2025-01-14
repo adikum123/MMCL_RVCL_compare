@@ -83,10 +83,6 @@ class MMCL_PGD(nn.Module):
         self.one_bs = torch.ones(batch_size, nn, 1, device=self.device)
         self.one = torch.ones(nn, device=self.device)
         self.KMASK = self.get_kmask(bs)
-        self.block = torch.zeros(bs, 2 * bs, device=self.device).bool()
-        self.block[:bs, :bs] = True
-        self.block12 = torch.zeros(bs, 2 * bs, device=self.device).bool()
-        self.block12[:bs, bs:] = True
         self.no_diag = (1 - torch.eye(bs, device=self.device)).bool()
         self.bs = bs
         self.schedule = schedule
@@ -134,8 +130,14 @@ class MMCL_PGD(nn.Module):
             ftr[: nn + 1], ftr, kernel_type=self.kernel, gamma=self.sigma
         )
 
+        # create blocks
+        block = torch.zeros(bs, 2 * bs, device=self.device).bool()
+        block[:bs, :bs] = True
+        block12 = torch.zeros(bs, 2 * bs, device=self.device).bool()
+        block12[:bs, bs:] = True
+
         with torch.no_grad():
-            KK = torch.masked_select(K.detach(), self.block).reshape(bs, bs)
+            KK = torch.masked_select(K.detach(), block).reshape(bs, bs)
 
             KK_d0 = KK * self.no_diag
             KXY = -KK_d0.unsqueeze(1).repeat(1, bs, 1)
@@ -181,7 +183,7 @@ class MMCL_PGD(nn.Module):
                 alpha_y = torch.relu(alpha_y).clamp(min=0, max=self.C).detach()
             alpha_x = alpha_y.sum(1)
 
-        Ks = torch.masked_select(K, self.block12).reshape(bs, bs)
+        Ks = torch.masked_select(K, block12).reshape(bs, bs)
         Kn = torch.masked_select(Ks.T, self.neg_mask).reshape(bs, nn).T
 
         pos_loss = (alpha_x * (Ks * self.pos_mask).sum(1)).mean()
