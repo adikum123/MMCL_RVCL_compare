@@ -74,55 +74,46 @@ class MMCL_Encoder(nn.Module):
             logs["epoch"] = it / len(self.batch_trainsampler)
         return logs
 
+    def train(self):
+        for epoch in range(self.hparams.encoder_num_iters):
+            self.model.train()  # Set the model to training mode
 
-def train(self):
-    """
-    Training process combining the training loop and epoch logic.
-    Includes anomaly detection, metrics collection, and scheduler step.
-    """
-    # Enable anomaly detection for debugging
-    torch.autograd.set_detect_anomaly(True)
+            total_loss, total_num = 0.0, 0
+            train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch+1}")
 
-    # Training loop for specified number of epochs
-    for epoch in range(self.hparams.encoder_num_iters):
-        self.model.train()  # Set the model to training mode
-
-        total_loss, total_num = 0.0, 0
-        train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch+1}")
-
-        for iii, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
-            # Move data to device
-            pos_1, pos_2 = pos_1.to(self.device, non_blocking=True), pos_2.to(
-                self.device, non_blocking=True
-            )
-
-            # Forward pass through the model
-            feature_1 = self.model(pos_1)
-            feature_2 = self.model(pos_2)
-            features = torch.cat(
-                [feature_1.unsqueeze(1), feature_2.unsqueeze(1)], dim=1
-            )
-            # Compute loss
-            loss, _, _, _, _, _ = self.crit(features)
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-            # Update metrics
-            batch_size = pos_1.size(0)
-            total_num += batch_size
-            total_loss += loss.item() * batch_size
-            # Update progress bar description
-            train_bar.set_description(
-                "Train Epoch: [{}/{}] Total Loss: {:.4e}".format(
-                    epoch + 1,
-                    self.hparams.encoder_num_iters,
-                    total_loss / total_num,
+            for iii, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
+                # Move data to device
+                pos_1, pos_2 = pos_1.to(self.device, non_blocking=True), pos_2.to(
+                    self.device, non_blocking=True
                 )
-            )
-        self.scheduler.step()
-        metrics = {
-            "total_loss": total_loss / total_num,
-            "epoch": epoch,
-            "lr": self.get_lr(),
-        }
-        print(f"Epoch: {epoch+1}, Metrics: {metrics}")
+
+                # Forward pass through the model
+                feature_1 = self.model(pos_1)
+                feature_2 = self.model(pos_2)
+                features = torch.cat(
+                    [feature_1.unsqueeze(1), feature_2.unsqueeze(1)], dim=1
+                )
+                # Compute loss
+                loss, _, _, _, _, _ = self.crit(features)
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+                # Update metrics
+                batch_size = pos_1.size(0)
+                total_num += batch_size
+                total_loss += loss.item() * batch_size
+                # Update progress bar description
+                train_bar.set_description(
+                    "Train Epoch: [{}/{}] Total Loss: {:.4e}".format(
+                        epoch + 1,
+                        self.hparams.encoder_num_iters,
+                        total_loss / total_num,
+                    )
+                )
+            self.scheduler.step()
+            metrics = {
+                "total_loss": total_loss / total_num,
+                "epoch": epoch,
+                "lr": self.get_lr(),
+            }
+            print(f"Epoch: {epoch+1}, Metrics: {metrics}")
