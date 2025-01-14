@@ -64,7 +64,7 @@ class LinearEval(nn.Module):
         for i, (ori_image, _, _, target) in enumerate(train_bar):
             ori_image, target = ori_image.to(self.device), target.to(self.device)
             # compute logits and loss
-            logits = self.forward(x=ori_image)
+            logits = self.forward(x=ori_image).to(self.device)
             loss = nn.CrossEntropyLoss()(logits, target)
             # do optimizer step
             self.optimizer.zero_grad()
@@ -93,6 +93,7 @@ class LinearEval(nn.Module):
     def test(self):
         """Evaluate the model on the test dataset."""
         self.classifier.eval()  # Set the classifier to evaluation mode
+        self.linear.eval()
         total_correct, total_samples = 0, 0
         total_loss = 0.0
         test_bar = tqdm(self.testloader, desc="Testing")

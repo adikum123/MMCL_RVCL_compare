@@ -72,7 +72,7 @@ class MMCL_Encoder(nn.Module):
         }
 
     def forward(self, x):
-        return self.model(F.normalize(x, dim=-1))
+        return self.model(x)
 
     def get_lr(self):
         for param_group in self.optimizer.param_groups:
