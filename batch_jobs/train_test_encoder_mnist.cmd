@@ -2,8 +2,8 @@
 #SBATCH -p lrz-hgx-h100-92x4
 #SBATCH --gres=gpu:2
 #SBATCH --time=1-00:00:00
-#SBATCH -o outs/100k.out
-#SBATCH -e outs/100k.out
+#SBATCH -o outs/mnist_100k.out
+#SBATCH -e outs/mnist_100k.out
 
 #!/bin/bash
 echo "Creating and starting the container..."
