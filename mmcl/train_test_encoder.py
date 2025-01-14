@@ -28,9 +28,7 @@ parser.add_argument(
 parser.add_argument("--seed", default=1, type=int, help="random seed")
 # loss params
 parser.add_argument("--C", default=1.0, type=float, help="C for SVM")
-parser.add_argument(
-    "--kernel_type", default="rbf", type=str, help="Kernel Type"
-)
+parser.add_argument("--kernel_type", default="rbf", type=str, help="Kernel Type")
 parser.add_argument("--sigma", default=0.07, type=float, help="Sigma")
 parser.add_argument("--reg", default=0.1, type=float, help="Regularization")
 
@@ -56,9 +54,12 @@ parser.add_argument(
 
 # data params
 parser.add_argument("--multiplier", default=2, type=int)
-parser.add_argument('--dist', default='dp', type=str,
-    help='dp: DataParallel, ddp: DistributedDataParallel',
-    choices=['dp', 'ddp'],
+parser.add_argument(
+    "--dist",
+    default="dp",
+    type=str,
+    help="dp: DataParallel, ddp: DistributedDataParallel",
+    choices=["dp", "ddp"],
 )
 parser.add_argument(
     "--color_dist_s", default=1.0, type=float, help="Color distortion strength"
@@ -76,24 +77,46 @@ parser.add_argument(
     type=bool,
     help="Syncronises BatchNorm layers between all processes if True",
 )
-parser.add_argument('--color_jitter_strength', default=0.5, type=float, help='0.5 for CIFAR, 1.0 for ImageNet')
-parser.add_argument('--encoder_lr', default=1e-4, type=float, help='learning rate for MMCL encoder')
-parser.add_argument('--svm_lr', default=1e-4, type=float, help='learning rate for SVM optimisation problem in MMCL')
-parser.add_argument('--linear_eval_lr', default=1e-4, type=float, help='learning rate for linear eval on top of MMCL encoder')
-parser.add_argument('--step_size', default=10, type=int, help='scheduler step size')
-parser.add_argument('--criterion_to_use', default='mmcl_pgd', type=str, help='choose which mmcl svm solver to use')
-parser.add_argument('--kernel_gamma', type=str, default="auto")
-parser.add_argument('--scheduler_gamma', type=float, default=0.9)
+parser.add_argument(
+    "--color_jitter_strength",
+    default=0.5,
+    type=float,
+    help="0.5 for CIFAR, 1.0 for ImageNet",
+)
+parser.add_argument(
+    "--encoder_lr", default=1e-3, type=float, help="learning rate for MMCL encoder"
+)
+parser.add_argument(
+    "--svm_lr",
+    default=1e-3,
+    type=float,
+    help="learning rate for SVM optimisation problem in MMCL",
+)
+parser.add_argument(
+    "--linear_eval_lr",
+    default=1e-3,
+    type=float,
+    help="learning rate for linear eval on top of MMCL encoder",
+)
+parser.add_argument("--step_size", default=10, type=int, help="scheduler step size")
+parser.add_argument(
+    "--criterion_to_use",
+    default="mmcl_pgd",
+    type=str,
+    help="choose which mmcl svm solver to use",
+)
+parser.add_argument("--kernel_gamma", type=str, default="auto")
+parser.add_argument("--scheduler_gamma", type=float, default=0.1)
 args = parser.parse_args()
 
 # Train model
-device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f'Running on: {device}')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Running on: {device}")
 model = MMCL_Encoder(hparams=args, device=device)
 model.train()
 
 # Test model
-args.train_type = 'linear_eval'
+args.train_type = "linear_eval"
 linear_eval = LinearEval(hparams=args, device=device, encoder=model)
 linear_eval.train()
 linear_eval.test()
