@@ -10,7 +10,15 @@ import rocl.data_loader as data_loader
 
 class LinearEval(nn.Module):
 
-    def __init__(self, hparams, encoder, device, feature_dim=100, num_classes=10, freeze_encoder=True):
+    def __init__(
+        self,
+        hparams,
+        encoder,
+        device,
+        feature_dim=100,
+        num_classes=10,
+        freeze_encoder=True,
+    ):
         super(LinearEval, self).__init__()
         self.hparams = hparams
         self.encoder = encoder
@@ -19,15 +27,21 @@ class LinearEval(nn.Module):
             self.freeze_encoder()
         self.classifier = nn.Linear(feature_dim, num_classes).to(self.device)
         self.criterion = nn.CrossEntropyLoss()
-        self.trainloader, self.traindst, self.testloader, self.testdst = data_loader.get_dataset(self.hparams)
+        self.trainloader, self.traindst, self.testloader, self.testdst = (
+            data_loader.get_dataset(self.hparams)
+        )
         self.optimizer = optim.Adam(
             self.classifier.parameters(),
             lr=self.hparams.linear_eval_lr,
             weight_decay=1e-6,
             betas=(0.9, 0.999),  # Default values for the Adam optimizer
-            eps=1e-8  # Small value to prevent division by zero
+            eps=1e-8,  # Small value to prevent division by zero
         )
-        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=self.hparams.step_size, gamma=self.hparams.scheduler_gamma)
+        self.scheduler = optim.lr_scheduler.StepLR(
+            self.optimizer,
+            step_size=self.hparams.step_size,
+            gamma=self.hparams.scheduler_gamma,
+        )
 
     def forward(self, x):
         with torch.no_grad():
@@ -59,18 +73,22 @@ class LinearEval(nn.Module):
             # rest ...
             total_num += self.hparams.batch_size
             total_loss += loss.item() * self.hparams.batch_size
-            train_bar.set_description('Train Epoch: [{}/{}] Total Loss: {:.4e}, loss: {}'.format(epoch, self.hparams.linear_eval_num_iters, total_loss / total_num, loss))
+            train_bar.set_description(
+                "Train Epoch: [{}/{}] Total Loss: {:.4e}, loss: {}".format(
+                    epoch,
+                    self.hparams.linear_eval_num_iters,
+                    total_loss / total_num,
+                    loss,
+                )
+            )
         self.scheduler.step()
-        metrics = {
-            'total_loss':total_loss / total_num,
-            'epoch': epoch
-        }
+        metrics = {"total_loss": total_loss / total_num, "epoch": epoch}
         return metrics
 
     def train(self):
         for epoch in range(self.hparams.linear_eval_num_iters):
             metrics = self.train_epoch(epoch=epoch)
-            print(f'Epoch: {epoch+1}, metrics: {json.dumps(metrics, indent=4)}')
+            print(f"Epoch: {epoch+1}, metrics: {json.dumps(metrics, indent=4)}")
 
     def test(self):
         """Evaluate the model on the test dataset."""
@@ -78,7 +96,6 @@ class LinearEval(nn.Module):
         total_correct, total_samples = 0, 0
         total_loss = 0.0
         test_bar = tqdm(self.testloader, desc="Testing")
-        criterion = nn.CrossEntropyLoss()
 
         with torch.no_grad():  # No gradients required during evaluation
             for images, targets in test_bar:
@@ -99,17 +116,18 @@ class LinearEval(nn.Module):
                 total_loss += loss.item() * targets.size(0)
 
                 # Update progress bar
-                test_bar.set_description("Test: Loss: {:.4e}, Acc: {:.2f}%".format(
-                    total_loss / total_samples,
-                    100 * total_correct / total_samples
-                ))
+                test_bar.set_description(
+                    "Test: Loss: {:.4e}, Acc: {:.2f}%".format(
+                        total_loss / total_samples, 100 * total_correct / total_samples
+                    )
+                )
 
         # Final metrics
         metrics = {
-            'accuracy': total_correct / total_samples,
-            'loss': total_loss / total_samples,
-            'total_correct': total_correct,
-            'total_samples': total_samples
+            "accuracy": total_correct / total_samples,
+            "loss": total_loss / total_samples,
+            "total_correct": total_correct,
+            "total_samples": total_samples,
         }
-        print(f'Test Results: {json.dumps(metrics, indent=4)}')
+        print(f"Test Results: {json.dumps(metrics, indent=4)}")
         return metrics
