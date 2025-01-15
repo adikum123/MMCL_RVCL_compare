@@ -1,14 +1,11 @@
 import torch
 from torchvision import transforms
 
-from beta_crown.utils import print_args
-
 from .data.cifar import CIFAR10, CIFAR100
 from .data.mnist import MNIST
 
 
 def get_dataset(args):
-    print_args(args)
     ### color augmentation ###
     color_jitter = transforms.ColorJitter(
         0.8 * args.color_jitter_strength,
@@ -327,7 +324,6 @@ def get_dataset(args):
 
 
 def get_train_val_test_dataset(args):
-    print_args(args)
 
     ### Color Augmentation ###
     color_jitter = transforms.ColorJitter(

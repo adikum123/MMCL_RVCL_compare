@@ -113,7 +113,7 @@ parser.add_argument("--scheduler_gamma", type=float, default=0.1)
 parser.add_argument("--trans", action="store_true", help="use transformed sample")
 parser.add_argument("--clean", action="store_true", help="use clean sample")
 parser.add_argument("--adv_img", action="store_true", help="use adversarial sample")
-parser.add_argument("--finetune", default=False, type=bool, help="finetune the model")
+parser.add_argument("--finetune", action="store_true", help="finetune the model")
 parser.add_argument(
     "--ss", action="store_true", help="using self-supervised learning loss"
 )
@@ -142,7 +142,7 @@ parser.add_argument("--random_start", type=bool, default=True, help="True for PG
 
 
 args = parser.parse_args()
-
+print(args)
 # Train model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Running on: {device}")
