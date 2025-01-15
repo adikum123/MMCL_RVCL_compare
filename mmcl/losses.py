@@ -62,31 +62,10 @@ class MMCL_PGD(nn.Module):
         bs = batch_size
         self.device = device
         print(f"========> Using device in losses.py: {self.device}")
-
-        # creates mask to distinguish positive and negative pairs
-        self.mask, self.logits_mask = self.get_mask(batch_size, anchor_count)
-        self.eye = torch.eye(anchor_count * batch_size, device=self.device)
-
-        self.pos_mask = self.mask[:bs, bs:].bool()
-        neg_mask = (self.mask * self.logits_mask + 1) % 2
-        self.neg_mask = neg_mask - self.eye
-        self.neg_mask = self.neg_mask[:bs, bs:].bool()
-
-        self.kmask = torch.ones(batch_size, device=self.device).bool()
-        self.kmask.requires_grad = False
-        self.reg = reg
-
-        self.oneone = (
-            torch.ones(bs, bs, device=self.device)
-            + torch.eye(bs, device=self.device) * reg
-        )
-        self.one_bs = torch.ones(batch_size, nn, 1, device=self.device)
-        self.one = torch.ones(nn, device=self.device)
-        self.KMASK = self.get_kmask(bs)
-        self.no_diag = (1 - torch.eye(bs, device=self.device)).bool()
-        self.bs = bs
         self.schedule = schedule
         self.multiplier = multiplier
+        self.anchor_count = anchor_count
+        self.reg = reg
 
         self.num_iters = num_iters
         self.eta = eta
@@ -135,16 +114,35 @@ class MMCL_PGD(nn.Module):
         block[:bs, :bs] = True
         block12 = torch.zeros(bs, 2 * bs, device=self.device).bool()
         block12[:bs, bs:] = True
+        mask, logits_mask = self.get_mask(bs, self.anchor_count)
+        eye = torch.eye(self.anchor_count * bs, device=self.device)
+
+        pos_mask = mask[:bs, bs:].bool()
+        neg_mask = (mask * logits_mask + 1) % 2
+        neg_mask = neg_mask - eye
+        neg_mask = neg_mask[:bs, bs:].bool()
+
+        kmask = torch.ones(bs, device=self.device).bool()
+        kmask.requires_grad = False
+
+        oneone = (
+            torch.ones(bs, bs, device=self.device)
+            + torch.eye(bs, device=self.device) * self.reg
+        )
+        one_bs = torch.ones(bs, nn, 1, device=self.device)
+        one = torch.ones(nn, device=self.device)
+        KMASK = self.get_kmask(bs)
+        no_diag = (1 - torch.eye(bs, device=self.device)).bool()
 
         with torch.no_grad():
             KK = torch.masked_select(K.detach(), block).reshape(bs, bs)
 
-            KK_d0 = KK * self.no_diag
+            KK_d0 = KK * no_diag
             KXY = -KK_d0.unsqueeze(1).repeat(1, bs, 1)
             KXY = KXY + KXY.transpose(2, 1)
-            Delta = (self.oneone + KK).unsqueeze(0) + KXY
+            Delta = (oneone + KK).unsqueeze(0) + KXY
 
-            DD = torch.masked_select(Delta, self.KMASK).reshape(bs, nn, nn)
+            DD = torch.masked_select(Delta, KMASK).reshape(bs, nn, nn)
 
             if self.C == -1:
                 alpha_y = torch.relu(torch.randn(bs, nn, 1, device=DD.device))
@@ -158,7 +156,7 @@ class MMCL_PGD(nn.Module):
                     self.eta,
                     self.num_iters,
                     DD,
-                    2 * self.one_bs,
+                    2 * one_bs,
                     alpha_y.clone(),
                     self.C,
                     use_norm=self.use_norm,
@@ -169,7 +167,7 @@ class MMCL_PGD(nn.Module):
                     self.eta,
                     self.num_iters,
                     DD,
-                    2 * self.one_bs,
+                    2 * one_bs,
                     alpha_y.clone(),
                     self.C,
                     use_norm=self.use_norm,
@@ -184,9 +182,9 @@ class MMCL_PGD(nn.Module):
             alpha_x = alpha_y.sum(1)
 
         Ks = torch.masked_select(K, block12).reshape(bs, bs)
-        Kn = torch.masked_select(Ks.T, self.neg_mask).reshape(bs, nn).T
+        Kn = torch.masked_select(Ks.T, neg_mask).reshape(bs, nn).T
 
-        pos_loss = (alpha_x * (Ks * self.pos_mask).sum(1)).mean()
+        pos_loss = (alpha_x * (Ks * pos_mask).sum(1)).mean()
         neg_loss = (alpha_y.T * Kn).sum() / bs
         loss = neg_loss - pos_loss
 
@@ -194,7 +192,7 @@ class MMCL_PGD(nn.Module):
         num_zero = (alpha_y == 0).sum() / alpha_y.numel()
         return (
             loss,
-            (Ks * self.pos_mask).sum(1).mean(),
+            (Ks * pos_mask).sum(1).mean(),
             Kn.mean(),
             sparsity,
             num_zero,
