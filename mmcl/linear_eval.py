@@ -163,7 +163,6 @@ class LinearEval(nn.Module):
                         total_loss / total_num,
                     )
                 )
-                break
             self.model.eval()
             val_loss, val_num = 0.0, 0
             with torch.no_grad():

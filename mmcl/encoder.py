@@ -71,7 +71,7 @@ class MMCL_Encoder(nn.Module):
             total_loss, total_num = 0.0, 0
             train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch + 1}")
             val_bar = tqdm(self.valloader, desc=f"Epoch {epoch + 1}")
-
+            # train phase
             for iii, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
                 # Move data to device
                 pos_1, pos_2 = pos_1.to(self.device, non_blocking=True), pos_2.to(
