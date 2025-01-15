@@ -110,14 +110,12 @@ parser.add_argument("--kernel_gamma", type=str, default="auto")
 parser.add_argument("--scheduler_gamma", type=float, default=0.1)
 
 ##### arguments for RoCL Linear eval #####
-parser.add_argument("--trans", default=False, type=bool, help="use transformed sample")
-parser.add_argument("--clean", default=False, type=bool, help="use clean sample")
-parser.add_argument(
-    "--adv_img", default=False, type=bool, help="use adversarial sample"
-)
+parser.add_argument("--trans", action="store_true", help="use transformed sample")
+parser.add_argument("--clean", action="store_true", help="use clean sample")
+parser.add_argument("--adv_img", action="store_true", help="use adversarial sample")
 parser.add_argument("--finetune", default=False, type=bool, help="finetune the model")
 parser.add_argument(
-    "--ss", default=False, type=bool, help="using self-supervised learning loss"
+    "--ss", action="store_true", help="using self-supervised learning loss"
 )
 
 ##### arguments for PGD attack & Adversarial Training #####
