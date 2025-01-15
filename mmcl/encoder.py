@@ -108,7 +108,7 @@ class MMCL_Encoder(nn.Module):
             self.model.eval()  # Set the model to evaluation mode
             val_loss, val_num = 0.0, 0
             with torch.no_grad():
-                for iii, (ori_image, pos_1, pos_2, target) in enumerate(self.valloader):
+                for iii, (ori_image, pos_1, pos_2, target) in enumerate(val_bar):
                     # Move data to device
                     pos_1, pos_2 = pos_1.to(self.device, non_blocking=True), pos_2.to(
                         self.device, non_blocking=True

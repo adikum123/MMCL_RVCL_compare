@@ -163,7 +163,9 @@ class LinearEval(nn.Module):
                         total_loss / total_num,
                     )
                 )
+                break
             self.model.eval()
+            val_loss, val_num = 0.0, 0
             with torch.no_grad():
                 for i, (ori_image, input1, input2, targets) in enumerate(val_bar):
                     total_inputs, total_targets = self.get_total_inputs_and_targets(
