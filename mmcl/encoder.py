@@ -32,31 +32,26 @@ class MMCL_Encoder(nn.Module):
         self.model = utils.load_model_contrastive(
             args=self.hparams, weights_loaded=False
         ).to(self.device)
-        self.trainloader, self.traindst, self.testloader, self.testdst = (
-            data_loader.get_dataset(self.hparams)
-        )
+        (
+            self.trainloader,
+            self.traindst,
+            self.valloader,
+            self.valdst,
+            self.testloader,
+            self.testdst,
+        ) = data_loader.get_train_val_test_dataset(self.hparams)
         self.optimizer = optim.SGD(
-            self.model.parameters(),
-            lr=self.hparams.encoder_lr,
+            self.model.parameters(), lr=self.hparams.encoder_lr, momentum=0.9
         )
+        print(f"Step size: {self.hparams.step_size}")
         self.scheduler = optim.lr_scheduler.StepLR(
             self.optimizer,
             step_size=self.hparams.step_size,
             gamma=self.hparams.scheduler_gamma,
         )
 
-    def step(self, batch):
-        original_batch, transformed_batch, transformed_batch_2, target = batch
-        z = self.model(batch)
-        loss, kxz, kyz, sparsity, num_zero, acc = self.criterion(z)
-        return {
-            "loss": loss,
-            "contrast_acc": acc,
-            "kxz": kxz,
-            "kyz": kyz,
-            "sparsity": sparsity,
-            "num_zero": num_zero,
-        }
+    def set_eval(self):
+        self.model.eval()
 
     def forward(self, x):
         return self.model(x)
@@ -65,21 +60,17 @@ class MMCL_Encoder(nn.Module):
         for param_group in self.optimizer.param_groups:
             return param_group["lr"]
 
-    def train_step(self, batch, it=None):
-        logs = self.step(batch)
-
-        if self.hparams.dist == "ddp":
-            self.trainsampler.set_epoch(it)
-        if it is not None:
-            logs["epoch"] = it / len(self.batch_trainsampler)
-        return logs
-
     def train(self):
-        for epoch in range(self.hparams.encoder_num_iters):
-            self.model.train()  # Set the model to training mode
+        best_val_loss = float("inf")
+        patience_counter = 0
+        max_patience = 5  # Number of epochs to wait before stopping
 
+        for epoch in range(self.hparams.encoder_num_iters):
+            # Training Phase
+            self.model.train()  # Set the model to training mode
             total_loss, total_num = 0.0, 0
-            train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch+1}")
+            train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch + 1}")
+            val_bar = tqdm(self.valloader, desc=f"Epoch {epoch + 1}")
 
             for iii, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
                 # Move data to device
@@ -93,15 +84,18 @@ class MMCL_Encoder(nn.Module):
                 features = torch.cat(
                     [feature_1.unsqueeze(1), feature_2.unsqueeze(1)], dim=1
                 )
+
                 # Compute loss
                 loss, _, _, _, _, _ = self.crit(features)
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
+
                 # Update metrics
                 batch_size = pos_1.size(0)
                 total_num += batch_size
                 total_loss += loss.item() * batch_size
+
                 # Update progress bar description
                 train_bar.set_description(
                     "Train Epoch: [{}/{}] Total Loss: {:.4e}".format(
@@ -110,10 +104,54 @@ class MMCL_Encoder(nn.Module):
                         total_loss / total_num,
                     )
                 )
+            # Validation Phase
+            self.model.eval()  # Set the model to evaluation mode
+            val_loss, val_num = 0.0, 0
+            with torch.no_grad():
+                for iii, (ori_image, pos_1, pos_2, target) in enumerate(self.valloader):
+                    # Move data to device
+                    pos_1, pos_2 = pos_1.to(self.device, non_blocking=True), pos_2.to(
+                        self.device, non_blocking=True
+                    )
+
+                    feature_1 = self.model(pos_1)
+                    feature_2 = self.model(pos_2)
+                    features = torch.cat(
+                        [feature_1.unsqueeze(1), feature_2.unsqueeze(1)], dim=1
+                    )
+
+                    loss, _, _, _, _, _ = self.crit(features)
+                    batch_size = pos_1.size(0)
+                    val_num += batch_size
+                    val_loss += loss.item() * batch_size
+
+            val_loss /= val_num
+
+            # Scheduler step
             self.scheduler.step()
+
+            # Logging metrics
+            train_loss = total_loss / total_num
             metrics = {
-                "total_loss": total_loss / total_num,
-                "epoch": epoch,
+                "train_loss": train_loss,
+                "val_loss": val_loss,
+                "epoch": epoch + 1,
                 "lr": self.get_lr(),
             }
             print(f"Epoch: {epoch+1}, Metrics: {metrics}")
+
+            # Early Stopping Check
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                patience_counter = 0
+                print(f"Validation loss improved to {val_loss:.4e}. Saving model...")
+                torch.save(self.model.state_dict(), "best_model.pth")
+            else:
+                patience_counter += 1
+                print(
+                    f"Validation loss did not improve. Patience: {patience_counter}/{max_patience}"
+                )
+
+            if patience_counter >= max_patience:
+                print("Early stopping triggered. Training terminated.")
+                break

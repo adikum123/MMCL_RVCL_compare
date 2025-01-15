@@ -13,6 +13,7 @@ parser.add_argument(
     default="cnn_4layer_b",
     help="model name (cifar_model, cifar_model_deep, cifar_model_wide, cnn_4layer, cnn_4layer_b, mnist_cnn_4layer)",
 )
+parser.add_argument("--name", default="", type=str, help="name of run")
 parser.add_argument("--batch_size", type=int, default=256, help="batch size")
 ##### arguments for model #####
 parser.add_argument(
@@ -98,7 +99,7 @@ parser.add_argument(
     type=float,
     help="learning rate for linear eval on top of MMCL encoder",
 )
-parser.add_argument("--step_size", default=10, type=int, help="scheduler step size")
+parser.add_argument("--step_size", default=30, type=int, help="scheduler step size")
 parser.add_argument(
     "--criterion_to_use",
     default="mmcl_pgd",
@@ -107,13 +108,48 @@ parser.add_argument(
 )
 parser.add_argument("--kernel_gamma", type=str, default="auto")
 parser.add_argument("--scheduler_gamma", type=float, default=0.1)
+
+##### arguments for RoCL Linear eval #####
+parser.add_argument("--trans", default=False, type=bool, help="use transformed sample")
+parser.add_argument("--clean", default=False, type=bool, help="use clean sample")
+parser.add_argument(
+    "--adv_img", default=False, type=bool, help="use adversarial sample"
+)
+parser.add_argument("--finetune", default=False, type=bool, help="finetune the model")
+parser.add_argument(
+    "--ss", default=False, type=bool, help="using self-supervised learning loss"
+)
+
+##### arguments for PGD attack & Adversarial Training #####
+parser.add_argument("--attack_type", type=str, default="linf", help="adversarial l_p")
+parser.add_argument(
+    "--epsilon",
+    type=float,
+    default=8.0 / 255,
+    help="maximum perturbation of adversaries (8/255(0.0314) for cifar-10)",
+)
+parser.add_argument(
+    "--alpha",
+    type=float,
+    default=0.007,
+    help="movement multiplier per iteration when generating adversarial examples (2/255=0.00784)",
+)
+parser.add_argument(
+    "--k",
+    type=int,
+    default=10,
+    help="maximum iteration when generating adversarial examples",
+)
+parser.add_argument("--random_start", type=bool, default=True, help="True for PGD")
+
+
 args = parser.parse_args()
 
 # Train model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Running on: {device}")
 model = MMCL_Encoder(hparams=args, device=device)
-model.train()
+# model.train()
 
 # Test model
 args.train_type = "linear_eval"

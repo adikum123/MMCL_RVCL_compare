@@ -139,6 +139,26 @@ def mnist_cnn_4layer():
     )
 
 
+def min_max_value(args):
+    """
+    Load regular data; Robustness region defined in results pickle
+    """
+    ans = {}
+    if args.dataset == "mnist":
+        # dummy_input = torch.randn(1, 1, 28, 28)
+        ans["mean"] = torch.tensor([0.0])
+        ans["std"] = torch.tensor([1.0])
+        ans["max"] = torch.tensor([1.0])
+        ans["min"] = torch.tensor([0.0])
+    elif "cifar" in args.dataset:
+        ans["mean"] = torch.tensor([0.485, 0.456, 0.406])
+        ans["std"] = torch.tensor([0.225, 0.225, 0.225])
+        # set data_max and data_min to be None if no clip
+        ans["max"] = torch.reshape((1.0 - ans["mean"]) / ans["std"], (1, -1, 1, 1))
+        ans["min"] = torch.reshape((0.0 - ans["mean"]) / ans["std"], (1, -1, 1, 1))
+    return ans
+
+
 def cut_model(model, contrastive=True, linear=False):
     if contrastive:
         return nn.Sequential(*list(model.children())[:-2])
