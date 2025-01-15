@@ -150,7 +150,7 @@ print(args)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Running on: {device}")
 model = MMCL_Encoder(hparams=args, device=device)
-# model.train()
+model.train()
 
 # Test model
 args.train_type = "linear_eval"
