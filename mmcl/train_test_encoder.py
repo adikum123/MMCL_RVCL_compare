@@ -114,7 +114,7 @@ parser.add_argument("--scheduler_gamma", type=float, default=0.1)
 
 ##### arguments for RoCL Linear eval #####
 parser.add_argument("--trans", action="store_true", help="use transformed sample")
-parser.add_argument("--clean", action="store_true", help="use clean sample")
+parser.add_argument("--clean", type=bool, default=True, help="use clean sample")
 parser.add_argument("--adv_img", action="store_true", help="use adversarial sample")
 parser.add_argument("--finetune", action="store_true", help="finetune the model")
 parser.add_argument(
