@@ -163,7 +163,7 @@ class LinearEval(nn.Module):
                         total_loss / total_num,
                     )
                 )
-            self.model.eval()
+            self.encoder.eval()
             val_loss, val_num = 0.0, 0
             with torch.no_grad():
                 for i, (ori_image, input1, input2, targets) in enumerate(val_bar):
@@ -188,7 +188,6 @@ class LinearEval(nn.Module):
                 best_val_loss = val_loss
                 patience_counter = 0
                 print(f"Validation loss improved to {val_loss:.4e}. Saving model...")
-                torch.save(self.model.state_dict(), "best_model.pth")
             else:
                 patience_counter += 1
                 print(
