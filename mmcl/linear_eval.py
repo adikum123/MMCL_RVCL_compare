@@ -36,7 +36,7 @@ class LinearEval(nn.Module):
             self.valdst,
             self.testloader,
             self.testdst,
-        ) = data_loader.get_dataset(self.hparams)
+        ) = data_loader.get_train_val_test_dataset(self.hparams)
         self.optimizer = optim.SGD(
             self.classifier.parameters(), lr=self.hparams.linear_eval_lr, momentum=0.9
         )
