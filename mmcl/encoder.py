@@ -124,6 +124,13 @@ class MMCL_Encoder(nn.Module):
                     batch_size = pos_1.size(0)
                     val_num += batch_size
                     val_loss += loss.item() * batch_size
+                    val_bar.set_description(
+                        "Val Epoch: [{}/{}] Total Loss: {:.4e}".format(
+                            epoch + 1,
+                            self.hparams.encoder_num_iters,
+                            val_loss / val_num,
+                        )
+                    )
             val_loss /= val_num
 
             # Scheduler step
@@ -144,7 +151,6 @@ class MMCL_Encoder(nn.Module):
                 best_val_loss = val_loss
                 patience_counter = 0
                 print(f"Validation loss improved to {val_loss:.4e}. Saving model...")
-                torch.save(self.model.state_dict(), "best_model.pth")
             else:
                 patience_counter += 1
                 print(
