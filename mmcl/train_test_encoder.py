@@ -29,6 +29,9 @@ parser.add_argument(
 parser.add_argument("--seed", default=1, type=int, help="random seed")
 # loss params
 parser.add_argument("--C", default=1.0, type=float, help="C for SVM")
+parser.add_argument(
+    "--degree", default=3.0, type=float, help="Degree for polynomial kernel"
+)
 parser.add_argument("--kernel_type", default="rbf", type=str, help="Kernel Type")
 parser.add_argument("--sigma", default=0.07, type=float, help="Sigma")
 parser.add_argument("--reg", default=0.1, type=float, help="Regularization")
@@ -147,7 +150,7 @@ print(args)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Running on: {device}")
 model = MMCL_Encoder(hparams=args, device=device)
-model.train()
+# model.train()
 
 # Test model
 args.train_type = "linear_eval"

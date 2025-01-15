@@ -8,7 +8,7 @@ from torch import nn
 from mmcl.solvers import *
 
 
-def compute_kernel(X, Y, gamma=0.1, kernel_type="rbf"):
+def compute_kernel(X, Y, gamma=0.1, kernel_type="rbf", degree=3.0):
     if kernel_type == "linear":
         kernel = torch.mm(X, Y.T)
     elif kernel_type == "rbf":
@@ -19,7 +19,7 @@ def compute_kernel(X, Y, gamma=0.1, kernel_type="rbf"):
         distances = X_norm + Y_norm - 2 * torch.mm(X, Y.T)
         kernel = torch.exp(-gamma * distances)
     elif kernel_type == "poly":
-        kernel = torch.pow(torch.mm(X, Y.T) + 0.5, 3.0)
+        kernel = torch.pow(torch.mm(X, Y.T) + 0.5, degree)
     elif kernel_type == "tanh":
         kernel = torch.tanh(gamma * torch.mm(X, Y.T))
     elif kernel_type == "min":

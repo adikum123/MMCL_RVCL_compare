@@ -163,7 +163,7 @@ class LinearEval(nn.Module):
                         total_loss / total_num,
                     )
                 )
-            self.encoder.eval()
+            self.encoder.set_eval()
             val_loss, val_num = 0.0, 0
             with torch.no_grad():
                 for i, (ori_image, input1, input2, targets) in enumerate(val_bar):
@@ -173,7 +173,7 @@ class LinearEval(nn.Module):
                     # Compute val loss
                     logits = self.forward(x=total_inputs)
                     loss = self.criterion(logits, total_targets)
-                    batch_size = pos_1.size(0)
+                    batch_size = input1.size(0)
                     val_num += batch_size
                     val_loss += loss.item() * batch_size
             self.scheduler.step()
