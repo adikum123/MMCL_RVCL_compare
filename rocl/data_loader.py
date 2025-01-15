@@ -384,10 +384,10 @@ def get_train_val_test_dataset(args):
 
         return (
             train_loader,
-            val_loader,
-            test_loader,
             train_subset,
+            val_loader,
             val_subset,
+            test_loader,
             test_dataset,
         )
 
