@@ -25,7 +25,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Running the Python script..."
     python -u mmcl/train_test_encoder.py --model mnist_model_deep --dataset mnist --batch_size 128 --kernel_type rbf --encoder_num_iters 100
-        --linear_eval_num_iters 50 --encoder_lr 1e-3 --step_size 30 --scheduler_gamma 0.1 --svm_lr 1e-3 --linear_eval_lr 1e-3 --adv_img=True
+        --linear_eval_num_iters 50 --encoder_lr 1e-3 --step_size 30 --scheduler_gamma 0.1 --svm_lr 1e-3 --linear_eval_lr 1e-3 --adv_img
 
     echo "Script completed."
 
