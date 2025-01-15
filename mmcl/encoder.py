@@ -124,7 +124,6 @@ class MMCL_Encoder(nn.Module):
                     batch_size = pos_1.size(0)
                     val_num += batch_size
                     val_loss += loss.item() * batch_size
-                    print(val_loss)
             val_loss /= val_num
 
             # Scheduler step
