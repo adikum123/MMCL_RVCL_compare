@@ -24,9 +24,9 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
 
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Running the Python script..."
-    python mmcl/train_test_encoder.py --model cifar_model_deep --dataset cifar-10 --batch_size 128 --kernel_type poly --deegre 5
-    --encoder_num_iters 100 --encoder_lr 1e-5 --linear_eval_num_iters 50 --step_size 30 --scheduler_gamma 0.1
-    --svm_lr 1e-4 --linear_eval_lr 1e-4 --C 15
+    python mmcl/train_test_encoder.py --model cifar_model_deep --dataset cifar-10 --batch_size 128 --kernel_type poly --deegre 3 ^
+    --encoder_num_iters 100 --encoder_lr 1e-6 --linear_eval_num_iters 50 --step_size 10 --scheduler_gamma 0.1 ^
+    --svm_lr 1e-6 --linear_eval_lr 1e-6 --C 1
 
     echo "Script completed."
 
