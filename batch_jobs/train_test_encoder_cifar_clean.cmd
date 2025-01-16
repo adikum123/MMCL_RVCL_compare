@@ -28,7 +28,8 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     --model cifar_model_deep \
     --dataset cifar-10 \
     --batch_size 128 \
-    --kernel_type rbf \
+    --kernel_type poly \
+    --deegre 3 \
     --encoder_num_iters 100 \
     --linear_eval_num_iters 50 \
     --step_size 30 \
