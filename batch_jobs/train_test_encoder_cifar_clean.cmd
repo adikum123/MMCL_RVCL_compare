@@ -27,15 +27,16 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     python -u mmcl/train_test_encoder.py \
     --model cifar_model_deep \
     --dataset cifar-10 \
-    --batch_size 128 \
-    --kernel_type poly \
+    --batch_size 32 \
+    --kernel_type rbf \
     --deegre 3 \
-    --encoder_num_iters 100 \
-    --linear_eval_num_iters 50 \
-    --step_size 30 \
+    --encoder_num_iters 500 \
+    --linear_eval_num_iters 200 \
+    --step_size 50 \
     --scheduler_gamma 0.1 \
     --svm_lr 1e-3 \
     --linear_eval_lr 1e-3 \
+    --encoder_lr 1e-3 \
     --C 10
 
     echo "Script completed."
