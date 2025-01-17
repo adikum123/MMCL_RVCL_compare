@@ -324,7 +324,6 @@ def get_dataset(args):
 
 
 def get_train_val_test_dataset(args):
-
     ### Color Augmentation ###
     color_jitter = transforms.ColorJitter(
         0.8 * args.color_jitter_strength,

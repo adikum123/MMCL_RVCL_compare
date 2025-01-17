@@ -4,6 +4,8 @@ import torch
 from encoder import MMCL_Encoder
 from linear_eval import LinearEval
 
+from beta_crown.utils import print_args
+
 parser = argparse.ArgumentParser(description="unsupervised verification")
 
 ##### arguments for beta CROWN #####
@@ -35,7 +37,11 @@ parser.add_argument(
 parser.add_argument("--kernel_type", default="rbf", type=str, help="Kernel Type")
 parser.add_argument("--sigma", default=0.07, type=float, help="Sigma")
 parser.add_argument("--reg", default=0.1, type=float, help="Regularization")
-
+parser.add_argument(
+    "--use_validation",
+    action="store_false",
+    help="Use validation set and stopping criteria",
+)
 parser.add_argument(
     "--encoder_num_iters", default=500, type=int, help="Num iters - PGD Solver"
 )
@@ -74,7 +80,6 @@ parser.add_argument(
     type=float,
     help="The minimum scale factor for RandomResizedCrop",
 )
-# ddp
 parser.add_argument(
     "--sync_bn",
     default=True,
@@ -114,7 +119,7 @@ parser.add_argument("--scheduler_gamma", type=float, default=0.1)
 
 ##### arguments for RoCL Linear eval #####
 parser.add_argument("--trans", action="store_true", help="use transformed sample")
-parser.add_argument("--clean", type=bool, default=True, help="use clean sample")
+parser.add_argument("--clean", action="store_true", help="use clean sample")
 parser.add_argument("--adv_img", action="store_true", help="use adversarial sample")
 parser.add_argument("--finetune", action="store_true", help="finetune the model")
 parser.add_argument(
@@ -145,7 +150,7 @@ parser.add_argument("--random_start", type=bool, default=True, help="True for PG
 
 
 args = parser.parse_args()
-print(args)
+print_args(args)
 # Train model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Running on: {device}")

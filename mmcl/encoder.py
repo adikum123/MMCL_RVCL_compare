@@ -32,18 +32,22 @@ class MMCL_Encoder(nn.Module):
         self.model = utils.load_model_contrastive(
             args=self.hparams, weights_loaded=False
         ).to(self.device)
-        (
-            self.trainloader,
-            self.traindst,
-            self.valloader,
-            self.valdst,
-            self.testloader,
-            self.testdst,
-        ) = data_loader.get_train_val_test_dataset(self.hparams)
-        self.optimizer = optim.SGD(
-            self.model.parameters(), lr=self.hparams.encoder_lr, momentum=0.9
-        )
-        print(f"Step size: {self.hparams.step_size}")
+        if self.hparams.use_validation:
+            (
+                self.trainloader,
+                self.traindst,
+                self.valloader,
+                self.valdst,
+                self.testloader,
+                self.testdst,
+            ) = data_loader.get_train_val_test_dataset(self.hparams)
+            self.optimizer = optim.SGD(
+                self.model.parameters(), lr=self.hparams.encoder_lr, momentum=0.9
+            )
+        else:
+            self.trainloader, self.traindst, self.testloader, self.testdst = (
+                data_loader.get_dataset(self.hparams)
+            )
         self.scheduler = optim.lr_scheduler.StepLR(
             self.optimizer,
             step_size=self.hparams.step_size,
@@ -98,40 +102,58 @@ class MMCL_Encoder(nn.Module):
 
                 # Update progress bar description
                 train_bar.set_description(
-                    "Train Epoch: [{}/{}] Total Loss: {:.4e}".format(
+                    "\nTrain Epoch: [{}/{}] Total Loss: {:.4e}".format(
                         epoch + 1,
                         self.hparams.encoder_num_iters,
                         total_loss / total_num,
                     )
                 )
-            # Validation Phase
-            self.model.eval()  # Set the model to evaluation mode
-            val_loss, val_num = 0.0, 0
-            with torch.no_grad():
-                for iii, (ori_image, pos_1, pos_2, target) in enumerate(val_bar):
-                    # Move data to device
-                    pos_1, pos_2 = pos_1.to(self.device, non_blocking=True), pos_2.to(
-                        self.device, non_blocking=True
-                    )
+            val_loss = None
+            if self.use_validation:
+                # Validation Phase
+                self.model.eval()  # Set the model to evaluation mode
+                val_loss, val_num = 0.0, 0
+                with torch.no_grad():
+                    for iii, (ori_image, pos_1, pos_2, target) in enumerate(val_bar):
+                        # Move data to device
+                        pos_1, pos_2 = pos_1.to(
+                            self.device, non_blocking=True
+                        ), pos_2.to(self.device, non_blocking=True)
 
-                    feature_1 = self.model(pos_1)
-                    feature_2 = self.model(pos_2)
-                    features = torch.cat(
-                        [feature_1.unsqueeze(1), feature_2.unsqueeze(1)], dim=1
-                    )
-
-                    loss, _, _, _, _, _ = self.crit(features)
-                    batch_size = pos_1.size(0)
-                    val_num += batch_size
-                    val_loss += loss.item() * batch_size
-                    val_bar.set_description(
-                        "Val Epoch: [{}/{}] Total Loss: {:.4e}".format(
-                            epoch + 1,
-                            self.hparams.encoder_num_iters,
-                            val_loss / val_num,
+                        feature_1 = self.model(pos_1)
+                        feature_2 = self.model(pos_2)
+                        features = torch.cat(
+                            [feature_1.unsqueeze(1), feature_2.unsqueeze(1)], dim=1
                         )
+
+                        loss, _, _, _, _, _ = self.crit(features)
+                        batch_size = pos_1.size(0)
+                        val_num += batch_size
+                        val_loss += loss.item() * batch_size
+                        val_bar.set_description(
+                            "\nVal Epoch: [{}/{}] Total Loss: {:.4e}".format(
+                                epoch + 1,
+                                self.hparams.encoder_num_iters,
+                                val_loss / val_num,
+                            )
+                        )
+                val_loss /= val_num
+                # Early Stopping Check
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    patience_counter = 0
+                    print(
+                        f"Validation loss improved to {val_loss:.4e}. Saving model..."
                     )
-            val_loss /= val_num
+                else:
+                    patience_counter += 1
+                    print(
+                        f"Validation loss did not improve. Patience: {patience_counter}/{max_patience}"
+                    )
+
+                if patience_counter >= max_patience:
+                    print("Early stopping triggered. Training terminated.")
+                    break
 
             # Scheduler step
             self.scheduler.step()
@@ -144,19 +166,4 @@ class MMCL_Encoder(nn.Module):
                 "epoch": epoch + 1,
                 "lr": self.get_lr(),
             }
-            print(f"Epoch: {epoch+1}, Metrics: {metrics}")
-
-            # Early Stopping Check
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
-                patience_counter = 0
-                print(f"Validation loss improved to {val_loss:.4e}. Saving model...")
-            else:
-                patience_counter += 1
-                print(
-                    f"Validation loss did not improve. Patience: {patience_counter}/{max_patience}"
-                )
-
-            if patience_counter >= max_patience:
-                print("Early stopping triggered. Training terminated.")
-                break
+            print(f"Epoch: {epoch+1}, Metrics: {json.dumps(metrics, indent=4)}")
