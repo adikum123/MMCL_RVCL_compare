@@ -95,6 +95,10 @@ class LinearEval(nn.Module):
         for param in self.encoder.parameters():
             param.requires_grad = False
 
+    def get_lr(self):
+        for param_group in self.linear.param_groups:
+            return param_group["lr"]
+
     def get_total_inputs_and_targets(self, ori_image, input1, input2, targets):
         # Move data to device
         ori_image, input1, input2, targets = (
@@ -163,40 +167,45 @@ class LinearEval(nn.Module):
                         total_loss / total_num,
                     )
                 )
-            self.encoder.set_eval()
-            val_loss, val_num = 0.0, 0
-            with torch.no_grad():
-                for i, (ori_image, input1, input2, targets) in enumerate(val_bar):
-                    total_inputs, total_targets = self.get_total_inputs_and_targets(
-                        ori_image, input1, input2, targets
+            val_loss = None
+            if self.hparams.use_validation:
+                self.encoder.set_eval()
+                val_loss, val_num = 0.0, 0
+                with torch.no_grad():
+                    for i, (ori_image, input1, input2, targets) in enumerate(val_bar):
+                        total_inputs, total_targets = self.get_total_inputs_and_targets(
+                            ori_image, input1, input2, targets
+                        )
+                        # Compute val loss
+                        logits = self.forward(x=total_inputs)
+                        loss = self.criterion(logits, total_targets)
+                        batch_size = input1.size(0)
+                        val_num += batch_size
+                        val_loss += loss.item() * batch_size
+                    val_loss /= val_num
+                self.scheduler.step()
+                # Early Stopping Check
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    patience_counter = 0
+                    print(
+                        f"Validation loss improved to {val_loss:.4e}. Saving model..."
                     )
-                    # Compute val loss
-                    logits = self.forward(x=total_inputs)
-                    loss = self.criterion(logits, total_targets)
-                    batch_size = input1.size(0)
-                    val_num += batch_size
-                    val_loss += loss.item() * batch_size
-            self.scheduler.step()
+                else:
+                    patience_counter += 1
+                    print(
+                        f"Validation loss did not improve. Patience: {patience_counter}/{max_patience}"
+                    )
+
+                if patience_counter >= max_patience:
+                    print("Early stopping triggered. Training terminated.")
+                    break
             metrics = {
                 "total_train_loss": total_loss / total_num,
                 "total_val_loss": val_loss / val_num,
                 "epoch": epoch + 1,
+                "lr": self.get_lr(),
             }
-            print(f"Epoch: {epoch+1}, Metrics: {json.dumps(metrics, indent=4)}")
-            # Early Stopping Check
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
-                patience_counter = 0
-                print(f"Validation loss improved to {val_loss:.4e}. Saving model...")
-            else:
-                patience_counter += 1
-                print(
-                    f"Validation loss did not improve. Patience: {patience_counter}/{max_patience}"
-                )
-
-            if patience_counter >= max_patience:
-                print("Early stopping triggered. Training terminated.")
-                break
 
     def test(self):
         """Evaluate the model on the test dataset."""
