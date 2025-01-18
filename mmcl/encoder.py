@@ -215,7 +215,7 @@ class MMCL_Encoder(nn.Module):
             + "_kernel_type_"
             + str(self.hparams.kernel_type)
             + "_train_data_"
-            + (self.get_train_data_desc(self.hparams))
+            + (get_train_data_desc(self.hparams))
         )
 
     def save(self):
