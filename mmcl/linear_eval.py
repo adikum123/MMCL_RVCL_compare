@@ -202,7 +202,7 @@ class LinearEval(nn.Module):
                     break
             metrics = {
                 "total_train_loss": total_loss / total_num,
-                "total_val_loss": val_loss / val_num,
+                "total_val_loss": val_loss,
                 "epoch": epoch + 1,
                 "lr": self.get_lr(),
             }
