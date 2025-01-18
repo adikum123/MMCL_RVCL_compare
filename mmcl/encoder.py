@@ -109,7 +109,7 @@ class MMCL_Encoder(nn.Module):
                     )
                 )
             val_loss = None
-            if self.use_validation:
+            if self.hparams.use_validation:
                 # Validation Phase
                 self.model.eval()  # Set the model to evaluation mode
                 val_loss, val_num = 0.0, 0
