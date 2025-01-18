@@ -1,10 +1,10 @@
 import argparse
 
 import torch
-from encoder import MMCL_Encoder
-from linear_eval import LinearEval
 
 from beta_crown.utils import print_args
+from mmcl.encoder import MMCL_Encoder
+from mmcl.linear_eval import LinearEval
 
 parser = argparse.ArgumentParser(description="unsupervised verification")
 
@@ -39,7 +39,7 @@ parser.add_argument("--sigma", default=0.07, type=float, help="Sigma")
 parser.add_argument("--reg", default=0.1, type=float, help="Regularization")
 parser.add_argument(
     "--use_validation",
-    action="store_false",
+    action="store_true",
     help="Use validation set and stopping criteria",
 )
 parser.add_argument(

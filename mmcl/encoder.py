@@ -41,13 +41,13 @@ class MMCL_Encoder(nn.Module):
                 self.testloader,
                 self.testdst,
             ) = data_loader.get_train_val_test_dataset(self.hparams)
-            self.optimizer = optim.SGD(
-                self.model.parameters(), lr=self.hparams.encoder_lr, momentum=0.9
-            )
         else:
             self.trainloader, self.traindst, self.testloader, self.testdst = (
                 data_loader.get_dataset(self.hparams)
             )
+        self.optimizer = optim.SGD(
+            self.model.parameters(), lr=self.hparams.encoder_lr, momentum=0.9
+        )
         self.scheduler = optim.lr_scheduler.StepLR(
             self.optimizer,
             step_size=self.hparams.step_size,
@@ -74,7 +74,6 @@ class MMCL_Encoder(nn.Module):
             self.model.train()  # Set the model to training mode
             total_loss, total_num = 0.0, 0
             train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch + 1}")
-            val_bar = tqdm(self.valloader, desc=f"Epoch {epoch + 1}")
             # train phase
             for iii, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
                 # Move data to device
@@ -102,7 +101,7 @@ class MMCL_Encoder(nn.Module):
 
                 # Update progress bar description
                 train_bar.set_description(
-                    "\nTrain Epoch: [{}/{}] Total Loss: {:.4e}".format(
+                    "Train Epoch: [{}/{}] Total Loss: {:.4e}".format(
                         epoch + 1,
                         self.hparams.encoder_num_iters,
                         total_loss / total_num,
@@ -110,6 +109,7 @@ class MMCL_Encoder(nn.Module):
                 )
             val_loss = None
             if self.hparams.use_validation:
+                val_bar = tqdm(self.valloader, desc=f"Epoch {epoch + 1}")
                 # Validation Phase
                 self.model.eval()  # Set the model to evaluation mode
                 val_loss, val_num = 0.0, 0
@@ -131,7 +131,7 @@ class MMCL_Encoder(nn.Module):
                         val_num += batch_size
                         val_loss += loss.item() * batch_size
                         val_bar.set_description(
-                            "\nVal Epoch: [{}/{}] Total Loss: {:.4e}".format(
+                            "Val Epoch: [{}/{}] Total Loss: {:.4e}".format(
                                 epoch + 1,
                                 self.hparams.encoder_num_iters,
                                 val_loss / val_num,
@@ -166,4 +166,4 @@ class MMCL_Encoder(nn.Module):
                 "epoch": epoch + 1,
                 "lr": self.get_lr(),
             }
-            print(f"Epoch: {epoch+1}, Metrics: {json.dumps(metrics, indent=4)}")
+            print(f"\nEpoch: {epoch+1}, Metrics: {json.dumps(metrics, indent=4)}\n")
