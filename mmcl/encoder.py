@@ -1,6 +1,8 @@
 import json
-from typing import Union
+import os
+import time
 
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -69,12 +71,15 @@ class MMCL_Encoder(nn.Module):
         patience_counter = 0
         max_patience = 5  # Number of epochs to wait before stopping
 
+        train_losses = []
+        val_losses = []
+
         for epoch in range(self.hparams.encoder_num_iters):
             # Training Phase
             self.model.train()  # Set the model to training mode
             total_loss, total_num = 0.0, 0
             train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch + 1}")
-            # train phase
+
             for iii, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
                 # Move data to device
                 pos_1, pos_2 = pos_1.to(self.device, non_blocking=True), pos_2.to(
@@ -107,6 +112,11 @@ class MMCL_Encoder(nn.Module):
                         total_loss / total_num,
                     )
                 )
+
+            # Save training loss for the epoch
+            train_loss = total_loss / total_num
+            train_losses.append(train_loss)
+
             val_loss = None
             if self.hparams.use_validation:
                 val_bar = tqdm(self.valloader, desc=f"Epoch {epoch + 1}")
@@ -138,6 +148,8 @@ class MMCL_Encoder(nn.Module):
                             )
                         )
                 val_loss /= val_num
+                val_losses.append(val_loss)
+
                 # Early Stopping Check
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
@@ -159,7 +171,6 @@ class MMCL_Encoder(nn.Module):
             self.scheduler.step()
 
             # Logging metrics
-            train_loss = total_loss / total_num
             metrics = {
                 "train_loss": train_loss,
                 "val_loss": val_loss,
@@ -167,3 +178,46 @@ class MMCL_Encoder(nn.Module):
                 "lr": self.get_lr(),
             }
             print(f"\nEpoch: {epoch+1}, Metrics: {json.dumps(metrics, indent=4)}\n")
+
+        # Plot and save the training and validation loss
+        save_dir = "plots/encoder"
+        os.makedirs(save_dir, exist_ok=True)
+        save_path = os.path.join(
+            save_dir, f"{self.get_model_save_name()}_{time.time()}.png"
+        )
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(range(1, len(train_losses) + 1), train_losses, label="Training Loss")
+        if self.hparams.use_validation:
+            plt.plot(range(1, len(val_losses) + 1), val_losses, label="Validation Loss")
+        plt.title("Training and Validation Loss")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(save_path)
+        plt.close()
+        print(f"Loss plot saved to {save_path}")
+
+    def get_model_save_name(self):
+        def get_train_data_desc(hparams):
+            if hparams.clean:
+                return "clean"
+            if hparams.adv_img:
+                return "adversarial"
+            if hparams.trans:
+                return "transformed"
+
+        return (
+            self.hparams.model
+            + "_C_"
+            + str(self.hparams.C)
+            + "_kernel_type_"
+            + str(self.hparams.kernel_type)
+            + "_train_data_"
+            + (self.get_train_data_desc(self.hparams))
+        )
+
+    def save(self):
+        save_path = os.path.join("models/mmcl", self.get_model_save_name() + ".pkl")
+        torch.save(self.model, save_path)

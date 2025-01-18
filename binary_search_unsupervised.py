@@ -109,10 +109,12 @@ np.random.seed(args.seed)
 
 img_clip = min_max_value(args)
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 # Model
 print("==> Building model..")
-model_ori = torch.load(args.load_checkpoint)
-model_ori.to(args.device)
+model_ori = torch.load(args.load_checkpoint, map_location=device)
+# model_ori.to(device)
 print(model_ori)
 output_size = list(model_ori.children())[-1].weight.data.shape[0]
 
@@ -123,15 +125,15 @@ def generate_attack(args, ori, target):
         None,
         epsilon=args.target_eps,
         alpha=args.alpha,
-        min_val=img_clip["min"].to(args.device),
-        max_val=img_clip["max"].to(args.device),
+        min_val=img_clip["min"].to(device),
+        max_val=img_clip["max"].to(device),
         max_iters=args.k,
         _type=args.attack_type,
         loss_type=args.loss_type,
     )
     adv_target = pgd_target.attack_pgd(
-        original_images=ori.to(args.device),
-        target=target.to(args.device),
+        original_images=ori.to(device),
+        target=target.to(device),
         type="attack",
         random_start=True,
     )
@@ -141,15 +143,15 @@ def generate_attack(args, ori, target):
         None,
         epsilon=args.epsilon,
         alpha=args.alpha,
-        min_val=img_clip["min"].to(args.device),
-        max_val=img_clip["max"].to(args.device),
+        min_val=img_clip["min"].to(device),
+        max_val=img_clip["max"].to(device),
         max_iters=args.k,
         _type=args.attack_type,
         loss_type=args.loss_type,
     )
     adv_img = pgd.attack_pgd(
-        original_images=ori.to(args.device),
-        target=adv_target.to(args.device),
+        original_images=ori.to(device),
+        target=adv_target.to(device),
         type="sim",
         random_start=True,
     )
@@ -200,12 +202,12 @@ def unsupervised_search(
     model = return_modify_model(
         model_ori, ori, target, output_size, contrastive=True, simplify=True
     )
-    model.to(args.device)
+    model.to(device)
     bound_modify_net = BoundedModule(
         model,
-        torch.empty_like(data.to(args.device)),
+        torch.empty_like(data.to(device)),
         bound_opts={"conv_mode": "patches"},
-        device=args.device,
+        device=device,
     )
 
     step = 0
@@ -223,9 +225,9 @@ def unsupervised_search(
         else:
             data_ub = data_lb = data
         ptb = PerturbationLpNorm(
-            norm=norm, eps=eps, x_L=data_lb.to(args.device), x_U=data_ub.to(args.device)
+            norm=norm, eps=eps, x_L=data_lb.to(device), x_U=data_ub.to(device)
         )
-        image = BoundedTensor(data, ptb).to(args.device)
+        image = BoundedTensor(data, ptb).to(device)
         lb, _ = copy.deepcopy(bound_modify_net).compute_bounds(
             x=(image,), method="backward"
         )
@@ -319,7 +321,15 @@ for batch_iter in range(args.ver_total // args.mini_batch):
             img_ori = image[total_ori_iter]
             img_target = image[total_target_iter]
 
-            model_ori.to("cpu")
+            print(f"Shapes of original images: {img_ori.shape}, {img_target.shape}")
+
+            print("Encoding images")
+            encoded_img_ori = model_ori(img_ori)
+            encoded_img_target = model_ori(img_target)
+            print(
+                f"Encoded shapes: {encoded_img_ori.shape}, {encoded_img_target.shape}"
+            )
+
             f_ori = F.normalize(model_ori(img_ori.to("cpu").detach()), p=2, dim=1)
             f_target = F.normalize(model_ori(img_target.to("cpu").detach()), p=2, dim=1)
 
@@ -344,12 +354,8 @@ for batch_iter in range(args.ver_total // args.mini_batch):
             )
             log.loc[line_iter, "time"] = time.time() - start
 
-            log.loc[line_iter, "value_upper"] = modify_net(
-                img_ori.to(args.device)
-            ).item()
-            log.loc[line_iter, "value_lower"] = modify_net(
-                img_target.to(args.device)
-            ).item()
+            log.loc[line_iter, "value_upper"] = modify_net(img_ori.to(device)).item()
+            log.loc[line_iter, "value_lower"] = modify_net(img_target.to(device)).item()
 
             log.loc[line_iter, "ori"] = total_ori_iter
             log.loc[line_iter, "target"] = total_target_iter
