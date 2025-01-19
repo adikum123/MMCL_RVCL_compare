@@ -1,13 +1,16 @@
 # Compute margin for mmcl and rvcl encoders using test samples
 import argparse
+import os
 import random
 from collections import defaultdict
 
+import matplotlib.pyplot as plt
+import seaborn as sns
 import torch
-from tests.svm_margin import compute_margin
 
 import mmcl.utils as utils
 import rocl.data_loader as data_loader
+from svm_margin import compute_margin
 
 # arg parser and device
 parser = argparse.ArgumentParser(description="Margin comparisson")
@@ -58,6 +61,7 @@ _, _, testloader, testdst = data_loader.get_dataset(args)
 class_names = testdst.classes
 print("Class names:", class_names)
 per_class_sampler = defaultdict(list)
+margins = defaultdict(list)
 
 # create per class sampler
 for idx, (image_batch, label_batch) in enumerate(testloader):
@@ -88,29 +92,62 @@ print(f"Loaded RVCL model: {rvcl_model}")
 
 # compute margin for each class
 for class_name in class_names:
-    # Select one random image as positive and other images as negatives
-    positive = random.choice(per_class_sampler[class_name])
-    negatives = [
-        image for k, v in per_class_sampler.items() for image in v if k != class_name
-    ]
-    # Add batch dimension to positive
-    positive = positive.unsqueeze(0)  # Shape: [1, 3, 32, 32]
-    # Compute MMCL margin
-    mmcl_positive_encoding = mmcl_model(positive)
-    mmcl_negative_encodings = torch.stack(
-        [mmcl_model(neg.unsqueeze(0)) for neg in negatives]
-    ).squeeze(1)
-    mmcl_margin = compute_margin(
-        positive=mmcl_positive_encoding, negatives=mmcl_negative_encodings, args=args
-    )
-    # Compute RVCL margin
-    rvcl_positive_encoding = rvcl_model(positive)
-    rvcl_negative_encodings = torch.stack(
-        [rvcl_model(neg.unsqueeze(0)) for neg in negatives]
-    ).squeeze(1)
-    rvcl_margin = compute_margin(
-        positive=rvcl_positive_encoding, negatives=rvcl_negative_encodings, args=args
-    )
-    print(
-        f"Kernel type: {args.kernel_type}, mmcl margin: {mmcl_margin}, rvcl margin: {rvcl_margin}"
-    )
+    for item in per_class_sampler[class_name]:
+        # Select one random image as positive and other images as negatives
+        positive = random.choice(per_class_sampler[class_name])
+        while torch.equal(positive, item):
+            positive = random.choice(per_class_sampler[class_name])
+        negatives = [
+            image
+            for k, v in per_class_sampler.items()
+            for image in v
+            if k != class_name
+        ]
+        # Add batch dimension to positive
+        positive = positive.unsqueeze(0)  # Shape: [1, 3, 32, 32]
+        # Compute MMCL margin
+        mmcl_positive_encoding = mmcl_model(positive)
+        mmcl_negative_encodings = torch.stack(
+            [mmcl_model(neg.unsqueeze(0)) for neg in negatives]
+        ).squeeze(1)
+        mmcl_margin = compute_margin(
+            positive=mmcl_positive_encoding,
+            negatives=mmcl_negative_encodings,
+            args=args,
+        )
+        # Compute RVCL margin
+        rvcl_positive_encoding = rvcl_model(positive)
+        rvcl_negative_encodings = torch.stack(
+            [rvcl_model(neg.unsqueeze(0)) for neg in negatives]
+        ).squeeze(1)
+        rvcl_margin = compute_margin(
+            positive=rvcl_positive_encoding,
+            negatives=rvcl_negative_encodings,
+            args=args,
+        )
+        margins[class_name].append({"mmcl": mmcl_margin, "rvcl": rvcl_margin})
+
+# save all plots
+save_dir = f"plots/svm_margin/mmcl:{args.mmcl_model}_rvcl:{args.rvcl_model}"
+os.makedirs(save_dir, exist_ok=True)
+for class_name in class_names:
+    mmcl_values = [x["mmcl"] for x in margins[class_name]]
+    rvcl_values = [x["rvcl"] for x in margins[class_name]]
+    # plot both distributions
+    # Plot distributions
+    plt.figure(figsize=(10, 6))
+    sns.kdeplot(mmcl_values, label="MMCL", fill=True, alpha=0.6)
+    sns.kdeplot(rvcl_values, label="RVCL", fill=True, alpha=0.6)
+
+    # Add title and labels
+    plt.title(f"Distributions of MMCL and RVCL for Class: {class_name}", fontsize=14)
+    plt.xlabel("Value", fontsize=12)
+    plt.ylabel("Density", fontsize=12)
+    plt.legend(title="Metric", fontsize=10)
+
+    # Save the plot
+    plot_path = os.path.join(save_dir, f"{class_name}_distribution.png")
+    plt.savefig(plot_path)
+    plt.close()  # Close the plot to avoid overlap in the next iteration
+
+    print(f"Saved plot for class {class_name} at {plot_path}")

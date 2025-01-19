@@ -96,7 +96,7 @@ class LinearEval(nn.Module):
             param.requires_grad = False
 
     def get_lr(self):
-        for param_group in self.linear.param_groups:
+        for param_group in self.classifier.param_groups:
             return param_group["lr"]
 
     def get_total_inputs_and_targets(self, ori_image, input1, input2, targets):
