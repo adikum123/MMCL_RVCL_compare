@@ -30,7 +30,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --batch_size 64 \
         --kernel_type rbf \
         --encoder_num_iters 500 \
-        --linear_eval_num_iters 100 \
+        --linear_eval_num_iters 200 \
         --encoder_lr 1e-3 \
         --step_size 30 \
         --scheduler_gamma 0.1 \
