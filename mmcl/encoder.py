@@ -106,7 +106,7 @@ class MMCL_Encoder(nn.Module):
 
                 # Update progress bar description
                 train_bar.set_description(
-                    "Train Epoch: [{}/{}] Total Loss: {:.4e}".format(
+                    "Train Epoch: [{}/{}] Running Loss: {:.4e}".format(
                         epoch + 1,
                         self.hparams.encoder_num_iters,
                         total_loss / total_num,
@@ -114,7 +114,7 @@ class MMCL_Encoder(nn.Module):
                 )
 
             # Save training loss for the epoch
-            train_loss = total_loss / total_num
+            train_loss = total_loss / len(self.traindst)
             train_losses.append(train_loss)
 
             val_loss = None
@@ -141,13 +141,13 @@ class MMCL_Encoder(nn.Module):
                         val_num += batch_size
                         val_loss += loss.item() * batch_size
                         val_bar.set_description(
-                            "Val Epoch: [{}/{}] Total Loss: {:.4e}".format(
+                            "Val Epoch: [{}/{}] Running Loss: {:.4e}".format(
                                 epoch + 1,
                                 self.hparams.encoder_num_iters,
                                 val_loss / val_num,
                             )
                         )
-                val_loss /= val_num
+                val_loss /= len(self.valdst)
                 val_losses.append(val_loss)
 
                 # Early Stopping Check
