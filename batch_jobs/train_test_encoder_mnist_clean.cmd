@@ -36,6 +36,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --scheduler_gamma 0.1 \
         --svm_lr 1e-3 \
         --linear_eval_lr 1e-3 \
+        --C 20 \
         --clean
 
     echo "Script completed."

@@ -27,7 +27,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     python train_test_encoder.py
         --model mnist_model_deep \
         --dataset mnist \
-        --batch_size 63 \
+        --batch_size 64 \
         --kernel_type rbf \
         --encoder_num_iters 500 \
         --linear_eval_num_iters 200 \
@@ -36,6 +36,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --scheduler_gamma 0.1 \
         --svm_lr 1e-3 \
         --linear_eval_lr 1e-3 \
+        --C 20 \
         --adv_img
 
     echo "Script completed."
