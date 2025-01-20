@@ -20,6 +20,7 @@ echo "Starting container"
 enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     echo "Installing dependencies from requirements.txt..."
     pip install --upgrade pip
+    pip install --upgrade onnx
     pip install -r requirements.txt
 
     export PYTHONPATH=$(pwd):$PYTHONPATH
