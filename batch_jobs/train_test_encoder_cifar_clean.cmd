@@ -25,7 +25,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
 
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Running the Python script..."
-    python train_test_encoder.py
+    python train_test_encoder.py \
         --model cifar_model_deep \
         --dataset cifar-10 \
         --batch_size 64 \
