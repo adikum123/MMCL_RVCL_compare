@@ -96,7 +96,7 @@ class LinearEval(nn.Module):
             param.requires_grad = False
 
     def get_lr(self):
-        for param_group in self.classifier.param_groups:
+        for param_group in self.optimizer.param_groups:
             return param_group["lr"]
 
     def get_total_inputs_and_targets(self, ori_image, input1, input2, targets):
@@ -143,7 +143,6 @@ class LinearEval(nn.Module):
             self.classifier.train()
             total_loss, total_num = 0.0, 0
             train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch+1}")
-            val_bar = tqdm(self.valloader, desc=f"Epoch {epoch+1}")
             for i, (ori_image, input1, input2, targets) in enumerate(train_bar):
                 total_inputs, total_targets = self.get_total_inputs_and_targets(
                     ori_image, input1, input2, targets
@@ -169,6 +168,7 @@ class LinearEval(nn.Module):
                 )
             val_loss = None
             if self.hparams.use_validation:
+                val_bar = tqdm(self.valloader, desc=f"Epoch {epoch+1}")
                 self.encoder.set_eval()
                 val_loss, val_num = 0.0, 0
                 with torch.no_grad():
