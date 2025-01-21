@@ -18,7 +18,7 @@ echo "Creating new container"
 enroot create --name mmcl_rvcl ../nvidia+tensorflow+20.12-tf1-py3.sqsh
 echo "Container created"
 echo "Starting container"
-enroot start --mount $(pwd):/workspace --entrypoint=/bin/bash mmcl_rvcl <<'EOF'
+enroot start --mount $(pwd):/workspace <<'EOF'
     echo "Installing dependencies from requirements.txt..."
     pip install --upgrade pip
     pip install --upgrade onnx
