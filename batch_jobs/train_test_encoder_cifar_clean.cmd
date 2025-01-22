@@ -24,22 +24,41 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     pip install -r requirements.txt
 
     export PYTHONPATH=$(pwd):$PYTHONPATH
-    echo "Running the Python script..."
-    python train_test_encoder.py \
-        --model cifar_model_deep \
+    echo "Training encoder"
+    python train_encoder.py \
+        --model_save_name cifar_model_base_poly \
+        --model cifar_model \
         --dataset cifar-10 \
-        --batch_size 64 \
-        --kernel_type rbf \
-        --encoder_num_iters 500 \
-        --linear_eval_num_iters 200 \
+        --batch_size 32 \
+        --kernel_type poly \
+        --deegre 5 \
+        --num_iters 200 \
         --encoder_lr 1e-3 \
-        --step_size 30 \
+        --step_size 50 \
         --scheduler_gamma 0.1 \
         --svm_lr 1e-3 \
-        --linear_eval_lr 1e-3 \
-        --C 20 \
-        --clean
+        --C 100 \
+        --clean \
 
-    echo "Script completed."
+    echo "Testing performance on linear eval"
+    python train_linear_eval.py \
+        --batch_size 32 \
+        --dataset cifar-10 \
+        --use_validation \
+        --num_iters 100 \
+        --step_size 50 \
+        --lr 1e-4 \
+        --load_checkpoint models/mmcl/cifar_model_base_poly.pkl \
+
+    echo "Computing plots for svm margin"
+    python compare_svm_margin.py \
+        --mmcl_model cifar_model \
+        --mmcl_checkpoint models/mmcl/cifar_model_base_poly.pkl \
+        --rvcl_model cifar_model \
+        --rvcl_checkpoint models/unsupervised/cifar10_base_adv4.pkl \
+        --C 100 \
+        --kernel_type poly \
+        --deegre 3 \
+        --class_sample_limit 1000 \
 
 EOF

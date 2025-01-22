@@ -95,9 +95,7 @@ print(f"Loaded RVCL model: {rvcl_model}")
 for class_name in class_names:
     for item in per_class_sampler[class_name]:
         # Select one random image as positive and other images as negatives
-        positive = random.choice(per_class_sampler[class_name])
-        while torch.equal(positive, item):
-            positive = random.choice(per_class_sampler[class_name])
+        positive = item
         negatives = [
             image
             for k, v in per_class_sampler.items()
@@ -143,30 +141,17 @@ os.makedirs(save_dir, exist_ok=True)
 for class_name in tqdm(class_names):
     mmcl_values = [x["mmcl"] for x in margins[class_name]]
     rvcl_values = [x["rvcl"] for x in margins[class_name]]
-
-    # Combine data to calculate appropriate bin size
-    combined_data = mmcl_values + rvcl_values
-    bins = calculate_bins(
-        combined_data, bin_width=5
-    )  # Adjust bin width for finer control
-
-    # Plot histograms with adjusted bins
-    plt.figure(figsize=(10, 6))
-    sns.histplot(
-        mmcl_values, label="MMCL", kde=False, color="blue", alpha=0.5, bins=bins
-    )
-    sns.histplot(
-        rvcl_values, label="RVCL", kde=False, color="orange", alpha=0.5, bins=bins
-    )
-
-    # Add title and labels
-    plt.title(f"Distributions of MMCL and RVCL for Class: {class_name}", fontsize=14)
-    plt.xlabel("Value", fontsize=12)
-    plt.ylabel("Frequency", fontsize=12)
-    plt.legend(title="Metric", fontsize=10)
-
-    # Save the plot
-    plot_path = os.path.join(save_dir, f"{class_name}_distribution_dynamic_bins.png")
-    plt.savefig(plot_path)
+    # compute histogram data
+    min_value = min(mmcl_values + rvcl_values)
+    max_value = max(mmcl_values + rvcl_values)
+    bins = np.linspace(min_value, max_value, 100)
+    # Create and save plot
+    plt.figure()
+    plt.hist([mmcl_values, rvcl_values], bins, label=["MMCL", "RVCL"])
+    plt.legend(loc="upper right")
+    plt.title(f"Margin Distribution for {class_name}")
+    plt.xlabel("Margin")
+    plt.ylabel("Frequency")
+    plot_path = os.path.join(save_dir, f"{class_name}_distribution.png")
+    plt.savefig(plot_path, dpi=300, bbox_inches="tight")
     plt.close()
-    print(f"Saved updated plot for class {class_name} at {plot_path}")
