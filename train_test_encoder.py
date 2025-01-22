@@ -10,6 +10,12 @@ parser = argparse.ArgumentParser(description="unsupervised verification")
 
 ##### arguments for beta CROWN #####
 parser.add_argument(
+    "--model_save_name",
+    type=str,
+    default=None,
+    help="Name under which model will be saved in mmcl/encoder",
+)
+parser.add_argument(
     "--model",
     type=str,
     default="cnn_4layer_b",
@@ -65,28 +71,6 @@ parser.add_argument(
 # data params
 parser.add_argument("--multiplier", default=2, type=int)
 parser.add_argument(
-    "--dist",
-    default="dp",
-    type=str,
-    help="dp: DataParallel, ddp: DistributedDataParallel",
-    choices=["dp", "ddp"],
-)
-parser.add_argument(
-    "--color_dist_s", default=1.0, type=float, help="Color distortion strength"
-)
-parser.add_argument(
-    "--scale_lower",
-    default=0.08,
-    type=float,
-    help="The minimum scale factor for RandomResizedCrop",
-)
-parser.add_argument(
-    "--sync_bn",
-    default=True,
-    type=bool,
-    help="Syncronises BatchNorm layers between all processes if True",
-)
-parser.add_argument(
     "--color_jitter_strength",
     default=0.5,
     type=float,
@@ -101,12 +85,6 @@ parser.add_argument(
     type=float,
     help="learning rate for SVM optimisation problem in MMCL",
 )
-parser.add_argument(
-    "--linear_eval_lr",
-    default=1e-3,
-    type=float,
-    help="learning rate for linear eval on top of MMCL encoder",
-)
 parser.add_argument("--step_size", default=30, type=int, help="scheduler step size")
 parser.add_argument(
     "--criterion_to_use",
@@ -116,36 +94,6 @@ parser.add_argument(
 )
 parser.add_argument("--kernel_gamma", type=str, default="auto")
 parser.add_argument("--scheduler_gamma", type=float, default=0.1)
-
-##### arguments for RoCL Linear eval #####
-parser.add_argument("--trans", action="store_true", help="use transformed sample")
-parser.add_argument("--clean", action="store_true", help="use clean sample")
-parser.add_argument("--adv_img", action="store_true", help="use adversarial sample")
-parser.add_argument("--finetune", action="store_true", help="finetune the model")
-parser.add_argument(
-    "--ss", action="store_true", help="using self-supervised learning loss"
-)
-
-##### arguments for PGD attack & Adversarial Training #####
-parser.add_argument("--attack_type", type=str, default="linf", help="adversarial l_p")
-parser.add_argument(
-    "--epsilon",
-    type=float,
-    default=8.0 / 255,
-    help="maximum perturbation of adversaries (8/255(0.0314) for cifar-10)",
-)
-parser.add_argument(
-    "--alpha",
-    type=float,
-    default=0.007,
-    help="movement multiplier per iteration when generating adversarial examples (2/255=0.00784)",
-)
-parser.add_argument(
-    "--k",
-    type=int,
-    default=10,
-    help="maximum iteration when generating adversarial examples",
-)
 parser.add_argument("--random_start", type=bool, default=True, help="True for PGD")
 
 
@@ -157,9 +105,3 @@ print(f"Running on: {device}")
 model = MMCL_Encoder(hparams=args, device=device)
 model.train()
 model.save()
-
-# Test model
-args.train_type = "linear_eval"
-linear_eval = LinearEval(hparams=args, device=device, encoder=model)
-linear_eval.train()
-linear_eval.test()

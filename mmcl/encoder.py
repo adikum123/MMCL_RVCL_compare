@@ -208,6 +208,8 @@ class MMCL_Encoder(nn.Module):
             if hparams.trans:
                 return "transformed"
 
+        if self.hparams.model_save_name:
+            return self.hparams.model_save_name
         return (
             self.hparams.model
             + "_C_"

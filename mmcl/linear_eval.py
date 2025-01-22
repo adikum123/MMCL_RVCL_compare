@@ -25,8 +25,6 @@ class LinearEval(nn.Module):
         self.hparams = hparams
         self.encoder = encoder
         self.device = device
-        if not self.hparams.finetune:
-            self.freeze_encoder()
         self.classifier = nn.Linear(feature_dim, num_classes).to(self.device)
         self.criterion = nn.CrossEntropyLoss()
         (
@@ -84,16 +82,6 @@ class LinearEval(nn.Module):
         with torch.no_grad():
             features = self.encoder(x)
         return self.classifier(features)
-
-    def unfreeze_encoder(self):
-        """Unfreeze the encoder for fine-tuning."""
-        for param in self.encoder.parameters():
-            param.requires_grad = True
-
-    def freeze_encoder(self):
-        """Freeze the encoder to train only the classifier."""
-        for param in self.encoder.parameters():
-            param.requires_grad = False
 
     def get_lr(self):
         for param_group in self.optimizer.param_groups:
@@ -209,8 +197,6 @@ class LinearEval(nn.Module):
 
     def test(self):
         """Evaluate the model on the test dataset."""
-        if self.hparams.finetune:
-            self.freeze_encoder()
         self.classifier.eval()
         total_correct, total_samples = 0, 0
         total_loss = 0.0
