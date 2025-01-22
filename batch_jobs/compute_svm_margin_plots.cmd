@@ -26,20 +26,14 @@ enroot start --mount $(pwd):/workspacesa_su  <<'EOF'
 
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Running the Python script..."
-    python train_test_encoder.py \
-        --model cifar_model_deep \
-        --dataset cifar-10 \
-        --batch_size 64 \
-        --kernel_type rbf \
-        --encoder_num_iters 500 \
-        --linear_eval_num_iters 200 \
-        --encoder_lr 1e-3 \
-        --step_size 30 \
-        --scheduler_gamma 0.1 \
-        --svm_lr 1e-3 \
-        --linear_eval_lr 1e-3 \
+    python compare_svm_margin.py \
+        --mmcl_model cifar_model_deep \
+        --mmcl_checkpoint models/mmcl/cifar_model_deep_C_20.0_kernel_type_rbf_train_data_clean.pkl \
+        --rvcl_model cifar_base \
+        --rvcl_checkpoint models/unsupervised/cifar10_base_adv4.pkl \
         --C 20 \
-        --adv_img
+        --kernel_type rbf \
+        --class_sample_limit 1000
 
     echo "Script completed."
 

@@ -7,6 +7,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import seaborn as sns
 import torch
+from tqdm import tqdm
 
 import mmcl.utils as utils
 import rocl.data_loader as data_loader
@@ -127,27 +128,45 @@ for class_name in class_names:
         )
         margins[class_name].append({"mmcl": mmcl_margin, "rvcl": rvcl_margin})
 
+
+# Dynamic bin calculation function
+def calculate_bins(data, bin_width=10):
+    """Calculate the number of bins based on data range and bin width."""
+    data_range = max(data) - min(data)
+    return max(int(data_range / bin_width), 1)  # Ensure at least 1 bin
+
+
 # save all plots
 save_dir = f"plots/svm_margin/mmcl:{args.mmcl_model}_rvcl:{args.rvcl_model}"
 os.makedirs(save_dir, exist_ok=True)
-for class_name in class_names:
+# Loop through classes
+for class_name in tqdm(class_names):
     mmcl_values = [x["mmcl"] for x in margins[class_name]]
     rvcl_values = [x["rvcl"] for x in margins[class_name]]
-    # plot both distributions
-    # Plot distributions
+
+    # Combine data to calculate appropriate bin size
+    combined_data = mmcl_values + rvcl_values
+    bins = calculate_bins(
+        combined_data, bin_width=5
+    )  # Adjust bin width for finer control
+
+    # Plot histograms with adjusted bins
     plt.figure(figsize=(10, 6))
-    sns.kdeplot(mmcl_values, label="MMCL", fill=True, alpha=0.6)
-    sns.kdeplot(rvcl_values, label="RVCL", fill=True, alpha=0.6)
+    sns.histplot(
+        mmcl_values, label="MMCL", kde=False, color="blue", alpha=0.5, bins=bins
+    )
+    sns.histplot(
+        rvcl_values, label="RVCL", kde=False, color="orange", alpha=0.5, bins=bins
+    )
 
     # Add title and labels
     plt.title(f"Distributions of MMCL and RVCL for Class: {class_name}", fontsize=14)
     plt.xlabel("Value", fontsize=12)
-    plt.ylabel("Density", fontsize=12)
+    plt.ylabel("Frequency", fontsize=12)
     plt.legend(title="Metric", fontsize=10)
 
     # Save the plot
-    plot_path = os.path.join(save_dir, f"{class_name}_distribution.png")
+    plot_path = os.path.join(save_dir, f"{class_name}_distribution_dynamic_bins.png")
     plt.savefig(plot_path)
-    plt.close()  # Close the plot to avoid overlap in the next iteration
-
-    print(f"Saved plot for class {class_name} at {plot_path}")
+    plt.close()
+    print(f"Saved updated plot for class {class_name} at {plot_path}")
