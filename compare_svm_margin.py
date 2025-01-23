@@ -5,7 +5,7 @@ import random
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
-import seaborn as sns
+import numpy as np
 import torch
 from tqdm import tqdm
 
@@ -93,7 +93,8 @@ print(f"Loaded RVCL model: {rvcl_model}")
 
 # compute margin for each class
 for class_name in class_names:
-    for item in per_class_sampler[class_name]:
+    print(f"Processing items for class: {class_name}")
+    for item in tqdm(per_class_sampler[class_name]):
         # Select one random image as positive and other images as negatives
         positive = item
         negatives = [

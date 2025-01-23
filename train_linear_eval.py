@@ -40,12 +40,13 @@ parser.add_argument(
     help="0.5 for CIFAR, 1.0 for ImageNet",
 )
 parser.add_argument(
-    "--eval_lr",
+    "--lr",
     default=1e-3,
     type=float,
     help="learning rate for linear eval on top of MMCL encoder",
 )
 parser.add_argument("--step_size", default=30, type=int, help="scheduler step size")
+parser.add_argument("--scheduler_gamma", type=float, default=0.1)
 ##### arguments for RoCL Linear eval #####
 parser.add_argument("--trans", action="store_true", help="use transformed sample")
 parser.add_argument("--clean", action="store_true", help="use clean sample")

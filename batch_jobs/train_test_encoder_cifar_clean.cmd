@@ -33,14 +33,12 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --kernel_type poly \
         --deegre 5 \
         --num_iters 200 \
-        --encoder_lr 1e-3 \
+        --encoder_lr 1e-4 \
         --step_size 50 \
-        --scheduler_gamma 0.1 \
         --svm_lr 1e-3 \
         --C 100 \
-        --clean \
 
-    echo "Testing performance on linear eval"
+echo "Testing performance on linear eval"
     python train_linear_eval.py \
         --batch_size 32 \
         --dataset cifar-10 \
@@ -49,6 +47,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --step_size 50 \
         --lr 1e-4 \
         --load_checkpoint models/mmcl/cifar_model_base_poly.pkl \
+        --adv_img \
 
     echo "Computing plots for svm margin"
     python compare_svm_margin.py \

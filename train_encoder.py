@@ -48,12 +48,7 @@ parser.add_argument(
     action="store_true",
     help="Use validation set and stopping criteria",
 )
-parser.add_argument(
-    "--encoder_num_iters", default=500, type=int, help="Num iters - PGD Solver"
-)
-parser.add_argument(
-    "--linear_eval_num_iters", default=100, type=int, help="Num iters - PGD Solver"
-)
+parser.add_argument("--num_iters", default=500, type=int, help="Num iters - PGD Solver")
 parser.add_argument("--eta", default=1e-5, type=float, help="Eta - PGD Solver")
 parser.add_argument(
     "--stop_condition",
