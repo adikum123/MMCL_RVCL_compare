@@ -48,7 +48,7 @@ class MMCL_Encoder(nn.Module):
                 data_loader.get_dataset(self.hparams)
             )
         self.optimizer = optim.SGD(
-            self.model.parameters(), lr=self.hparams.encoder_lr, momentum=0.9
+            self.model.parameters(), lr=self.hparams.lr, momentum=0.9
         )
         self.scheduler = optim.lr_scheduler.StepLR(
             self.optimizer,
@@ -74,7 +74,7 @@ class MMCL_Encoder(nn.Module):
         train_losses = []
         val_losses = []
 
-        for epoch in range(self.hparams.encoder_num_iters):
+        for epoch in range(self.hparams.num_iters):
             # Training Phase
             self.model.train()  # Set the model to training mode
             total_loss, total_num = 0.0, 0
@@ -108,7 +108,7 @@ class MMCL_Encoder(nn.Module):
                 train_bar.set_description(
                     "Train Epoch: [{}/{}] Running Loss: {:.4e}".format(
                         epoch + 1,
-                        self.hparams.encoder_num_iters,
+                        self.hparams.num_iters,
                         total_loss / total_num,
                     )
                 )
@@ -143,7 +143,7 @@ class MMCL_Encoder(nn.Module):
                         val_bar.set_description(
                             "Val Epoch: [{}/{}] Running Loss: {:.4e}".format(
                                 epoch + 1,
-                                self.hparams.encoder_num_iters,
+                                self.hparams.num_iters,
                                 val_loss / val_num,
                             )
                         )

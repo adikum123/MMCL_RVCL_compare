@@ -31,7 +31,7 @@ parser.add_argument(
     "--norm", type=float, default="inf", help="p norm for epsilon perturbation"
 )
 parser.add_argument(
-    "--model",
+    "--mmcl_model",
     type=str,
     default="cnn_4layer_b",
     help="model name (cifar_model, cifar_model_deep, cifar_model_wide, cnn_4layer, cnn_4layer_b, mnist_cnn_4layer)",
@@ -47,7 +47,7 @@ parser.add_argument(
 )
 parser.add_argument("--dataset", default="cifar-10", type=str, help="cifar-10/mnist")
 parser.add_argument(
-    "--load_checkpoint", default="", type=str, help="PATH TO CHECKPOINT"
+    "--mmcl_load_checkpoint", default="", type=str, help="PATH TO CHECKPOINT"
 )
 parser.add_argument("--name", default="", type=str, help="name of run")
 parser.add_argument("--seed", default=1, type=int, help="random seed")

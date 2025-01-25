@@ -33,7 +33,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --kernel_type poly \
         --deegre 5 \
         --num_iters 200 \
-        --encoder_lr 1e-4 \
+        --lr 1e-4 \
         --step_size 50 \
         --svm_lr 1e-3 \
         --C 100 \
