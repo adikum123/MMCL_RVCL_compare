@@ -1,11 +1,11 @@
-torch
-torchvision
-numpy
+torch==1.13.1
+torchvision==0.14.1
+numpy==1.19.2
 tqdm
-scikit-learn
-diffdist
-matplotlib
+scikit-learn==1.0.2
+diffdist==0.1
+matplotlib==3.4.2
 appdirs
 oslo_concurrency
-pandas<=1.2.5  # Compatible version to avoid np.bool issues
-scipy>=1.6.0
+pandas==1.2.4  # Compatible version to avoid np.bool issues
+scipy==1.7.3

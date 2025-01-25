@@ -5,28 +5,19 @@ import json
 import random
 import sys
 import time
-from collections import defaultdict
+from collections import OrderedDict
 
 import numpy as np
+import pandas as pd
 import torch.nn.functional as F
 
 import rocl.data_loader as data_loader
 from beta_crown.auto_LiRPA import BoundedModule, BoundedTensor
 from beta_crown.auto_LiRPA.perturbations import *
-from beta_crown.model_beta_CROWN import LiRPAConvNet, return_modify_model
-from beta_crown.relu_conv_parallel import relu_bab_parallel
 from beta_crown.utils import *
-from rocl.attack_lib import FastGradientSignUntargeted, RepresentationAdv
 
-parser = argparse.ArgumentParser(description="unsupervised beta binary search")
-
-##### arguments for beta CROWN #####
-parser.add_argument(
-    "--no_solve_slope",
-    action="store_false",
-    dest="solve_slope",
-    help="do not optimize slope/alpha in compute bounds",
-)
+parser = argparse.ArgumentParser(description="supervised binary search")
+##### arguments for CROWN #####
 parser.add_argument(
     "--device",
     type=str,
@@ -40,83 +31,26 @@ parser.add_argument(
     "--norm", type=float, default="inf", help="p norm for epsilon perturbation"
 )
 parser.add_argument(
-    "--bound_type",
-    type=str,
-    default="CROWN-IBP",
-    choices=["IBP", "CROWN-IBP", "CROWN"],
-    help="method of bound analysis",
-)
-parser.add_argument(
-    "--mmcl_model",
+    "--model",
     type=str,
     default="cnn_4layer_b",
     help="model name (cifar_model, cifar_model_deep, cifar_model_wide, cnn_4layer, cnn_4layer_b, mnist_cnn_4layer)",
 )
-parser.add_argument(
-    "--rvcl_model",
-    type=str,
-    default="cnn_4layer_b",
-    help="model name (cifar_model, cifar_model_deep, cifar_model_wide, cnn_4layer, cnn_4layer_b, mnist_cnn_4layer)",
-)
-parser.add_argument(
-    "--bound_opts",
-    type=str,
-    default="same-slope",
-    choices=["same-slope", "zero-lb", "one-lb"],
-    help="bound options for relu",
-)
-parser.add_argument(
-    "--no_warm",
-    action="store_true",
-    default=False,
-    help="using warm up for lp solver, true by default",
-)
-parser.add_argument(
-    "--no_beta",
-    action="store_true",
-    default=False,
-    help="using beta splits, true by default",
-)
-parser.add_argument(
-    "--max_subproblems_list",
-    type=int,
-    default=200000,
-    help="max length of sub-problems list",
-)
-parser.add_argument(
-    "--decision_thresh",
-    type=float,
-    default=0,
-    help="decision threshold of lower bounds",
-)
-parser.add_argument(
-    "--timeout", type=float, default=30, help="timeout for one property"
-)
-parser.add_argument(
-    "--mode",
-    type=str,
-    default="incomplete",
-    choices=["complete", "incomplete", "verified-acc"],
-    help="which mode to use",
-)
+parser.add_argument("--batch_size", type=int, default=256, help="batch size")
 
 ##### arguments for model #####
 parser.add_argument(
     "--train_type",
-    default="contrastive",
+    default="linear_eval",
     type=str,
     help="contrastive/linear eval/test/supervised",
 )
 parser.add_argument("--dataset", default="cifar-10", type=str, help="cifar-10/mnist")
 parser.add_argument(
-    "--mmcl_load_checkpoint", default="", type=str, help="PATH TO CHECKPOINT"
-)
-parser.add_argument(
-    "--rvcl_load_checkpoint", default="", type=str, help="PATH TO CHECKPOINT"
+    "--load_checkpoint", default="", type=str, help="PATH TO CHECKPOINT"
 )
 parser.add_argument("--name", default="", type=str, help="name of run")
 parser.add_argument("--seed", default=1, type=int, help="random seed")
-parser.add_argument("--batch_size", type=int, default=256, help="batch size")
 
 ##### arguments for data augmentation #####
 parser.add_argument(
@@ -155,98 +89,55 @@ parser.add_argument(
 )
 
 ##### arguments for binary_search #####
-parser.add_argument("--mini_batch", type=int, default=10, help="mini batch for PGD")
 parser.add_argument(
     "--ver_total", type=int, default=100, help="number of img to verify"
 )
 parser.add_argument("--max_steps", type=int, default=200, help="max steps for search")
+
 args = parser.parse_args()
+
+os.environ["CUDA_VISIBLE_DEVICES"] = args.gpuno
+print_args(args)
+
 torch.manual_seed(args.seed)
 torch.cuda.manual_seed_all(args.seed)
 random.seed(args.seed)
 np.random.seed(args.seed)
+
 img_clip = min_max_value(args)
+upper_eps = (torch.max(img_clip["max"]) - torch.min(img_clip["min"])).item()
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-print("Loading MMCL and RVCL models")
-mmcl_model = torch.load(args.mmcl_load_checkpoint, map_location=device)
-rvcl_model = torch.load(args.rvcl_load_checkpoint, map_location=device)
-
-
-def generate_attack(args, model_ori, ori, target):
-    pgd_target = RepresentationAdv(
-        model_ori,
-        None,
-        epsilon=args.target_eps,
-        alpha=args.alpha,
-        min_val=img_clip["min"].to(args.device),
-        max_val=img_clip["max"].to(args.device),
-        max_iters=args.k,
-        _type=args.attack_type,
-        loss_type=args.loss_type,
-    )
-    adv_target = pgd_target.attack_pgd(
-        original_images=ori.to(args.device),
-        target=target.to(args.device),
-        type="attack",
-        random_start=True,
-    )
-
-    pgd = RepresentationAdv(
-        model_ori,
-        None,
-        epsilon=args.epsilon,
-        alpha=args.alpha,
-        min_val=img_clip["min"].to(args.device),
-        max_val=img_clip["max"].to(args.device),
-        max_iters=args.k,
-        _type=args.attack_type,
-        loss_type=args.loss_type,
-    )
-    adv_img = pgd.attack_pgd(
-        original_images=ori.to(args.device),
-        target=adv_target.to(args.device),
-        type="sim",
-        random_start=True,
-    )
-    return adv_target, adv_img
+# Model
+print("==> Building model..")
+model = torch.load(args.load_checkpoint)
+model.to(args.device)
 
 
-def generate_ver_data(loader, model, total, class_num, adv=True):
+def generate_ver_data(loader, total, class_num):
     count = [0 for _ in range(class_num)]
     per_class = total // class_num
     data_loader = iter(loader)
     ans_image = []
-    if adv:
-        adv_target = []
-        adv_eps = []
     ans_label = []
     while sum(count) < total:
-        (ori, aug_img, _, label) = next(data_loader)
+        (img, label) = next(data_loader)
         i = int(label)
-        if count[i] < per_class:
-            ans_image.append(ori)
+        img = img.to(args.device)
+        label = label.to(args.device)
+        out = model(img)
+        _, predx = torch.max(out.data, 1)
+        if count[i] < per_class and predx.item() == label.item():
+            ans_image.append(img)
             ans_label.append(i)
-            if adv:
-                i1, i2 = generate_attack(args, model, ori, aug_img)
-                adv_target.append(i1)
-                adv_eps.append(i2)
             count[i] += 1
-    if adv:
-        return ans_image, adv_target, adv_eps, ans_label
-    else:
-        return ans_image, ans_label
+    return ans_image, ans_label
 
 
-def unsupervised_search(
-    model_ori,
+def supervised_search(
     data,
-    ori,
-    target,
+    label,
     norm,
     args,
-    output_size,
     data_max=None,
     data_min=None,
     upper=1.0,
@@ -254,17 +145,6 @@ def unsupervised_search(
     tol=0.000001,
     max_steps=100,
 ):
-    model = LiRPAConvNet(
-        model_ori,
-        ori,
-        target,
-        output_size=output_size,
-        contrastive=True,
-        simplify=True,
-        solve_slope=args.solve_slope,
-        device=args.device,
-        in_size=data.shape,
-    )
     step = 0
     while upper - lower > tol:
         eps = 0.5 * (lower + upper)
@@ -282,142 +162,100 @@ def unsupervised_search(
         ptb = PerturbationLpNorm(
             norm=norm, eps=eps, x_L=data_lb.to(args.device), x_U=data_ub.to(args.device)
         )
-        x = BoundedTensor(data, ptb).to(args.device)
-        domain = torch.stack([data_lb.squeeze(0), data_ub.squeeze(0)], dim=-1)
-        with HiddenPrints():
-            lb, _, _, _ = relu_bab_parallel(
-                copy.deepcopy(model),
-                domain,
-                x,
-                batch=args.batch_size,
-                no_LP=True,
-                decision_thresh=args.decision_thresh,
-                beta=not args.no_beta,
-                max_subproblems_list=args.max_subproblems_list,
-                timeout=args.timeout,
-            )
-        if isinstance(lb, torch.Tensor):
-            lb = lb.item()
-        if lb > 500:
-            continue
+        image = BoundedTensor(data, ptb).to(args.device)
+        lb, ub = bound_net.compute_bounds(x=(image,), method="backward")
+        true_label_low = lb[0][label].item()
+        target_label_upper = np.delete(ub.detach().cpu().numpy()[0], label).max()
+        success = target_label_upper < true_label_low
         print(
             "[binary search] step = {}, current = {:.6f}, success = {}, val = {:.2f}".format(
-                step, eps, lb > 0, lb
+                step, eps, success, true_label_low - target_label_upper
             )
         )
 
-        if lb > 0:  # success at current value
+        if success:  # success at current value
             lower = eps
         else:
             upper = eps
         step += 1
         if step >= max_steps:
             break
-    return lower, step, model.modify_net
+    return lower, step, np.argmax(np.delete(ub.detach().cpu().numpy()[0], label))
 
+
+# save log
+save_name = ""
+if args.name != "":
+    save_name = args.name + "_"
+save_name += args.model + "_ver_total" + str(args.ver_total)
+
+save_dir = f'./result/supervised_binary/{args.dataset}/{time.strftime("%m%d")}'
+save_path = f'{save_dir}/{time.strftime("%H%M", time.localtime())}_{save_name}.csv'
+if not os.path.exists(save_dir):
+    os.makedirs(save_dir)
 
 # Data
 print("==> Preparing data..")
 _, _, testloader, testdst = data_loader.get_dataset(args)
-mmcl_image, mmcl_label = generate_ver_data(
-    testloader, mmcl_model, args.ver_total, class_num=10, adv=False
+total_image, total_label = generate_ver_data(testloader, args.ver_total, class_num=10)
+bound_net = BoundedModule(
+    model,
+    torch.empty_like(total_image[0].to(args.device)),
+    bound_opts={"conv_mode": "patches"},
+    device=args.device,
 )
-rvcl_image, rvcl_label = generate_ver_data(
-    testloader, rvcl_model, args.ver_total, class_num=10, adv=True
+
+log = pd.DataFrame(
+    columns=[
+        "veri_lower",
+        "true_label",
+        "target_label",
+        "steps",
+        "time",
+        "avg_veri_lower",
+        "min_veri_lower",
+        "max_veri_lower",
+        "avg_time",
+        "avg_steps",
+        args.load_checkpoint,
+    ]
 )
-robust_radius = defaultdict(list)
+avg_veri_lower = []
+avg_time = []
+avg_steps = []
 
-line_iter = 0
-upper_eps = (torch.max(img_clip["max"]) - torch.min(img_clip["min"])).item()
-total_avg = []
-total_time = []
-for batch_iter in range(args.ver_total // args.mini_batch):
-    for ori_iter in range(args.mini_batch):
-        total_ori_iter = batch_iter * args.mini_batch + ori_iter
-        print("verifying {}-th image".format(total_ori_iter))
-        avg_veri_lower = []
-        avg_time = []
-        avg_steps = []
-        for target_iter in range(args.mini_batch):
-            if ori_iter == target_iter:
-                continue
-            total_target_iter = batch_iter * args.mini_batch + target_iter
-            print(
-                "verifying {}-th image, against {}-th image".format(
-                    total_ori_iter, total_target_iter
-                )
-            )
-            img_ori = image[total_ori_iter]
-            img_target = image[total_target_iter]
+for iter in range(args.ver_total):
+    print("verifying {}-th image".format(iter))
+    img = total_image[iter]
+    label = total_label[iter]
+    start = time.time()
+    low, step, target_label = supervised_search(
+        img.to("cpu"),
+        label,
+        args.norm,
+        args,
+        img_clip["max"],
+        img_clip["min"],
+        upper=upper_eps,
+        lower=0.0,
+        max_steps=args.max_steps,
+    )
+    per_time = time.time() - start
 
-            # mmcl step
-            mmcl_item = {}
-            mmcl_model.to("cpu")
-            f_ori = F.normalize(mmcl_model(mmcl_model.to("cpu").detach()), p=2, dim=1)
-            f_target = F.normalize(
-                mmcl_model(mmcl_model.to("cpu").detach()), p=2, dim=1
-            )
+    log.loc[iter, "veri_lower"] = low
+    log.loc[iter, "true_label"] = label
+    log.loc[iter, "target_label"] = target_label
+    log.loc[iter, "steps"] = step
+    log.loc[iter, "time"] = per_time
 
-            start = time.time()
-            (mmcl_item["veri_lower"], mmcl_item["steps"], modify_net) = (
-                unsupervised_search(
-                    mmcl_model,
-                    img_ori,
-                    f_ori,
-                    f_target,
-                    args.norm,
-                    args,
-                    output_size,
-                    img_clip["max"],
-                    img_clip["min"],
-                    upper=upper_eps,
-                    lower=0.0,
-                    max_steps=args.max_steps,
-                )
-            )
-            mmcl_item["time"] = time.time() - start
-            modify_net.to(args.device)
-            mmcl_item["value_upper"] = modify_net(img_ori.to(args.device)).item()
-            mmcl_item["value_lower"] = modify_net(img_target.to(args.device)).item()
+    avg_veri_lower.append(low)
+    avg_time.append(per_time)
+    avg_steps.append(step)
+    log.to_csv(save_path)
 
-            mmcl_item["ori"] = total_ori_iter
-            mmcl_item["target"] = total_target_iter
-
-            # rvcl step
-            rvcl_item = {}
-            rvcl_model.to("cpu")
-            f_ori = F.normalize(rvcl_model(mmcl_model.to("cpu").detach()), p=2, dim=1)
-            f_target = F.normalize(
-                rvcl_model(mmcl_model.to("cpu").detach()), p=2, dim=1
-            )
-
-            start = time.time()
-            (rvcl_item["veri_lower"], rvcl_item["steps"], modify_net) = (
-                unsupervised_search(
-                    rvcl_model,
-                    img_ori,
-                    f_ori,
-                    f_target,
-                    args.norm,
-                    args,
-                    output_size,
-                    img_clip["max"],
-                    img_clip["min"],
-                    upper=upper_eps,
-                    lower=0.0,
-                    max_steps=args.max_steps,
-                )
-            )
-            rvcl_item["time"] = time.time() - start
-            modify_net.to(args.device)
-            rvcl_item["value_upper"] = modify_net(img_ori.to(args.device)).item()
-            rvcl_item["value_lower"] = modify_net(img_target.to(args.device)).item()
-
-            rvcl_item["ori"] = total_ori_iter
-            rvcl_item["target"] = total_target_iter
-
-            robust_radius[(total_ori_iter, total_target_iter)].append(
-                {"mmcl_item": mmcl_item, "rvcl_item": rvcl_item}
-            )
-
-print(robust_radius)
+log.loc[0, "avg_veri_lower"] = np.mean(avg_veri_lower)
+log.loc[0, "min_veri_lower"] = min(avg_veri_lower)
+log.loc[0, "max_veri_lower"] = max(avg_veri_lower)
+log.loc[0, "avg_time"] = np.mean(avg_time)
+log.loc[0, "avg_steps"] = np.mean(avg_steps)
+log.to_csv(save_path)
