@@ -75,8 +75,13 @@ parser.add_argument(
     "--lr", default=1e-3, type=float, help="learning rate for MMCL encoder"
 )
 parser.add_argument(
+    "--use_validation",
+    action="store_true",
+    help="Use validation set and stopping criteria",
+)
+parser.add_argument(
     "--svm_lr",
-    default=1e-3,
+    default=1e-4,
     type=float,
     help="learning rate for SVM optimisation problem in MMCL",
 )
