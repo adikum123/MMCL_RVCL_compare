@@ -53,6 +53,7 @@ class MMCL_Encoder(nn.Module):
             step_size=self.hparams.step_size,
             gamma=self.hparams.scheduler_gamma,
         )
+        self.best_model_saved = False
 
     def set_eval(self):
         self.model.eval()
@@ -145,9 +146,8 @@ class MMCL_Encoder(nn.Module):
                                 val_loss / val_num,
                             )
                         )
-                val_loss /= len(self.valdst)
+                val_loss /= val_num
                 val_losses.append(val_loss)
-
                 # Early Stopping Check
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
@@ -155,19 +155,19 @@ class MMCL_Encoder(nn.Module):
                     print(
                         f"Validation loss improved to {val_loss:.4e}. Saving model..."
                     )
+                    self.best_model_saved = False
+                    self.save()
+                    self.best_model_saved = True
                 else:
                     patience_counter += 1
                     print(
                         f"Validation loss did not improve. Patience: {patience_counter}/{max_patience}"
                     )
-
                 if patience_counter >= max_patience:
                     print("Early stopping triggered. Training terminated.")
                     break
-
             # Scheduler step
             self.scheduler.step()
-
             # Logging metrics
             metrics = {
                 "train_loss": train_loss,
@@ -176,7 +176,8 @@ class MMCL_Encoder(nn.Module):
                 "lr": self.get_lr(),
             }
             print(f"\nEpoch: {epoch+1}, Metrics: {json.dumps(metrics, indent=4)}\n")
-
+        if self.hparams.use_validation:
+            self.model = torch.load(os.path.join("models/linear", self.get_model_save_name()+".pkl"), map_location=self.device)
         # Plot and save the training and validation loss
         save_dir = "plots/encoder"
         os.makedirs(save_dir, exist_ok=True)
@@ -219,5 +220,6 @@ class MMCL_Encoder(nn.Module):
         )
 
     def save(self):
-        save_path = os.path.join("models/mmcl", self.get_model_save_name() + ".pkl")
-        torch.save(self.model, save_path)
+        if not self.best_model_saved:
+            save_path = os.path.join("models/mmcl", self.get_model_save_name() + ".pkl")
+            torch.save(self.model, save_path)

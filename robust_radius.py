@@ -14,6 +14,7 @@ from rocl.attack_lib import FastGradientSignUntargeted, RepresentationAdv
 class RobustRadius:
 
     def __init__(self, hparams, model_type=None):
+        assert model_type in ['mmcl', 'rvcl']
         self.args = hparams
         self.device = torch.device('cuda' if torch.cuda().is_available() else 'cpu')
         # Model

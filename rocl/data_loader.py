@@ -193,7 +193,7 @@ def get_dataset(args):
             contrastive_learning=learning_type,
         )
 
-        if learning_type == "contrastive" and "ngpu" in vars(args):
+        if learning_type == "contrastive" in vars(args):
             train_sampler = torch.utils.data.distributed.DistributedSampler(
                 train_dst,
                 num_replicas=args.ngpu,
@@ -209,7 +209,7 @@ def get_dataset(args):
             )
             val_loader = torch.utils.data.DataLoader(
                 val_dst,
-                batch_size=100,
+                batch_size=args.batch_size,
                 num_workers=4,
                 pin_memory=False,
                 shuffle=True,
@@ -225,11 +225,9 @@ def get_dataset(args):
                     val_dst, batch_size=1, shuffle=True
                 )
             else:
-                val_batch = 100
                 val_loader = torch.utils.data.DataLoader(
-                    val_dst, batch_size=val_batch, shuffle=True, num_workers=4
+                    val_dst, batch_size=args.batch_size, shuffle=True, num_workers=4
                 )
-
             return train_loader, train_dst, val_loader, val_dst
 
     if args.dataset == "cifar-100":

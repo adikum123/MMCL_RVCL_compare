@@ -29,7 +29,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --model_save_name cifar_model_base_poly_deg_5_C_100 \
         --model cifar_model \
         --dataset cifar-10 \
-        --batch_size 32 \
+        --batch_size 64 \
         --kernel_type poly \
         --deegre 5 \
         --num_iters 200 \

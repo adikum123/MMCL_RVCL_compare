@@ -77,6 +77,7 @@ class LinearEval(nn.Module):
                 device=self.device,
                 _type=self.hparams.attack_type,
             )
+        best_model_saved = False
 
     def forward(self, x):
         with torch.no_grad():
@@ -179,6 +180,9 @@ class LinearEval(nn.Module):
                     print(
                         f"Validation loss improved to {val_loss:.4e}. Saving model..."
                     )
+                    self.best_model_saved = False
+                    self.save()
+                    self.best_model_saved = True
                 else:
                     patience_counter += 1
                     print(
@@ -194,6 +198,9 @@ class LinearEval(nn.Module):
                 "epoch": epoch + 1,
                 "lr": self.get_lr(),
             }
+        # load best saved model as the classifier
+        if self.hparams.use_validation:
+            self.classifier = torch.load(os.path.join("models/linear", self.get_model_save_name()+".pkl"), map_location=self.device)
 
     def test(self):
         """Evaluate the model on the test dataset."""
@@ -231,3 +238,11 @@ class LinearEval(nn.Module):
         }
         print(f"Test Results: {json.dumps(metrics, indent=4)}")
         return metrics
+
+    def get_model_save_name(self):
+        return f"linear_{self.encoder.get_model_save_name()}.pkl
+
+    def save(self):
+        if not self.best_model_saved:
+            save_path = os.path.join("models/linear", self.get_model_save_name())
+            torch.save(self.classifier, save_path)
