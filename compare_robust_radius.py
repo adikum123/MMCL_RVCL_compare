@@ -5,9 +5,9 @@ import json
 import random
 import sys
 import time
+from collections import defaultdict
 
 import numpy as np
-import pandas as pd
 import torch.nn.functional as F
 
 import rocl.data_loader as data_loader
@@ -170,11 +170,11 @@ img_clip = min_max_value(args)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print("Loading MMCL and RVCL models")
-mmcl_model = torch.load(args.mmcl_load_checkpoint)
-rvcl_model = torch.load(args.rvcl_load_checkpoint)
+mmcl_model = torch.load(args.mmcl_load_checkpoint, map_location=device)
+rvcl_model = torch.load(args.rvcl_load_checkpoint, map_location=device)
 
 
-def generate_attack(args, ori, target):
+def generate_attack(args, model_ori, ori, target):
     pgd_target = RepresentationAdv(
         model_ori,
         None,
@@ -213,7 +213,7 @@ def generate_attack(args, ori, target):
     return adv_target, adv_img
 
 
-def generate_ver_data(loader, total, class_num, adv=True):
+def generate_ver_data(loader, model, total, class_num, adv=True):
     count = [0 for _ in range(class_num)]
     per_class = total // class_num
     data_loader = iter(loader)
@@ -229,7 +229,7 @@ def generate_ver_data(loader, total, class_num, adv=True):
             ans_image.append(ori)
             ans_label.append(i)
             if adv:
-                i1, i2 = generate_attack(args, ori, aug_img)
+                i1, i2 = generate_attack(args, model, ori, aug_img)
                 adv_target.append(i1)
                 adv_eps.append(i2)
             count[i] += 1
@@ -316,57 +316,16 @@ def unsupervised_search(
     return lower, step, model.modify_net
 
 
-# save log
-save_name = ""
-if args.name != "":
-    save_name = args.name + "_"
-save_name += (
-    args.model
-    + "_timeout"
-    + str(args.timeout)
-    + "_minibatch"
-    + str(args.mini_batch)
-    + "_ver_total"
-    + str(args.ver_total)
-)
-
-save_dir = f'./result/unsupervised_bata_binary/{args.dataset}/{time.strftime("%m%d")}'
-save_path = f'{save_dir}/{time.strftime("%H%M", time.localtime())}_{save_name}'
-if not os.path.exists(save_dir):
-    os.makedirs(save_dir)
-
 # Data
 print("==> Preparing data..")
 _, _, testloader, testdst = data_loader.get_dataset(args)
-image, label = generate_ver_data(testloader, args.ver_total, class_num=10, adv=False)
-if args.mini_batch == 50:
-    image_savenp = np.array([item.cpu().detach().numpy() for item in image])
-    np.save(save_path + ".npy", image_savenp)
-
-log = pd.DataFrame(
-    columns=[
-        "ori",
-        "target",
-        "veri_lower",
-        "steps",
-        "value_upper",
-        "value_lower",
-        "time",
-        "avg_veri_lower",
-        "min_veri_lower",
-        "max_veri_lower",
-        "avg_time",
-        "total_time",
-        "min_time",
-        "max_time",
-        "avg_steps",
-        "min_steps",
-        "max_steps",
-        "total_avg_lower",
-        "avg_total_time",
-        args.load_checkpoint,
-    ]
+mmcl_image, mmcl_label = generate_ver_data(
+    testloader, mmcl_model, args.ver_total, class_num=10, adv=False
 )
+rvcl_image, rvcl_label = generate_ver_data(
+    testloader, rvcl_model, args.ver_total, class_num=10, adv=True
+)
+robust_radius = defaultdict(list)
 
 line_iter = 0
 upper_eps = (torch.max(img_clip["max"]) - torch.min(img_clip["min"])).item()
@@ -392,6 +351,7 @@ for batch_iter in range(args.ver_total // args.mini_batch):
             img_target = image[total_target_iter]
 
             # mmcl step
+            mmcl_item = {}
             mmcl_model.to("cpu")
             f_ori = F.normalize(mmcl_model(mmcl_model.to("cpu").detach()), p=2, dim=1)
             f_target = F.normalize(
@@ -399,43 +359,32 @@ for batch_iter in range(args.ver_total // args.mini_batch):
             )
 
             start = time.time()
-            (
-                log.loc[line_iter, "veri_lower"],
-                log.loc[line_iter, "steps"],
-                modify_net,
-            ) = unsupervised_search(
-                mmcl_model,
-                img_ori,
-                f_ori,
-                f_target,
-                args.norm,
-                args,
-                output_size,
-                img_clip["max"],
-                img_clip["min"],
-                upper=upper_eps,
-                lower=0.0,
-                max_steps=args.max_steps,
+            (mmcl_item["veri_lower"], mmcl_item["steps"], modify_net) = (
+                unsupervised_search(
+                    mmcl_model,
+                    img_ori,
+                    f_ori,
+                    f_target,
+                    args.norm,
+                    args,
+                    output_size,
+                    img_clip["max"],
+                    img_clip["min"],
+                    upper=upper_eps,
+                    lower=0.0,
+                    max_steps=args.max_steps,
+                )
             )
-            log.loc[line_iter, "time"] = time.time() - start
+            mmcl_item["time"] = time.time() - start
             modify_net.to(args.device)
-            log.loc[line_iter, "value_upper"] = modify_net(
-                img_ori.to(args.device)
-            ).item()
-            log.loc[line_iter, "value_lower"] = modify_net(
-                img_target.to(args.device)
-            ).item()
+            mmcl_item["value_upper"] = modify_net(img_ori.to(args.device)).item()
+            mmcl_item["value_lower"] = modify_net(img_target.to(args.device)).item()
 
-            log.loc[line_iter, "ori"] = total_ori_iter
-            log.loc[line_iter, "target"] = total_target_iter
-
-            avg_veri_lower.append(log.loc[line_iter, "veri_lower"])
-            avg_time.append(log.loc[line_iter, "time"])
-            avg_steps.append(log.loc[line_iter, "steps"])
-            line_iter += 1
-            log.to_csv(save_path + ".csv")
+            mmcl_item["ori"] = total_ori_iter
+            mmcl_item["target"] = total_target_iter
 
             # rvcl step
+            rvcl_item = {}
             rvcl_model.to("cpu")
             f_ori = F.normalize(rvcl_model(mmcl_model.to("cpu").detach()), p=2, dim=1)
             f_target = F.normalize(
@@ -443,58 +392,32 @@ for batch_iter in range(args.ver_total // args.mini_batch):
             )
 
             start = time.time()
-            (
-                log.loc[line_iter, "veri_lower"],
-                log.loc[line_iter, "steps"],
-                modify_net,
-            ) = unsupervised_search(
-                rvcl_model,
-                img_ori,
-                f_ori,
-                f_target,
-                args.norm,
-                args,
-                output_size,
-                img_clip["max"],
-                img_clip["min"],
-                upper=upper_eps,
-                lower=0.0,
-                max_steps=args.max_steps,
+            (rvcl_item["veri_lower"], rvcl_item["steps"], modify_net) = (
+                unsupervised_search(
+                    rvcl_model,
+                    img_ori,
+                    f_ori,
+                    f_target,
+                    args.norm,
+                    args,
+                    output_size,
+                    img_clip["max"],
+                    img_clip["min"],
+                    upper=upper_eps,
+                    lower=0.0,
+                    max_steps=args.max_steps,
+                )
             )
-            log.loc[line_iter, "time"] = time.time() - start
+            rvcl_item["time"] = time.time() - start
             modify_net.to(args.device)
-            log.loc[line_iter, "value_upper"] = modify_net(
-                img_ori.to(args.device)
-            ).item()
-            log.loc[line_iter, "value_lower"] = modify_net(
-                img_target.to(args.device)
-            ).item()
+            rvcl_item["value_upper"] = modify_net(img_ori.to(args.device)).item()
+            rvcl_item["value_lower"] = modify_net(img_target.to(args.device)).item()
 
-            log.loc[line_iter, "ori"] = total_ori_iter
-            log.loc[line_iter, "target"] = total_target_iter
+            rvcl_item["ori"] = total_ori_iter
+            rvcl_item["target"] = total_target_iter
 
-            avg_veri_lower.append(log.loc[line_iter, "veri_lower"])
-            avg_time.append(log.loc[line_iter, "time"])
-            avg_steps.append(log.loc[line_iter, "steps"])
-            line_iter += 1
-            log.to_csv(save_path + ".csv")
+            robust_radius[(total_ori_iter, total_target_iter)].append(
+                {"mmcl_item": mmcl_item, "rvcl_item": rvcl_item}
+            )
 
-        log.loc[line_iter, "avg_veri_lower"] = np.mean(avg_veri_lower)
-        total_avg.append(np.mean(avg_veri_lower))
-        log.loc[line_iter, "avg_time"] = np.mean(avg_time)
-        log.loc[line_iter, "total_time"] = np.sum(avg_time)
-        total_time.append(np.sum(avg_time))
-        log.loc[line_iter, "avg_steps"] = np.mean(avg_steps)
-        log.loc[line_iter, "min_veri_lower"] = min(avg_veri_lower)
-        log.loc[line_iter, "min_time"] = min(avg_time)
-        log.loc[line_iter, "min_steps"] = min(avg_steps)
-        log.loc[line_iter, "max_veri_lower"] = max(avg_veri_lower)
-        log.loc[line_iter, "max_time"] = max(avg_time)
-        log.loc[line_iter, "max_steps"] = max(avg_steps)
-        log.loc[line_iter, "ori"] = total_ori_iter
-        line_iter += 1
-        log.to_csv(save_path + ".csv")
-
-log.loc[0, "total_avg_lower"] = np.mean(total_avg)
-log.loc[0, "avg_total_time"] = np.mean(total_time)
-log.to_csv(save_path + ".csv")
+print(robust_radius)

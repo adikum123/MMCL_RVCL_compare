@@ -5,3 +5,6 @@ tqdm
 scikit-learn
 diffdist
 matplotlib
+appdirs
+oslo_concurrency
+pandas<=1.2.5  # Compatible version to avoid np.bool issues
