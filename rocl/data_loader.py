@@ -84,10 +84,10 @@ def get_dataset(args):
             contrastive_learning=learning_type,
         )
 
-        if learning_type == "contrastive" and "ngpu" in vars(args):
+        if learning_type == "contrastive":
             train_sampler = torch.utils.data.distributed.DistributedSampler(
                 train_dst,
-                num_replicas=args.ngpu,
+                num_replicas=1,
                 rank=args.local_rank,
             )
             train_loader = torch.utils.data.DataLoader(
@@ -196,7 +196,7 @@ def get_dataset(args):
         if learning_type == "contrastive" in vars(args):
             train_sampler = torch.utils.data.distributed.DistributedSampler(
                 train_dst,
-                num_replicas=args.ngpu,
+                num_replicas=1,
                 rank=args.local_rank,
             )
             train_loader = torch.utils.data.DataLoader(
@@ -289,7 +289,7 @@ def get_dataset(args):
         if learning_type == "contrastive":
             train_sampler = torch.utils.data.distributed.DistributedSampler(
                 train_dst,
-                num_replicas=args.ngpu,
+                num_replicas=1,
                 rank=args.local_rank,
             )
             train_loader = torch.utils.data.DataLoader(
