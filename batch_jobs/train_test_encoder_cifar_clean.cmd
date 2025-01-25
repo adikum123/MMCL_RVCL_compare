@@ -26,7 +26,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Training encoder"
     python train_encoder.py \
-        --model_save_name cifar_model_base_poly \
+        --model_save_name cifar_model_base_poly_deg_5_C_100 \
         --model cifar_model \
         --dataset cifar-10 \
         --batch_size 32 \
@@ -46,18 +46,18 @@ echo "Testing performance on linear eval"
         --num_iters 100 \
         --step_size 50 \
         --lr 1e-4 \
-        --load_checkpoint models/mmcl/cifar_model_base_poly.pkl \
+        --load_checkpoint models/mmcl/cifar_model_base_poly_deg_5_C_100.pkl \
         --adv_img \
 
     echo "Computing plots for svm margin"
     python compare_svm_margin.py \
         --mmcl_model cifar_model \
-        --mmcl_checkpoint models/mmcl/cifar_model_base_poly.pkl \
+        --mmcl_checkpoint models/mmcl/cifar_model_base_poly_deg_5_C_100.pkl \
         --rvcl_model cifar_model \
         --rvcl_checkpoint models/unsupervised/cifar10_base_adv4.pkl \
         --C 100 \
         --kernel_type poly \
-        --deegre 3 \
+        --deegre 5 \
         --class_sample_limit 1000 \
 
 EOF
