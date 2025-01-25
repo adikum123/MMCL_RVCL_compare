@@ -10,31 +10,29 @@ import numpy as np
 import pandas as pd
 import torch.nn.functional as F
 
-import mmcl.rocl.data_loader as data_loader
-from mmcl.beta_crown.auto_LiRPA import BoundedModule, BoundedTensor
-from mmcl.beta_crown.auto_LiRPA.perturbations import *
-from mmcl.beta_crown.model_beta_CROWN import LiRPAConvNet, return_modify_model
-from mmcl.beta_crown.relu_conv_parallel import relu_bab_parallel
-from mmcl.beta_crown.utils import *
-from mmcl.rocl.attack_lib import FastGradientSignUntargeted, RepresentationAdv
+import rocl.data_loader as data_loader
+from beta_crown.auto_LiRPA import BoundedModule, BoundedTensor
+from beta_crown.auto_LiRPA.perturbations import *
+from beta_crown.model_beta_CROWN import LiRPAConvNet, return_modify_model
+from beta_crown.relu_conv_parallel import relu_bab_parallel
+from beta_crown.utils import *
+from robust_radius import RobustRadius
+from rocl.attack_lib import FastGradientSignUntargeted, RepresentationAdv
 
 parser = argparse.ArgumentParser(description="unsupervised binary search")
 
 ##### arguments for CROWN #####
 parser.add_argument(
-    "--device",
-    type=str,
-    default="cuda",
-    choices=["cpu", "cuda"],
-    help="use cpu or cuda",
-)
-parser.add_argument("--gpuno", default="0", type=str)
-
-parser.add_argument(
     "--norm", type=float, default="inf", help="p norm for epsilon perturbation"
 )
 parser.add_argument(
-    "--model",
+    "--mmcl_model",
+    type=str,
+    default="cnn_4layer_b",
+    help="model name (cifar_model, cifar_model_deep, cifar_model_wide, cnn_4layer, cnn_4layer_b, mnist_cnn_4layer)",
+)
+parser.add_argument(
+    "--rvcl_model",
     type=str,
     default="cnn_4layer_b",
     help="model name (cifar_model, cifar_model_deep, cifar_model_wide, cnn_4layer, cnn_4layer_b, mnist_cnn_4layer)",
@@ -50,7 +48,10 @@ parser.add_argument(
 )
 parser.add_argument("--dataset", default="cifar-10", type=str, help="cifar-10/mnist")
 parser.add_argument(
-    "--load_checkpoint", default="", type=str, help="PATH TO CHECKPOINT"
+    "--mmcl_load_checkpoint", default="", type=str, help="PATH TO CHECKPOINT"
+)
+parser.add_argument(
+    "--rvcl_load_checkpoint", default="", type=str, help="PATH TO CHECKPOINT"
 )
 parser.add_argument("--name", default="", type=str, help="name of run")
 parser.add_argument("--seed", default=1, type=int, help="random seed")
@@ -99,7 +100,6 @@ parser.add_argument(
 parser.add_argument("--max_steps", type=int, default=200, help="max steps for search")
 
 args = parser.parse_args()
-os.environ["CUDA_VISIBLE_DEVICES"] = args.gpuno
 print_args(args)
 
 torch.manual_seed(args.seed)
@@ -111,13 +111,7 @@ img_clip = min_max_value(args)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Model
-print("==> Building model..")
-model_ori = torch.load(args.load_checkpoint, map_location=device)
-# model_ori.to(device)
-print(model_ori)
-output_size = list(model_ori.children())[-1].weight.data.shape[0]
-
+verifier = RobustRadius(hparams=args, model_type='mmcl')
 
 def generate_ver_data(loader, total, class_num, adv=True):
     count = [0 for _ in range(class_num)]
@@ -149,3 +143,25 @@ def generate_ver_data(loader, total, class_num, adv=True):
 print("==> Preparing data..")
 _, _, testloader, testdst = data_loader.get_dataset(args)
 image, label = generate_ver_data(testloader, args.ver_total, class_num=10, adv=False)
+per_class_sampler = defaultdict(list)
+
+# create per class sampler
+for idx, (image_batch, label_batch) in enumerate(testloader):
+    stop = False
+    for image, label in zip(image_batch, label_batch):
+        class_name = class_names[label]
+        if len(per_class_sampler[class_name]) < args.class_sample_limit:
+            per_class_sampler[class_name].append(image)
+            if all(
+                len(images) >= args.class_sample_limit
+                for images in per_class_sampler.values()
+            ):
+                stop = True
+            if stop:
+                break
+        if stop:
+            break
+
+sample1 = per_class_sampler[class_names[random.randint(0, 9)]][0]
+sample2 = per_class_sampler[class_names[random.randint(0, 9)]][0]
+

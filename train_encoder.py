@@ -4,7 +4,6 @@ import torch
 
 from beta_crown.utils import print_args
 from mmcl.encoder import MMCL_Encoder
-from mmcl.linear_eval import LinearEval
 
 parser = argparse.ArgumentParser(description="unsupervised verification")
 

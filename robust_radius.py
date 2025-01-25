@@ -1,6 +1,6 @@
-import torch
 import numpy as np
 import pandas as pd
+import torch
 import torch.nn.functional as F
 
 from beta_crown.auto_LiRPA import BoundedModule, BoundedTensor
@@ -16,16 +16,18 @@ class RobustRadius:
     def __init__(self, hparams, model_type=None):
         assert model_type in ['mmcl', 'rvcl']
         self.args = hparams
-        self.device = torch.device('cuda' if torch.cuda().is_available() else 'cpu')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # Model
         print('==> Building model..')
         self.model_ori = torch.load(
-            self.hparams.mmcl_load_checkpoint if model_type='mmcl' else self.hparams.rvcl_load_checkpoint
+            self.args.mmcl_load_checkpoint if model_type == 'mmcl' else self.hparams.rvcl_load_checkpoint,
+            map_location = self.device
         )
-        self.model_ori.to(self.device)
-        print(f"Built model: {model_ori}")
-        self.output_size = list(model_ori.children())[-1].weight.data.shape[0]
-        img_clip = min_max_value(args)
+        print(f"Built model: {self.model_ori}")
+        self.output_size = list(self.model_ori.children())[-1].weight.data.shape[0]
+        img_clip = min_max_value(self.args)
+        print(f"Output size: {self.output_size}, image clip: {img_clip}")
+
 
 
     def generate_attack(args, ori, target):
@@ -90,6 +92,7 @@ class RobustRadius:
                 data_ub = data_lb = data
             ptb = PerturbationLpNorm(norm=norm, eps=eps, x_L=data_lb.to(self.device), x_U=data_ub.to(self.device))
             image = BoundedTensor(data, ptb).to(self.device)
+            # indicates mode
             lb, _ = copy.deepcopy(bound_modify_net).compute_bounds(x=(image,), method='backward')
             lb = lb.item()
             print("[binary search] step = {}, current = {:.6f}, success = {}, val = {:.2f}".format(step,eps,lb > 0,lb))
@@ -102,3 +105,18 @@ class RobustRadius:
             if step >= max_steps:
                 break
         return lower, step, model
+
+    def verify(img_ori, img_target):
+        # normalize inputs
+        f_ori = F.normalize(model_ori(img_ori.to('cpu').detach()), p=2, dim=1)
+        f_target = F.normalize(model_ori(img_target.to('cpu').detach()), p=2, dim=1)
+        # find lower bound
+        verifier_lower, steps, modify_net = unsupervised_search(
+            model_ori,
+            img_ori,
+            f_ori,
+            f_target,
+            args.norm,
+            args, output_size, img_clip['max'], img_clip['min'], upper=upper_eps, lower=0.0, max_steps=args.max_steps
+        )
+        print(verifier_lower)

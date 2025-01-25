@@ -240,7 +240,7 @@ class LinearEval(nn.Module):
         return metrics
 
     def get_model_save_name(self):
-        return f"linear_{self.encoder.get_model_save_name()}.pkl
+        return f"linear_{self.encoder.get_model_save_name()}.pkl"
 
     def save(self):
         if not self.best_model_saved:
