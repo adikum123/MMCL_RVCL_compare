@@ -30,6 +30,7 @@ class MMCL_Encoder(nn.Module):
         self.model = utils.load_model_contrastive(
             args=self.hparams, weights_loaded=False
         ).to(self.device)
+        print('Loading dataset')
         if self.hparams.use_validation:
             (
                 self.trainloader,
@@ -43,6 +44,7 @@ class MMCL_Encoder(nn.Module):
             self.trainloader, self.traindst, self.testloader, self.testdst = (
                 data_loader.get_dataset(self.hparams)
             )
+        print('Dataset loaded')
         self.optimizer = optim.SGD(
             self.model.parameters(), lr=self.hparams.lr, momentum=0.9
         )
