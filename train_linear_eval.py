@@ -77,6 +77,7 @@ parser.add_argument(
     help="maximum iteration when generating adversarial examples",
 )
 parser.add_argument("--random_start", type=bool, default=True, help="True for PGD")
+parser.add_argument("--kernel_gamma", type=str, default="auto")
 
 
 args = parser.parse_args()
