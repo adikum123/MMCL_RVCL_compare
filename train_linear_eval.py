@@ -3,7 +3,6 @@ import argparse
 import torch
 
 from beta_crown.utils import print_args
-from mmcl.encoder import MMCL_Encoder
 from mmcl.linear_eval import LinearEval
 
 parser = argparse.ArgumentParser(description="unsupervised verification")
@@ -85,6 +84,7 @@ print_args(args)
 # Train model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Running on: {device}")
-model = MMCL_Encoder(hparams=args, device=device)
+encoder = torch.load(args.load_checkpoint, map_location=device)
+model = LinearEval(hparams=args, encoder=encoder, device=device)
 model.train()
 model.save()
