@@ -22,7 +22,7 @@ enroot start --mount $(pwd):/workspacesa_su  <<'EOF'
     echo "Installing dependencies from requirements.txt..."
     pip install --upgrade pip
     pip uninstall onnx
-    pip install onnx==1.9.0
+    pip install onnx==1.9.0 --force-reinstall --yes
     pip install -r requirements.txt
 
     export PYTHONPATH=$(pwd):$PYTHONPATH
