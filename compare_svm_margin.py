@@ -39,6 +39,9 @@ parser.add_argument("--batch_size", default=256, type=int, help="Batch size")
 parser.add_argument("--dataset", default="cifar-10", type=str, help="cifar-10/mnist")
 parser.add_argument("--C", type=float, default=1.0, help="C value for SVM algorithm")
 parser.add_argument("--kernel_type", default="rbf", type=str, help="Kernel Type")
+parser.add_argument(
+    "--deegre", default=3.0, type=float, help="Degree for polynomial kernel"
+)
 parser.add_argument("--seed", default=1, type=int, help="random seed")
 parser.add_argument(
     "--color_jitter_strength",
