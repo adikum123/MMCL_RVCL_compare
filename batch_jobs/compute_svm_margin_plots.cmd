@@ -21,7 +21,8 @@ echo "Starting container"
 enroot start --mount $(pwd):/workspacesa_su  <<'EOF'
     echo "Installing dependencies from requirements.txt..."
     pip install --upgrade pip
-    pip install --upgrade onnx
+    pip uninstall onnx
+    pip install onnx==1.9.0
     pip install -r requirements.txt
 
     export PYTHONPATH=$(pwd):$PYTHONPATH
