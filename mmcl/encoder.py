@@ -157,7 +157,7 @@ class MMCL_Encoder(nn.Module):
                     best_val_loss = val_loss
                     patience_counter = 0
                     print(
-                        f"Validation loss improved to {val_loss:.4e}. Saving model..."
+                        f"\nValidation loss improved to {val_loss:.4e}. Saving model..."
                     )
                     self.best_model_saved = False
                     self.save()
@@ -165,10 +165,10 @@ class MMCL_Encoder(nn.Module):
                 else:
                     patience_counter += 1
                     print(
-                        f"Validation loss did not improve. Patience: {patience_counter}/{max_patience}"
+                        f"\nValidation loss did not improve. Patience: {patience_counter}/{max_patience}"
                     )
                 if patience_counter >= max_patience:
-                    print("Early stopping triggered. Training terminated.")
+                    print("\nEarly stopping triggered. Training terminated.")
                     break
             # Scheduler step
             self.scheduler.step()
@@ -200,7 +200,7 @@ class MMCL_Encoder(nn.Module):
         plt.grid(True)
         plt.savefig(save_path)
         plt.close()
-        print(f"Loss plot saved to {save_path}")
+        print(f"\nLoss plot saved to {save_path}")
 
     def get_model_save_name(self):
         def get_train_data_desc(hparams):
