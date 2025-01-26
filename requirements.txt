@@ -1,6 +1,6 @@
 torch==1.13.1
 torchvision==0.14.1
-numpy==1.19.2
+numpy==1.18.5
 tqdm
 scikit-learn==1.0.2
 diffdist==0.1
