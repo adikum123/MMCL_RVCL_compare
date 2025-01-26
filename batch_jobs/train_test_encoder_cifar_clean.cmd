@@ -22,6 +22,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     pip install --upgrade pip
     pip uninstall -y onnx
     yes | pip install onnx==1.9.0
+    yes | pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
     pip install -r requirements.txt
 
     export PYTHONPATH=$(pwd):$PYTHONPATH
