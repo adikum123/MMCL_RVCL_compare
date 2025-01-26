@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import numpy as np
 import pandas as pd
 import torch
@@ -106,10 +108,10 @@ class RobustRadius:
                 break
         return lower, step, model
 
-    def verify(img_ori, img_target):
+    def verify(self, img_ori, img_target):
         # normalize inputs
-        f_ori = F.normalize(model_ori(img_ori.to('cpu').detach()), p=2, dim=1)
-        f_target = F.normalize(model_ori(img_target.to('cpu').detach()), p=2, dim=1)
+        f_ori = F.normalize(self.model_ori(img_ori.to('cpu').detach()), p=2, dim=1)
+        f_target = F.normalize(self.model_ori(img_target.to('cpu').detach()), p=2, dim=1)
         # find lower bound
         verifier_lower, steps, modify_net = unsupervised_search(
             model_ori,
@@ -117,6 +119,11 @@ class RobustRadius:
             f_ori,
             f_target,
             args.norm,
-            args, output_size, img_clip['max'], img_clip['min'], upper=upper_eps, lower=0.0, max_steps=args.max_steps
+            args, output_size,
+            img_clip['max'],
+            img_clip['min'],
+            upper=upper_eps,
+            lower=0.0,
+            max_steps=args.max_steps
         )
         print(verifier_lower)

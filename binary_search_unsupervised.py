@@ -5,6 +5,7 @@ import json
 import random
 import sys
 import time
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
@@ -98,6 +99,12 @@ parser.add_argument(
     "--ver_total", type=int, default=100, help="number of img to verify"
 )
 parser.add_argument("--max_steps", type=int, default=200, help="max steps for search")
+parser.add_argument(
+    "--class_sample_limit",
+    default=10,
+    type=int,
+    help="NUmber of random samples per class",
+)
 
 args = parser.parse_args()
 print_args(args)
@@ -142,11 +149,12 @@ def generate_ver_data(loader, total, class_num, adv=True):
 # Data
 print("==> Preparing data..")
 _, _, testloader, testdst = data_loader.get_dataset(args)
+class_names = testdst.classes
 image, label = generate_ver_data(testloader, args.ver_total, class_num=10, adv=False)
 per_class_sampler = defaultdict(list)
 
 # create per class sampler
-for idx, (image_batch, label_batch) in enumerate(testloader):
+for idx, (image_batch, _, _, label_batch) in enumerate(testloader):
     stop = False
     for image, label in zip(image_batch, label_batch):
         class_name = class_names[label]
@@ -164,4 +172,4 @@ for idx, (image_batch, label_batch) in enumerate(testloader):
 
 sample1 = per_class_sampler[class_names[random.randint(0, 9)]][0]
 sample2 = per_class_sampler[class_names[random.randint(0, 9)]][0]
-
+verifier.verify(sample1, sample2)

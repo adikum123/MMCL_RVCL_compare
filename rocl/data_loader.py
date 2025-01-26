@@ -322,23 +322,6 @@ def get_dataset(args):
 
 
 def get_train_val_test_dataset(args):
-    ### Color Augmentation ###
-    color_jitter = transforms.ColorJitter(
-        0.8 * args.color_jitter_strength,
-        0.8 * args.color_jitter_strength,
-        0.8 * args.color_jitter_strength,
-        0.2 * args.color_jitter_strength,
-    )
-    rnd_color_jitter = transforms.RandomApply([color_jitter], p=0.8)
-    rnd_gray = transforms.RandomGrayscale(p=0.2)
-    normalize = transforms.Normalize(
-        mean=[0.485, 0.456, 0.406], std=[0.225, 0.225, 0.225]
-    )
-
-    learning_type = args.train_type
-    if learning_type == "supervised":
-        learning_type = "linear_eval"
-
     def create_dataloader_and_split(dataset_class, transform_train, transform_test):
         dataset = dataset_class(
             root="./rocl/Data",
@@ -383,6 +366,22 @@ def get_train_val_test_dataset(args):
             test_loader,
             test_dataset,
         )
+    ### Color Augmentation ###
+    color_jitter = transforms.ColorJitter(
+        0.8 * args.color_jitter_strength,
+        0.8 * args.color_jitter_strength,
+        0.8 * args.color_jitter_strength,
+        0.2 * args.color_jitter_strength,
+    )
+    rnd_color_jitter = transforms.RandomApply([color_jitter], p=0.8)
+    rnd_gray = transforms.RandomGrayscale(p=0.2)
+    normalize = transforms.Normalize(
+        mean=[0.485, 0.456, 0.406], std=[0.225, 0.225, 0.225]
+    )
+
+    learning_type = args.train_type
+    if learning_type == "supervised":
+        learning_type = "linear_eval"
 
     if args.dataset == "mnist":
         if learning_type in ["contrastive", "linear_eval"]:

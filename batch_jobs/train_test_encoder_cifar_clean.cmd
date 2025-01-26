@@ -33,6 +33,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --kernel_type rbf \
         --num_iters 200 \
         --lr 1e-4 \
+        --use_validation \
         --step_size 50 \
         --C 100 \
 
