@@ -37,7 +37,7 @@ class LinearEval(nn.Module):
             self.testdst,
         ) = data_loader.get_train_val_test_dataset(self.hparams)
         self.optimizer = optim.SGD(
-            self.classifier.parameters(), lr=self.hparams.linear_eval_lr, momentum=0.9
+            self.classifier.parameters(), lr=self.hparams.lr, momentum=0.9
         )
         print(f"Step size: {self.hparams.step_size}")
         self.scheduler = optim.lr_scheduler.StepLR(
@@ -129,7 +129,7 @@ class LinearEval(nn.Module):
         best_val_loss = float("inf")
         patience_counter = 0
         max_patience = 5  # Number of epochs to wait before stopping
-        for epoch in range(self.hparams.linear_eval_num_iters):
+        for epoch in range(self.hparams.num_iters):
             self.classifier.train()
             total_loss, total_num = 0.0, 0
             train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch+1}")
@@ -152,7 +152,7 @@ class LinearEval(nn.Module):
                 train_bar.set_description(
                     "Train Epoch: [{}/{}] Total Loss: {:.4e}".format(
                         epoch + 1,
-                        self.hparams.linear_eval_num_iters,
+                        self.hparams.num_iters,
                         total_loss / total_num,
                     )
                 )
