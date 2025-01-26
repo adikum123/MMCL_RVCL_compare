@@ -1,3 +1,4 @@
+import copy
 from collections import defaultdict
 
 import numpy as np
@@ -5,6 +6,7 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 
+import mmcl.utils as utils
 from beta_crown.auto_LiRPA import BoundedModule, BoundedTensor
 from beta_crown.auto_LiRPA.perturbations import *
 from beta_crown.model_beta_CROWN import LiRPAConvNet, return_modify_model
@@ -21,14 +23,15 @@ class RobustRadius:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # Model
         print('==> Building model..')
-        self.model_ori = torch.load(
-            self.args.mmcl_load_checkpoint if model_type == 'mmcl' else self.hparams.rvcl_load_checkpoint,
-            map_location = self.device
+        self.model_ori = utils.load_model_contrastive_test(
+            model=self.args.mmcl_model if model_type=='mmcl' else self.args.rvcl_model,
+            model_path=self.args.mmcl_load_checkpoint if model_type=='mmcl' else self.args.rvcl_load_checkpoint,
+            device=self.device
         )
         print(f"Built model: {self.model_ori}")
         self.output_size = list(self.model_ori.children())[-1].weight.data.shape[0]
-        img_clip = min_max_value(self.args)
-        print(f"Output size: {self.output_size}, image clip: {img_clip}")
+        self.img_clip = min_max_value(self.args)
+        self.upper_eps = (torch.max(self.img_clip['max']) - torch.min(self.img_clip['min'])).item()
 
 
 
@@ -109,21 +112,27 @@ class RobustRadius:
         return lower, step, model
 
     def verify(self, img_ori, img_target):
+        img_ori = img_ori.unsqueeze(0)
+        img_target = img_target.unsqueeze(0)
         # normalize inputs
-        f_ori = F.normalize(self.model_ori(img_ori.to('cpu').detach()), p=2, dim=1)
-        f_target = F.normalize(self.model_ori(img_target.to('cpu').detach()), p=2, dim=1)
+        ori_encoding = self.model_ori(img_ori.detach())
+        target_encoding = self.model_ori(img_target.detach())
+        # normalize
+        f_ori = F.normalize(ori_encoding, p=2, dim=1)
+        f_target = F.normalize(target_encoding, p=2, dim=1)
         # find lower bound
-        verifier_lower, steps, modify_net = unsupervised_search(
-            model_ori,
+        verifier_lower, steps, modify_net = self.unsupervised_search(
+            self.model_ori,
             img_ori,
             f_ori,
             f_target,
-            args.norm,
-            args, output_size,
-            img_clip['max'],
-            img_clip['min'],
-            upper=upper_eps,
+            self.args.norm,
+            self.args,
+            self.output_size,
+            self.img_clip['max'],
+            self.img_clip['min'],
+            upper=self.upper_eps,
             lower=0.0,
-            max_steps=args.max_steps
+            max_steps=self.args.max_steps
         )
         print(verifier_lower)

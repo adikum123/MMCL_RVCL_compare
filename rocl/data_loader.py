@@ -193,30 +193,7 @@ def get_dataset(args):
             contrastive_learning=learning_type,
         )
 
-        if learning_type == "contrastive" in vars(args):
-            train_sampler = torch.utils.data.distributed.DistributedSampler(
-                train_dst,
-                num_replicas=1,
-                rank=args.local_rank,
-            )
-            train_loader = torch.utils.data.DataLoader(
-                train_dst,
-                batch_size=args.batch_size,
-                num_workers=4,
-                pin_memory=False,
-                shuffle=True,
-                sampler=train_sampler,
-            )
-            val_loader = torch.utils.data.DataLoader(
-                val_dst,
-                batch_size=args.batch_size,
-                num_workers=4,
-                pin_memory=False,
-                shuffle=True,
-            )
-            return train_loader, train_dst, val_loader, val_dst, train_sampler
-
-        else:
+        if learning_type == "contrastive":
             train_loader = torch.utils.data.DataLoader(
                 train_dst, batch_size=args.batch_size, shuffle=True, num_workers=4
             )
@@ -319,6 +296,7 @@ def get_dataset(args):
             )
 
             return train_loader, train_dst, val_loader, val_dst
+
 
 
 def get_train_val_test_dataset(args):

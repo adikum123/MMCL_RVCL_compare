@@ -62,7 +62,7 @@ parser.add_argument(
     "--color_jitter_strength",
     default=0.5,
     type=float,
-    help="0.5 for CIFAR, 1.0 for ImageNet",
+    help="0.5 for CIFAR, 1.0 for ImageNet"
 )
 parser.add_argument(
     "--temperature", default=0.5, type=float, help="temperature for pairwise-similarity"
@@ -118,39 +118,13 @@ img_clip = min_max_value(args)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-verifier = RobustRadius(hparams=args, model_type='mmcl')
-
-def generate_ver_data(loader, total, class_num, adv=True):
-    count = [0 for _ in range(class_num)]
-    per_class = total // class_num
-    data_loader = iter(loader)
-    ans_image = []
-    if adv:
-        adv_target = []
-        adv_eps = []
-    ans_label = []
-    while sum(count) < total:
-        (ori, aug_img, _, label) = next(data_loader)
-        i = int(label)
-        if count[i] < per_class:
-            ans_image.append(ori)
-            ans_label.append(i)
-            if adv:
-                i1, i2 = generate_attack(args, ori, aug_img)
-                adv_target.append(i1)
-                adv_eps.append(i2)
-            count[i] += 1
-    if adv:
-        return ans_image, adv_target, adv_eps, ans_label
-    else:
-        return ans_image, ans_label
-
+mmcl_verifier = RobustRadius(hparams=args, model_type='mmcl')
+rvcl_verifier = RobustRadius(hparams=args, model_type='mmcl')
 
 # Data
 print("==> Preparing data..")
 _, _, testloader, testdst = data_loader.get_dataset(args)
 class_names = testdst.classes
-image, label = generate_ver_data(testloader, args.ver_total, class_num=10, adv=False)
 per_class_sampler = defaultdict(list)
 
 # create per class sampler
@@ -170,6 +144,7 @@ for idx, (image_batch, _, _, label_batch) in enumerate(testloader):
         if stop:
             break
 
-sample1 = per_class_sampler[class_names[random.randint(0, 9)]][0]
-sample2 = per_class_sampler[class_names[random.randint(0, 9)]][0]
-verifier.verify(sample1, sample2)
+for class_name in per_class_sampler:
+    for ori_image in per_class_sampler[class_name]:
+        target_images = [v for k,v in per_class_sampler.items() if v != class_name]
+            for target_images in target_images:

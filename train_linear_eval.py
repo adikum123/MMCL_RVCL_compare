@@ -29,7 +29,7 @@ parser.add_argument(
     help="Use validation set and stopping criteria",
 )
 parser.add_argument(
-    "--_num_iters", default=100, type=int, help="Num iters - PGD Solver"
+    "--num_iters", default=100, type=int, help="Num iters - PGD Solver"
 )
 
 # data params
