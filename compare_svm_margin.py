@@ -58,7 +58,7 @@ args = parser.parse_args()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # load test dataset
-_, _, testloader, testdst = data_loader.get_dataset(args)
+_, _, _, _, testloader, testdst = data_loader.get_train_val_test_dataset(args)
 print(testloader)
 print(testdst)
 class_names = testdst.classes
