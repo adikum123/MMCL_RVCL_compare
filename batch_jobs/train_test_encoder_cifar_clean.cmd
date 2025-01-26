@@ -31,7 +31,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --model_save_name cifar_model_base_rbf_C_100 \
         --model cifar_model \
         --dataset cifar-10 \
-        --batch_size 64 \
+        --batch_size 32 \
         --kernel_type rbf \
         --num_iters 200 \
         --lr 1e-4 \
