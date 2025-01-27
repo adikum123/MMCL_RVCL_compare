@@ -45,6 +45,12 @@ parser.add_argument(
     type=float,
     help="learning rate for linear eval on top of MMCL encoder",
 )
+parser.add_argument(
+    "--model",
+    type=str,
+    default="cnn_4layer_b",
+    help="model name (cifar_model, cifar_model_deep, cifar_model_wide, cnn_4layer, cnn_4layer_b, mnist_cnn_4layer)",
+)
 parser.add_argument("--step_size", default=30, type=int, help="scheduler step size")
 parser.add_argument("--scheduler_gamma", type=float, default=0.1)
 ##### arguments for RoCL Linear eval #####

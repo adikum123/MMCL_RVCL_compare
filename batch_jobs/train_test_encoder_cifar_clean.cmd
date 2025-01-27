@@ -47,6 +47,7 @@ echo "Testing performance on linear eval"
         --num_iters 100 \
         --step_size 30 \
         --lr 1e-4 \
+        --model cifar_model \
         --load_checkpoint models/mmcl/cifar_model_base_rbf_C_100.pkl \
         --adv_img \
 

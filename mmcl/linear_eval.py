@@ -78,7 +78,7 @@ class LinearEval(nn.Module):
                 device=self.device,
                 _type=self.hparams.attack_type,
             )
-        best_model_saved = False
+        self.best_model_saved = False
 
     def forward(self, x):
         with torch.no_grad():
@@ -201,7 +201,7 @@ class LinearEval(nn.Module):
             }
         # load best saved model as the classifier
         if self.hparams.use_validation:
-            self.classifier = torch.load(os.path.join("models/linear", self.get_model_save_name()+".pkl"), map_location=self.device)
+            self.classifier = torch.load(os.path.join("models/linear_evaluate", self.get_model_save_name()), map_location=self.device)
 
     def test(self):
         """Evaluate the model on the test dataset."""
@@ -241,9 +241,9 @@ class LinearEval(nn.Module):
         return metrics
 
     def get_model_save_name(self):
-        return f"linear_{self.encoder.get_model_save_name()}.pkl"
+        return f"linear_{self.hparams.load_checkpoint.split('/')[-1]}"
 
     def save(self):
         if not self.best_model_saved:
-            save_path = os.path.join("models/linear", self.get_model_save_name())
+            save_path = os.path.join("models/linear_evaluate", self.get_model_save_name())
             torch.save(self.classifier, save_path)

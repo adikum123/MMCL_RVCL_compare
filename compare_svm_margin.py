@@ -141,7 +141,7 @@ def calculate_bins(data, bin_width=10):
 
 
 # save all plots
-save_dir = f"plots/svm_margin/mmcl:{args.mmcl_model}_rvcl:{args.rvcl_model}"
+save_dir = f"plots/svm_margin/mmcl:{args.mmcl_model}_rvcl:{args.rvcl_model}_kernel_type:{args.kernel_type}_C:{args.C}"
 os.makedirs(save_dir, exist_ok=True)
 # Loop through classes
 for class_name in tqdm(class_names):
@@ -150,7 +150,7 @@ for class_name in tqdm(class_names):
     # compute histogram data
     min_value = min(mmcl_values + rvcl_values)
     max_value = max(mmcl_values + rvcl_values)
-    bins = np.linspace(min_value, max_value, 100)
+    bins = np.linspace(min_value, max_value, 500)
     # Create and save plot
     plt.figure()
     plt.hist([mmcl_values, rvcl_values], bins, label=["MMCL", "RVCL"])

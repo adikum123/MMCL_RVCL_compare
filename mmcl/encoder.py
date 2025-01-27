@@ -19,19 +19,21 @@ class MMCL_Encoder(nn.Module):
     def __init__(self, hparams, device):
         super(MMCL_Encoder, self).__init__()
         self.hparams = hparams
-        self.crit = MMCL_pgd(
-            sigma=self.hparams.kernel_gamma,
-            batch_size=self.hparams.batch_size,
-            anchor_count=2,
-            C=self.hparams.C,
-            solver_type=self.hparams.solver_type,
-            use_norm=self.hparams.use_norm,
-            device=device,
-            kernel=self.hparams.kernel_type,
-            eta=self.hparams.svm_lr,
-        )
+        ckpt_provided = ('load_checkpoint' in vars(self.hparams) and self.hparams.load_checkpoint) or ('mmcl_checkpoint' in vars(self.hparams) and self.hparams.mmcl_checkpoint)
+        if not ckpt_provided:
+            self.crit = MMCL_pgd(
+                sigma=self.hparams.kernel_gamma,
+                batch_size=self.hparams.batch_size,
+                anchor_count=2,
+                C=self.hparams.C,
+                solver_type=self.hparams.solver_type,
+                use_norm=self.hparams.use_norm,
+                device=device,
+                kernel=self.hparams.kernel_type,
+                eta=self.hparams.svm_lr,
+            )
         self.device = device
-        if 'load_checkpoint' in vars(self.hparams) or 'mmcl_checkpoint' in vars(self.hparams):
+        if ckpt_provided:
             ckpt = self.hparams.load_checkpoint if 'load_checkpoint' in vars(self.hparams) else self.hparams.mmcl_checkpoint
             self.model = utils.load_model_contrastive_test(model=self.hparams.model, model_path=ckpt, device=device)
         else:
