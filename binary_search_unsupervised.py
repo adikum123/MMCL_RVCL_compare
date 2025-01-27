@@ -49,7 +49,7 @@ parser.add_argument(
 )
 parser.add_argument("--dataset", default="cifar-10", type=str, help="cifar-10/mnist")
 parser.add_argument(
-    "--mmcl_load_checkpoint", default="", type=str, help="PATH TO CHECKPOINT"
+    "--mmcl_checkpoint", default="", type=str, help="PATH TO CHECKPOINT"
 )
 parser.add_argument(
     "--rvcl_load_checkpoint", default="", type=str, help="PATH TO CHECKPOINT"

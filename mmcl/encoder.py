@@ -31,9 +31,13 @@ class MMCL_Encoder(nn.Module):
             eta=self.hparams.svm_lr,
         )
         self.device = device
-        self.model = utils.load_model_contrastive(
-            args=self.hparams, weights_loaded=False
-        ).to(self.device)
+        if 'load_checkpoint' in vars(self.hparams) or 'mmcl_checkpoint' in vars(self.hparams):
+            ckpt = self.hparams.load_checkpoint if 'load_checkpoint' in vars(self.hparams) else self.hparams.mmcl_checkpoint
+            self.model = utils.load_model_contrastive_test(model=self.hparams.model, model_path=ckpt, device=device)
+        else:
+            self.model = utils.load_model_contrastive(
+                args=self.hparams, weights_loaded=False
+            ).to(self.device)
         print('Loading dataset')
         if self.hparams.use_validation:
             (
