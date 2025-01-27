@@ -62,8 +62,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # load test dataset
 _, _, _, _, testloader, testdst = data_loader.get_train_val_test_dataset(args)
-print(testloader)
-print(testdst)
 class_names = testdst.classes
 print("Class names:", class_names)
 per_class_sampler = defaultdict(list)
@@ -103,13 +101,13 @@ for class_name in class_names:
         # Select one random image as positive and other images as negatives
         positive = item
         negatives = [
-            image
+            image.to(device)
             for k, v in per_class_sampler.items()
             for image in v
             if k != class_name
         ]
         # Add batch dimension to positive
-        positive = positive.unsqueeze(0)  # Shape: [1, 3, 32, 32]
+        positive = positive.unsqueeze(0).to(device)  # Shape: [1, 3, 32, 32]
         # Compute MMCL margin
         mmcl_positive_encoding = mmcl_model(positive)
         mmcl_negative_encodings = torch.stack(
