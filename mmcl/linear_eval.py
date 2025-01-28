@@ -247,5 +247,5 @@ class LinearEval(nn.Module):
         if not self.best_model_saved:
             save_dir = "models/linear_evaluate"
             os.makedirs(save_dir, exist_ok=True)
-            save_path = os.path.join(save_dirz, self.get_model_save_name())
+            save_path = os.path.join(save_dir, self.get_model_save_name())
             torch.save(self.classifier, save_path)
