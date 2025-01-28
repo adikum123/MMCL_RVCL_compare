@@ -231,5 +231,7 @@ class MMCL_Encoder(nn.Module):
 
     def save(self):
         if not self.best_model_saved:
-            save_path = os.path.join("models/mmcl", self.get_model_save_name() + ".pkl")
+            save_dir = 'models/mmcl'
+            os.makedirs(save_dir, exist_ok=True)
+            save_path = os.path.join(save_dir, self.get_model_save_name() + ".pkl")
             torch.save(self.model, save_path)
