@@ -34,7 +34,8 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --batch_size 32 \
         --kernel_type rbf \
         --num_iters 200 \
-        --lr 1e-5 \
+        --lr 1e-6 \
+        --kernel_gamma 0.1 \
         --use_validation \
         --step_size 50 \
         --C 100 \
@@ -60,6 +61,7 @@ echo "Testing performance on linear eval"
         --dataset cifar-10 \
         --C 100 \
         --kernel_type rbf \
+        --kernel_gamma 0.1 \
         --class_sample_limit 1000 \
 
 EOF
