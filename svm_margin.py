@@ -21,7 +21,7 @@ def compute_margin(positive, negatives, args):
     svm_params = {
         "C": args.C,
         "kernel": args.kernel_type,
-        "gamma": getattr(args, "gamma", "scale"),
+        "gamma": getattr(args, "kernel_gamma", "scale"),
         "degree": getattr(args, "degree", 3),
         "coef0": getattr(args, "coef0", 0.0),
     }
