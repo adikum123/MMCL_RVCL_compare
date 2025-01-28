@@ -14,6 +14,8 @@ def compute_kernel(X, Y, gamma=0.1, kernel_type="rbf", degree=3.0):
     elif kernel_type == "rbf":
         if gamma == "auto":
             gamma = 1.0 / X.shape[-1]
+        else:
+            gamma = float(gamma)
         X_norm = torch.sum(X**2, dim=1, keepdim=True)
         Y_norm = torch.sum(Y**2, dim=1, keepdim=True).T
         distances = X_norm + Y_norm - 2 * torch.mm(X, Y.T)
