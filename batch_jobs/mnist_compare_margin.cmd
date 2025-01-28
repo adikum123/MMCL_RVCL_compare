@@ -27,7 +27,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
 
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Training encoder"
-    python train_test_encoder.py \
+    python train_encoder.py \
         --model_save_name mnist_model_base_rbf_C_100 \
         --model mnist_model_base \
         --dataset mnist \

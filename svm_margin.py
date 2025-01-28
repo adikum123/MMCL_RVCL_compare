@@ -7,39 +7,40 @@ from sklearn.svm import SVC
 
 
 def compute_margin(positive, negatives, args):
+    # Stack positive and negative samples
     X = np.vstack(
         (
-            positive.detach().numpy(),
-            np.array([neg.detach().numpy() for neg in negatives.squeeze(1)]),
+            positive.detach().cpu().numpy(),
+            np.array([neg.detach().cpu().numpy() for neg in negatives]),
         )
     )
-    Y = np.vstack((np.ones((1, 1)), -np.ones((len(negatives), 1))))
+    # Create labels (1 for positive, -1 for negatives)
+    Y = np.hstack((np.ones(1), -np.ones(len(negatives))))
+
     # Extract SVM parameters from args
     svm_params = {
         "C": args.C,
         "kernel": args.kernel_type,
-        "gamma": getattr(
-            args, "gamma", "scale"
-        ),  # Default to 'scale' if gamma not specified
-        "degree": getattr(args, "degree", 3),  # Default to 3 if degree not specified
-        "coef0": getattr(args, "coef0", 0.0),  # Default to 0.0 if coef0 not specified
+        "gamma": getattr(args, "gamma", "scale"),
+        "degree": getattr(args, "degree", 3),
+        "coef0": getattr(args, "coef0", 0.0),
     }
-    # Train SVM using the extracted parameters
+
+    # Train SVM
     model = SVC(**svm_params)
-    model.fit(X, Y.ravel())
+    model.fit(X, Y)
+
     # Extract support vectors and dual coefficients
     support_vectors = model.support_vectors_
     dual_coefs = model.dual_coef_[0]
-    # Extract kernel parameters based on the kernel type
+
+    # Compute kernel parameters
     kernel_type = svm_params["kernel"]
     if kernel_type == "rbf":
-        # Compute numeric value for gamma if it is 'scale' or 'auto'
         if svm_params["gamma"] == "scale":
-            svm_params["gamma"] = 1 / (
-                X.shape[1] * X.var()
-            )  # scale: 1 / (n_features * variance of X)
+            svm_params["gamma"] = 1 / (X.shape[1] * X.var())
         elif svm_params["gamma"] == "auto":
-            svm_params["gamma"] = 1 / X.shape[1]  # auto: 1 / n_features
+            svm_params["gamma"] = 1 / X.shape[1]
         else:
             svm_params["gamma"] = float(svm_params["gamma"])
         kernel_params = {"gamma": svm_params["gamma"]}
@@ -53,12 +54,12 @@ def compute_margin(positive, negatives, args):
         kernel_params = {}
     else:
         raise ValueError(f"Unsupported kernel type: {kernel_type}")
-    # Compute the kernel matrix
-    kernel_matrix = pairwise_kernels(
-        X=support_vectors,
-        metric=kernel_type,
-        **kernel_params,
-    )
+
+    # Compute kernel matrix
+    kernel_matrix = pairwise_kernels(X=support_vectors, metric=kernel_type, **kernel_params)
+
+    # Compute ||w||^2
     w_norm_sq = np.dot(np.dot(dual_coefs, kernel_matrix), dual_coefs.T)
+
     # Return the margin (2 / ||w||)
     return 2 / math.sqrt(w_norm_sq) if w_norm_sq > 0 else w_norm_sq
