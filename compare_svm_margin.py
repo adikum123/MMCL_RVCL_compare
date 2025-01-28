@@ -55,6 +55,8 @@ parser.add_argument(
     type=int,
     help="NUmber of random samples per class",
 )
+parser.add_argument("--kernel_gamma", type=str, default="auto")
+
 
 args = parser.parse_args()
 
