@@ -60,6 +60,9 @@ parser.add_argument("--kernel_gamma", type=str, default="auto")
 
 args = parser.parse_args()
 
+if args.kernel_gamma not in {'scale', 'auto'}:
+    args.kernel_gamma = float(args.kernel_gamma)
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # load test dataset
