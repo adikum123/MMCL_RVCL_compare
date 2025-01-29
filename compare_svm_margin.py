@@ -144,7 +144,7 @@ def calculate_bins(data, bin_width=10):
 
 
 # save all plots
-save_dir = f"plots/svm_margin/mmcl:{args.mmcl_model}_rvcl:{args.rvcl_model}_kernel_type:{args.kernel_type}_C:{args.C}"
+save_dir = f"plots/svm_margin/mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_kernel_type_{args.kernel_type}_C_{args.C}"
 os.makedirs(save_dir, exist_ok=True)
 # Loop through classes
 for class_name in tqdm(class_names):
