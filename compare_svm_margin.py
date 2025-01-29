@@ -136,15 +136,13 @@ for class_name in class_names:
         margins[class_name].append({"mmcl": mmcl_margin, "rvcl": rvcl_margin})
 
 
-# Dynamic bin calculation function
-def calculate_bins(data, bin_width=10):
-    """Calculate the number of bins based on data range and bin width."""
-    data_range = max(data) - min(data)
-    return max(int(data_range / bin_width), 1)  # Ensure at least 1 bin
-
 
 # save all plots
 save_dir = f"plots/svm_margin/mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_kernel_type_{args.kernel_type}_C_{args.C}"
+if args.kernel_type == 'rbf':
+    save_dir += f"_gamma_{args.kernel_gamma}"
+elif args.kernel_type == 'poly':
+    save_dir += f"_deegre_{args.deegre}"
 os.makedirs(save_dir, exist_ok=True)
 # Loop through classes
 for class_name in tqdm(class_names):
