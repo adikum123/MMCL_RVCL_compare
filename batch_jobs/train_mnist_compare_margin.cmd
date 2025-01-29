@@ -33,7 +33,6 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --dataset mnist \
         --batch_size 32 \
         --kernel_type rbf \
-        --kernel_gamma 0.1 \
         --num_iters 200 \
         --use_validation \
         --lr 1e-6 \
@@ -61,7 +60,6 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --dataset mnist \
         --C 100 \
         --kernel_type rbf \
-        --kernel_gamma 0.1 \
         --class_sample_limit 1000 \
 
     echo "Script completed."
