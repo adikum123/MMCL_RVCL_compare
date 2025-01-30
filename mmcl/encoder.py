@@ -55,7 +55,7 @@ class MMCL_Encoder(nn.Module):
                 data_loader.get_dataset(self.hparams)
             )
         print('Dataset loaded')
-        self.optimizer = optim.SGD(
+        self.optimizer = optim.Adam(
             self.model.parameters(), lr=self.hparams.lr, momentum=0.9
         )
         self.scheduler = optim.lr_scheduler.StepLR(
