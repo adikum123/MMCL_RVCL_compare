@@ -36,8 +36,8 @@ class LinearEval(nn.Module):
             self.testloader,
             self.testdst,
         ) = data_loader.get_train_val_test_dataset(self.hparams)
-        self.optimizer = optim.SGD(
-            self.classifier.parameters(), lr=self.hparams.lr, momentum=0.9
+        self.optimizer = optim.Adam(
+            self.classifier.parameters(), lr=self.hparams.lr
         )
         print(f"Step size: {self.hparams.step_size}")
         self.scheduler = optim.lr_scheduler.StepLR(
