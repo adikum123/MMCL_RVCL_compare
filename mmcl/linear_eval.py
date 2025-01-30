@@ -129,80 +129,100 @@ class LinearEval(nn.Module):
         best_val_loss = float("inf")
         patience_counter = 0
         max_patience = 5  # Number of epochs to wait before stopping
+
+        train_losses = []
+        val_losses = []
+
         for epoch in range(self.hparams.num_iters):
-            self.classifier.train()
+            # Training Phase
+            self.classifier.train()  # Set the classifier to training mode
             total_loss, total_num = 0.0, 0
-            train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch+1}")
+            train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch + 1}")
+
             for i, (ori_image, input1, input2, targets) in enumerate(train_bar):
                 total_inputs, total_targets = self.get_total_inputs_and_targets(
                     ori_image, input1, input2, targets
                 )
-                # Forward pass
+
+                # Forward pass through the model
                 logits = self.forward(x=total_inputs)
                 loss = self.criterion(logits, total_targets)
-                # Backpropagation and optimizer step
-                self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
+
                 # Update metrics
                 batch_size = total_inputs.size(0)
                 total_num += batch_size
                 total_loss += loss.item() * batch_size
-                # log metrics for specific batch
+
+                # Update progress bar description
                 train_bar.set_description(
-                    "Train Epoch: [{}/{}] Total Loss: {:.4e}".format(
+                    "Train Epoch: [{}/{}] Running Loss: {:.4e}".format(
                         epoch + 1,
                         self.hparams.num_iters,
                         total_loss / total_num,
                     )
                 )
+
+            # Compute final training loss for the epoch
+            train_loss = total_loss / total_num
+            train_losses.append(train_loss)
+
             val_loss = None
             if self.hparams.use_validation:
-                val_bar = tqdm(self.valloader, desc=f"Epoch {epoch+1}")
-                self.encoder.set_eval()
+                val_bar = tqdm(self.valloader, desc=f"Epoch {epoch + 1}")
+                self.encoder.set_eval()  # Set encoder to evaluation mode
                 val_loss, val_num = 0.0, 0
+
                 with torch.no_grad():
                     for i, (ori_image, input1, input2, targets) in enumerate(val_bar):
                         total_inputs, total_targets = self.get_total_inputs_and_targets(
                             ori_image, input1, input2, targets
                         )
-                        # Compute val loss
+
+                        # Compute validation loss
                         logits = self.forward(x=total_inputs)
                         loss = self.criterion(logits, total_targets)
                         batch_size = input1.size(0)
                         val_num += batch_size
                         val_loss += loss.item() * batch_size
+
                     val_loss /= val_num
-                self.scheduler.step()
+                    val_losses.append(val_loss)
+
                 # Early Stopping Check
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
                     patience_counter = 0
-                    print(
-                        f"Validation loss improved to {val_loss:.4e}. Saving model..."
-                    )
+                    print(f"Validation loss improved to {val_loss:.4e}. Saving model...")
                     self.best_model_saved = False
                     self.save()
                     self.best_model_saved = True
                 else:
                     patience_counter += 1
-                    print(
-                        f"Validation loss did not improve. Patience: {patience_counter}/{max_patience}"
-                    )
+                    print(f"Validation loss did not improve. Patience: {patience_counter}/{max_patience}")
 
                 if patience_counter >= max_patience:
                     print("Early stopping triggered. Training terminated.")
                     break
+
+            # Backpropagation after full training phase
+            self.optimizer.zero_grad()
+            total_loss.backward()
+            self.optimizer.step()
+
+            # Scheduler step
+            self.scheduler.step()
+
+            # Logging metrics
             metrics = {
-                "total_train_loss": total_loss / total_num,
+                "total_train_loss": train_loss,
                 "total_val_loss": val_loss,
                 "epoch": epoch + 1,
                 "lr": self.get_lr(),
             }
-        # load best saved model as the classifier
+
+        # Load best saved model as the classifier
         if self.hparams.use_validation:
             self.classifier = torch.load(os.path.join("models/linear_evaluate", self.get_model_save_name()), map_location=self.device)
-
     def test(self):
         """Evaluate the model on the test dataset."""
         self.classifier.eval()

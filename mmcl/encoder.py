@@ -104,9 +104,6 @@ class MMCL_Encoder(nn.Module):
 
                 # Compute loss
                 loss, _, _, _, _, _ = self.crit(features)
-                self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
 
                 # Update metrics
                 batch_size = pos_1.size(0)
@@ -176,6 +173,10 @@ class MMCL_Encoder(nn.Module):
                 if patience_counter >= max_patience:
                     print("\nEarly stopping triggered. Training terminated.")
                     break
+            # Backpropagation after full training phase
+            self.optimizer.zero_grad()
+            total_loss.backward()
+            self.optimizer.step()
             # Scheduler step
             self.scheduler.step()
             # Logging metrics
