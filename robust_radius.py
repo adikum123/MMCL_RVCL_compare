@@ -120,8 +120,6 @@ class RobustRadius:
         # normalize
         f_ori = F.normalize(ori_encoding, p=2, dim=1)
         f_target = F.normalize(target_encoding, p=2, dim=1)
-        img_ori = img_ori.to('cpu')
-        img_target = img_target.to('cpu')
         # find lower bound
         verifier_lower, _, _ = self.unsupervised_search(
             self.model_ori,

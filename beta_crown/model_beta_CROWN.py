@@ -7,35 +7,48 @@ from .auto_LiRPA import BoundedModule, BoundedTensor
 from .auto_LiRPA.bound_ops import BoundRelu
 from .auto_LiRPA.perturbations import *
 from .modules import Flatten
-import copy
 
 
 def simplify_network(all_layers):
     """
     Given a sequence of Pytorch nn.Module `all_layers`,
     representing a feed-forward neural network,
-    merge the layers when two sucessive modules are nn.Linear
-    and can therefore be equivalenty computed as a single nn.Linear
+    merge the layers when two successive modules are nn.Linear
+    and can therefore be equivalently computed as a single nn.Linear.
     """
-    new_all_layers = [all_layers[0]]
+    if not all_layers:
+        return all_layers
+
+    # Detect the device of the first layer and ensure all layers are on the same device
+    device = next(all_layers[0].parameters()).device
+
+    new_all_layers = [all_layers[0].to(device)]
     for layer in all_layers[1:]:
-        if (type(layer) is nn.Linear) and (type(new_all_layers[-1]) is nn.Linear):
+        layer = layer.to(device)  # Move each layer to the detected device
+
+        if isinstance(layer, nn.Linear) and isinstance(new_all_layers[-1], nn.Linear):
             # We can fold together those two layers
             prev_layer = new_all_layers.pop()
 
-            joint_weight = torch.mm(layer.weight.data, prev_layer.weight.data)
+            # Ensure all tensors are on the same device
+            joint_weight = torch.mm(layer.weight.to(device), prev_layer.weight.to(device))
+
             if prev_layer.bias is not None:
-                joint_bias = layer.bias.data + torch.mv(layer.weight.data, prev_layer.bias.data)
+                joint_bias = layer.bias.to(device) + torch.mv(layer.weight.to(device), prev_layer.bias.to(device))
             else:
-                joint_bias = layer.bias.data
+                joint_bias = layer.bias.to(device)
 
             joint_out_features = layer.out_features
             joint_in_features = prev_layer.in_features
 
-            joint_layer = nn.Linear(joint_in_features, joint_out_features)
+            joint_layer = nn.Linear(joint_in_features, joint_out_features).to(device)
             joint_layer.bias.data.copy_(joint_bias)
             joint_layer.weight.data.copy_(joint_weight)
+
             new_all_layers.append(joint_layer)
+        else:
+            new_all_layers.append(layer)
+
     return new_all_layers
 
 
