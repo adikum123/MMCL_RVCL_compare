@@ -112,8 +112,8 @@ class RobustRadius:
         return lower, step, model
 
     def verify(self, img_ori, img_target):
-        img_ori = img_ori.unsqueeze(0).to(self.device)
-        img_target = img_target.unsqueeze(0).to(self.device)
+        img_ori = img_ori.unsqueeze(0).to('cpu')
+        img_target = img_target.unsqueeze(0).to('cpu')
         # normalize inputs
         ori_encoding = self.model_ori(img_ori.detach())
         target_encoding = self.model_ori(img_target.detach())
