@@ -20,7 +20,7 @@ class RobustRadius:
     def __init__(self, hparams, model_type=None):
         assert model_type in ['mmcl', 'rvcl']
         self.args = hparams
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cpu')
         # Model
         print('==> Building model..')
         self.model_ori = utils.load_model_contrastive_test(
