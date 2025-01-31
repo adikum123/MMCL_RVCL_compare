@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -p lrz-hgx-h100-92x4
 #SBATCH --gres=gpu:1
-#SBATCH --time=5:00:00
+#SBATCH --time=3:00:00
 #SBATCH -o outs/robust_radius_100k.out
 #SBATCH -e outs/robust_radius_100k.out
 
@@ -32,6 +32,6 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --rvcl_model cifar_model_base \
         --rvcl_checkpoint models/unsupervised/cifar10_base_adv4.pkl \
         --dataset cifar-10 \
-        --sample_limit 30 \
+        --class_sample_limit 50 \
 
 EOF

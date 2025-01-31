@@ -106,7 +106,7 @@ class MMCL_Encoder(nn.Module):
                 loss, _, _, _, _, _ = self.crit(features)
                 # Backpropagation after full training phase
                 self.optimizer.zero_grad()
-                total_loss.backward()
+                loss.backward()
                 self.optimizer.step()
 
                 # Update metrics

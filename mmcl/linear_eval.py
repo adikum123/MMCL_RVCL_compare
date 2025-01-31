@@ -149,7 +149,7 @@ class LinearEval(nn.Module):
                 loss = self.criterion(logits, total_targets)
                 # Backpropagation after full training phase
                 self.optimizer.zero_grad()
-                total_loss.backward()
+                loss.backward()
                 self.optimizer.step()
 
                 # Update metrics

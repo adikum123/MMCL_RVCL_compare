@@ -62,7 +62,7 @@ parser.add_argument('--loss_type', type=str, default='mse', help='loss type for 
 ##### arguments for binary_search #####
 parser.add_argument('--mini_batch', type=int, default=10, help='mini batch for PGD')
 parser.add_argument('--max_steps', type=int, default=200, help='max steps for search')
-parser.add_argument("--class_sample_limit", type=int, default=1000, help='max number of items to compare')
+parser.add_argument("--class_sample_limit", type=int, default=10, help='max number of items to compare')
 
 args = parser.parse_args()
 
