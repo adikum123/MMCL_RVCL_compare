@@ -121,7 +121,7 @@ class RobustRadius:
         f_ori = F.normalize(ori_encoding, p=2, dim=1)
         f_target = F.normalize(target_encoding, p=2, dim=1)
         # find lower bound
-        verifier_lower, steps, modify_net = self.unsupervised_search(
+        verifier_lower, _, _ = self.unsupervised_search(
             self.model_ori,
             img_ori,
             f_ori,
@@ -135,4 +135,4 @@ class RobustRadius:
             lower=0.0,
             max_steps=self.args.max_steps
         )
-        print(verifier_lower)
+        return verifier_lower

@@ -2,12 +2,16 @@ import argparse
 import copy
 import gc
 import json
+import os
 import random
 import sys
 import time
+from collections import defaultdict
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 
@@ -58,10 +62,9 @@ parser.add_argument('--loss_type', type=str, default='mse', help='loss type for 
 ##### arguments for binary_search #####
 parser.add_argument('--mini_batch', type=int, default=10, help='mini batch for PGD')
 parser.add_argument('--max_steps', type=int, default=200, help='max steps for search')
-parser.add_argument("--sample_limit", type=int, default=1000, help='max number of items to compare')
+parser.add_argument("--class_sample_limit", type=int, default=1000, help='max number of items to compare')
 
 args = parser.parse_args()
-print_args(args)
 
 # add random seed
 torch.manual_seed(args.seed)
@@ -70,7 +73,7 @@ random.seed(args.seed)
 np.random.seed(args.seed)
 
 # get data
-_, _, _, _, testdst, testloader = data_loader.get_train_val_test_dataset(args=args)
+_, _, _, _, testloader, testdst = data_loader.get_train_val_test_dataset(args=args)
 
 # creating verifiers
 mmcl_verifier = RobustRadius(hparams=args, model_type='mmcl')
@@ -79,14 +82,13 @@ rvcl_verifier = RobustRadius(hparams=args, model_type='mmcl')
 # creating data
 class_names = testdst.classes
 per_class_sampler = defaultdict(list)
-class_sample_limit = args.sample_limit // len(class_names)
 
 # create per class sampler
 for idx, (image_batch, _, _, label_batch) in enumerate(testloader):
     stop = False
     for image, label in zip(image_batch, label_batch):
         class_name = class_names[label]
-        if len(per_class_sampler[class_name]) < class_sample_limit:
+        if len(per_class_sampler[class_name]) < args.class_sample_limit:
             per_class_sampler[class_name].append(image)
             if all(
                 len(images) >= args.class_sample_limit
@@ -101,36 +103,76 @@ for idx, (image_batch, _, _, label_batch) in enumerate(testloader):
 result_storage = {}
 
 def compute_radius_and_update_storage(verifier, ori_image, target_image):
-    if (verifier, ori_image, target_image) in result_storage:
-        return result_storage[(verifier, ori_image, target_image)]
-    if (verifier, target_image, ori_image) in result_storage:
-        return result_storage[(verifier, target_image, ori_image)]
+    key = (
+        verifier,
+        tuple(ori_image.cpu().numpy().flatten()),
+        tuple(target_image.cpu().numpy().flatten())
+    )
+    reverse_key = (
+        verifier,
+        tuple(target_image.cpu().numpy().flatten()),
+        tuple(ori_image.cpu().numpy().flatten())
+    )
+    # Check if result already exists in storage
+    if key in result_storage:
+        return result_storage[key]
+    if reverse_key in result_storage:
+        return result_storage[reverse_key]
+    # Compute the robust radius
     curr_radius = verifier.verify(ori_image, target_image)
-    result_storage[(verifier, ori_image, target_image)] = curr_radius
-    result_storage[(verifier, target_image, ori_image)] = curr_radius
+    print(f"Computed robust radius: {curr_radius}")
+    # Store the computed result
+    result_storage[key] = curr_radius
+    result_storage[reverse_key] = curr_radius  # Store for both orderings
     return curr_radius
 
 # for each sample in class we compute the average radius
 average_robust_radius = defaultdict(list)
 for class_name in per_class_sampler:
     for ori_image in per_class_sampler[class_name]:
-        target_images = [v for k,v in per_class_sampler.items() if v != class_name]
+        target_images = [image for k, v in per_class_sampler.items() for image in v if k != class_name]
         mmcl_robust_radius = []
         rvcl_robust_radius = []
         for target_image in target_images:
+            print('Computing MMCL robust radius')
             mmcl_robust_radius.append(
                 compute_radius_and_update_storage(
                     verifier=mmcl_verifier, ori_image=ori_image, target_image=target_image
                 )
             )
+            print('Computing RVCL robust radius')
             rvcl_robust_radius.append(
                 compute_radius_and_update_storage(
                     verifier=rvcl_verifier, ori_image=ori_image, target_image=target_image
                 )
             )
-    average_robust_radius[class_name].append({
-        'mmcl': sum(mmcl_robust_radius) // len(mmcl_robust_radius),
-        'rvcl': sum(rvcl_robust_radius) // len(rvcl_robust_radius)
-    })
+        average_robust_radius[class_name].append({
+            'mmcl': sum(mmcl_robust_radius) // len(mmcl_robust_radius),
+            'rvcl': sum(rvcl_robust_radius) // len(rvcl_robust_radius)
+        })
 
-# plot average radius as histogram
+# save all plots
+save_dir = f"plots/robust_radius/mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_kernel_type_{args.kernel_type}_C_{args.C}"
+if args.kernel_type == 'rbf':
+    save_dir += f"_gamma_{args.kernel_gamma}"
+elif args.kernel_type == 'poly':
+    save_dir += f"_deegre_{args.deegre}"
+os.makedirs(save_dir, exist_ok=True)
+# Loop through classes
+for class_name in tqdm(class_names):
+    mmcl_values = [x["mmcl"] for x in average_robust_radius[class_name]]
+    rvcl_values = [x["rvcl"] for x in average_robust_radius[class_name]]
+    # compute histogram data
+    min_value = min(mmcl_values + rvcl_values)
+    max_value = max(mmcl_values + rvcl_values)
+    bins = np.linspace(min_value, max_value, 100)
+    # Create and save plot
+    plt.figure()
+    plt.hist([mmcl_values, rvcl_values], bins, label=["MMCL", "RVCL"])
+    plt.legend(loc="upper right")
+    plt.title(f"Margin Distribution for {class_name}")
+    plt.xlabel("Margin")
+    plt.ylabel("Frequency")
+    plot_path = os.path.join(save_dir, f"{class_name}_distribution.png")
+    plt.savefig(plot_path, dpi=300, bbox_inches="tight")
+    plt.close()

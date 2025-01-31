@@ -147,6 +147,10 @@ class LinearEval(nn.Module):
                 # Forward pass through the model
                 logits = self.forward(x=total_inputs)
                 loss = self.criterion(logits, total_targets)
+                # Backpropagation after full training phase
+                self.optimizer.zero_grad()
+                total_loss.backward()
+                self.optimizer.step()
 
                 # Update metrics
                 batch_size = total_inputs.size(0)
@@ -203,11 +207,6 @@ class LinearEval(nn.Module):
                 if patience_counter >= max_patience:
                     print("Early stopping triggered. Training terminated.")
                     break
-
-            # Backpropagation after full training phase
-            self.optimizer.zero_grad()
-            total_loss.backward()
-            self.optimizer.step()
 
             # Scheduler step
             self.scheduler.step()
