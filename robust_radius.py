@@ -27,7 +27,7 @@ class RobustRadius:
             model=self.args.mmcl_model if model_type=='mmcl' else self.args.rvcl_model,
             model_path=self.args.mmcl_checkpoint if model_type=='mmcl' else self.args.rvcl_load_checkpoint,
             device=self.device
-        )
+        ).to(self.device)
         print(f"Built model: {self.model_ori}")
         self.output_size = list(self.model_ori.children())[-1].weight.data.shape[0]
         self.img_clip = min_max_value(self.args)
@@ -41,8 +41,8 @@ class RobustRadius:
             None,
             epsilon=self.args.target_eps,
             alpha=self.args.alpha,
-            min_val=img_clip['min'].to(self.device),
-            max_val=img_clip['max'].to(self.device),
+            min_val=self.img_clip['min'].to(self.device),
+            max_val=self.img_clip['max'].to(self.device),
             max_iters=self.args.k,
             _type=self.args.attack_type,
             loss_type=self.args.loss_type
@@ -54,8 +54,8 @@ class RobustRadius:
             None,
             epsilon=self.args.epsilon,
             alpha=self.args.alpha,
-            min_val=img_clip['min'].to(self.device),
-            max_val=img_clip['max'].to(self.device),
+            min_val=self.img_clip['min'].to(self.device),
+            max_val=self.img_clip['max'].to(self.device),
             max_iters=self.args.k,
             _type=self.args.attack_type,
             loss_type=self.args.loss_type
