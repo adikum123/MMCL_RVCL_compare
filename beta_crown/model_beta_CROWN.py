@@ -20,7 +20,7 @@ def simplify_network(all_layers):
         return all_layers
 
     # Detect the device of the first layer and ensure all layers are on the same device
-    device = next(all_layers[0].parameters()).device
+    device = torch.device('cpu')
 
     new_all_layers = [all_layers[0].to(device)]
     for layer in all_layers[1:]:
