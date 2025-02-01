@@ -66,7 +66,6 @@ parser.add_argument("--class_sample_limit", type=int, default=5, help='max numbe
 
 args = parser.parse_args()
 
-torch.multiprocessing.set_start_method('spawn')
 
 # add random seed
 torch.manual_seed(args.seed)
@@ -74,33 +73,35 @@ torch.cuda.manual_seed_all(args.seed)
 random.seed(args.seed)
 np.random.seed(args.seed)
 
+print("Obtaining data")
 # get data
 _, _, _, _, testloader, testdst = data_loader.get_train_val_test_dataset(args=args)
+print("Obtained data")
 
 # creating verifiers
 mmcl_verifier = RobustRadius(hparams=args, model_type='mmcl')
 rvcl_verifier = RobustRadius(hparams=args, model_type='mmcl')
-
+print("Loaded verifiers")
 # creating data
 class_names = testdst.classes
 per_class_sampler = defaultdict(list)
 
-# create per class sampler
-for idx, (image_batch, _, _, label_batch) in enumerate(testloader):
-    stop = False
-    for image, label in zip(image_batch, label_batch):
-        class_name = class_names[label]
-        if len(per_class_sampler[class_name]) < args.class_sample_limit:
-            per_class_sampler[class_name].append(image)
-            if all(
-                len(images) >= args.class_sample_limit
-                for images in per_class_sampler.values()
-            ):
-                stop = True
-            if stop:
-                break
-        if stop:
-            break
+print("Iterating through the test dataset")
+stop = False  # Flag to stop early if all classes are sampled
+
+for idx in range(len(testdst)):  # Iterate directly through dataset indices
+    image, _, _, label = testdst[idx]  # Unpack sample from dataset
+
+    class_name = class_names[label]  # Get class name from label
+    if len(per_class_sampler[class_name]) < args.class_sample_limit:
+        per_class_sampler[class_name].append(image)
+
+        # Check if we have reached the limit for all classes
+        if all(len(images) >= args.class_sample_limit for images in per_class_sampler.values()):
+            stop = True
+            break  # Stop iterating once all classes are sampled
+
+print("Constructed class sampler")
 
 result_storage = {}
 
