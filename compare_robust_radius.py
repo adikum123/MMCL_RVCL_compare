@@ -62,9 +62,11 @@ parser.add_argument('--loss_type', type=str, default='mse', help='loss type for 
 ##### arguments for binary_search #####
 parser.add_argument('--mini_batch', type=int, default=10, help='mini batch for PGD')
 parser.add_argument('--max_steps', type=int, default=200, help='max steps for search')
-parser.add_argument("--class_sample_limit", type=int, default=10, help='max number of items to compare')
+parser.add_argument("--class_sample_limit", type=int, default=5, help='max number of items to compare')
 
 args = parser.parse_args()
+
+torch.multiprocessing.set_start_method('spawn')
 
 # add random seed
 torch.manual_seed(args.seed)
@@ -128,7 +130,7 @@ def compute_radius_and_update_storage(verifier, ori_image, target_image):
 
 # for each sample in class we compute the average radius
 average_robust_radius = defaultdict(list)
-for class_name in per_class_sampler:
+for class_name in tqdm(per_class_sampler):
     for ori_image in per_class_sampler[class_name]:
         target_images = [image for k, v in per_class_sampler.items() for image in v if k != class_name]
         mmcl_robust_radius = []

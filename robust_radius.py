@@ -100,7 +100,7 @@ class RobustRadius:
             # indicates mode
             lb, _ = copy.deepcopy(bound_modify_net).compute_bounds(x=(image,), method='backward')
             lb = lb.item()
-            print("[binary search] step = {}, current = {:.6f}, success = {}, val = {:.2f}".format(step,eps,lb > 0,lb))
+            #print("[binary search] step = {}, current = {:.6f}, success = {}, val = {:.2f}".format(step,eps,lb > 0,lb))
 
             if lb > 0: # success at current value
                 lower = eps
