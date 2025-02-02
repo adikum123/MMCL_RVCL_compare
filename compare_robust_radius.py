@@ -117,12 +117,13 @@ def compute_radius_and_update_storage(verifier, ori_image, target_image):
     )
     # Check if result already exists in storage
     if key in result_storage:
+        print('Found in result storage')
         return result_storage[key]
     if reverse_key in result_storage:
+        print('Found in result storage')
         return result_storage[reverse_key]
     # Compute the robust radius
     curr_radius = verifier.verify(ori_image, target_image)
-    print(f"Computed robust radius: {curr_radius}")
     # Store the computed result
     result_storage[key] = curr_radius
     result_storage[reverse_key] = curr_radius  # Store for both orderings
@@ -130,12 +131,13 @@ def compute_radius_and_update_storage(verifier, ori_image, target_image):
 
 # for each sample in class we compute the average radius
 average_robust_radius = defaultdict(list)
-for class_name in tqdm(per_class_sampler):
+for idx, class_name in enumerate(per_class_sampler):
+    print(f'Processing class: {class_name}, already processed: {idx+1}/{len(class_names)} classes')
     for ori_image in per_class_sampler[class_name]:
         target_images = [image for k, v in per_class_sampler.items() for image in v if k != class_name]
         mmcl_robust_radius = []
         rvcl_robust_radius = []
-        for target_image in target_images:
+        for target_image in tqdm(target_images):
             mmcl_robust_radius.append(
                 compute_radius_and_update_storage(
                     verifier=mmcl_verifier, ori_image=ori_image, target_image=target_image
@@ -153,11 +155,7 @@ for class_name in tqdm(per_class_sampler):
 
 
 # save all plots
-save_dir = f"plots/robust_radius/mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_kernel_type_{args.kernel_type}_C_{args.C}"
-if args.kernel_type == 'rbf':
-    save_dir += f"_gamma_{args.kernel_gamma}"
-elif args.kernel_type == 'poly':
-    save_dir += f"_deegre_{args.deegre}"
+save_dir = f"plots/robust_radius/mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}"
 os.makedirs(save_dir, exist_ok=True)
 # Loop through classes
 for class_name in tqdm(class_names):
