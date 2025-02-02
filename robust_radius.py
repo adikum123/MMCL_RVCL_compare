@@ -27,7 +27,7 @@ class RobustRadius:
             model=self.args.mmcl_model if model_type=='mmcl' else self.args.rvcl_model,
             model_path=self.args.mmcl_checkpoint if model_type=='mmcl' else self.args.rvcl_load_checkpoint,
             device=self.device
-        ).to(self.device)
+        )
         print(f"Built model: {self.model_ori}")
         self.output_size = list(self.model_ori.children())[-1].weight.data.shape[0]
         self.img_clip = min_max_value(self.args)
