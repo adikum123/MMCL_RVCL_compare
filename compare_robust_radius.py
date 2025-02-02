@@ -66,7 +66,6 @@ parser.add_argument("--class_sample_limit", type=int, default=5, help='max numbe
 
 args = parser.parse_args()
 
-
 # add random seed
 torch.manual_seed(args.seed)
 torch.cuda.manual_seed_all(args.seed)
@@ -89,8 +88,8 @@ per_class_sampler = defaultdict(list)
 print("Iterating through the test dataset")
 stop = False  # Flag to stop early if all classes are sampled
 
-for idx in range(len(testdst)):  # Iterate directly through dataset indices
-    image, _, _, label = testdst[idx]  # Unpack sample from dataset
+for idx, sample in enumerate(testdst):  # Use enumerate to get index and sample directly
+    image, _, _, label = sample  # Unpack sample from dataset
 
     class_name = class_names[label]  # Get class name from label
     if len(per_class_sampler[class_name]) < args.class_sample_limit:
@@ -137,22 +136,21 @@ for class_name in tqdm(per_class_sampler):
         mmcl_robust_radius = []
         rvcl_robust_radius = []
         for target_image in target_images:
-            print('Computing MMCL robust radius')
             mmcl_robust_radius.append(
                 compute_radius_and_update_storage(
                     verifier=mmcl_verifier, ori_image=ori_image, target_image=target_image
                 )
             )
-            print('Computing RVCL robust radius')
             rvcl_robust_radius.append(
                 compute_radius_and_update_storage(
                     verifier=rvcl_verifier, ori_image=ori_image, target_image=target_image
                 )
             )
         average_robust_radius[class_name].append({
-            'mmcl': sum(mmcl_robust_radius) // len(mmcl_robust_radius),
-            'rvcl': sum(rvcl_robust_radius) // len(rvcl_robust_radius)
+            'mmcl': sum(mmcl_robust_radius) / len(mmcl_robust_radius),
+            'rvcl': sum(rvcl_robust_radius) / len(rvcl_robust_radius)
         })
+
 
 # save all plots
 save_dir = f"plots/robust_radius/mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_kernel_type_{args.kernel_type}_C_{args.C}"
@@ -168,7 +166,7 @@ for class_name in tqdm(class_names):
     # compute histogram data
     min_value = min(mmcl_values + rvcl_values)
     max_value = max(mmcl_values + rvcl_values)
-    bins = np.linspace(min_value, max_value, 100)
+    bins = np.linspace(min_value, max_value, 60)
     # Create and save plot
     plt.figure()
     plt.hist([mmcl_values, rvcl_values], bins, label=["MMCL", "RVCL"])

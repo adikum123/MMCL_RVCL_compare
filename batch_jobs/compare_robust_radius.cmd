@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -p lrz-hgx-h100-92x4
 #SBATCH --gres=gpu:1
-#SBATCH --time=3:00:00
+#SBATCH --time=7:00:00
 #SBATCH -o outs/robust_radius_100k.out
 #SBATCH -e outs/robust_radius_100k.out
 
@@ -34,19 +34,13 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     # Install other required dependencies
     pip install -r requirements.txt
 
-    echo "Verifying installation..."
-    python -c "import torch; print(f'PyTorch version: {torch.__version__}')"
-    python -c "import torchvision; print(f'Torchvision version: {torchvision.__version__}')"
-    python -c "import torchaudio; print(f'Torchaudio version: {torchaudio.__version__}')"
-    python -c "import onnx; print(f'ONNX version: {onnx.__version__}')"
-
     echo "Computing plots for robust radius..."
-    python compare_robust_radius.py \
+    python -u compare_robust_radius.py \
         --mmcl_model cifar_model_base \
         --mmcl_checkpoint models/mmcl/cifar_model_base_rbf_C_100.pkl \
         --rvcl_model cifar_model_base \
         --rvcl_checkpoint models/unsupervised/cifar10_base_adv4.pkl \
         --dataset cifar-10 \
-        --class_sample_limit 50 \
+        --class_sample_limit 40 \
 
 EOF
