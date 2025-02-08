@@ -92,6 +92,7 @@ parser.add_argument("--random_start", type=bool, default=True, help="True for PG
 
 
 args = parser.parse_args()
+print("Args:\n")
 print_args(args)
 # Train model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
