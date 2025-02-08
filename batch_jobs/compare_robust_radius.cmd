@@ -42,6 +42,6 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --rvcl_checkpoint models/unsupervised/cifar10_base_adv4.pkl \
         --dataset cifar-10 \
         --max_steps 100 \
-        --class_sample_limit 20 \
+        --class_sample_limit 100 \
 
 EOF
