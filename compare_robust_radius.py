@@ -164,7 +164,7 @@ for class_name in tqdm(class_names):
     # compute histogram data
     min_value = min(mmcl_values + rvcl_values)
     max_value = max(mmcl_values + rvcl_values)
-    bins = np.linspace(min_value, max_value, 200)
+    bins = np.linspace(min_value, max_value, 300)
     # Create and save plot
     plt.figure()
     plt.hist([mmcl_values, rvcl_values], bins, label=["MMCL", "RVCL"])
