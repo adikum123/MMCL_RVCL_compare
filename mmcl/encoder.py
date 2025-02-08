@@ -188,7 +188,7 @@ class MMCL_Encoder(nn.Module):
             }
             print(f"\nEpoch: {epoch+1}, Metrics: {json.dumps(metrics, indent=4)}\n")
         if self.hparams.use_validation:
-            self.model = torch.load(os.path.join("models/mmcl", self.get_model_save_name()+".pkl"), map_location=self.device)
+            self.model = torch.load(os.path.join(f"models/mmcl/{self.hparams.kernel_type}", self.get_model_save_name()+".pkl"), map_location=self.device)
         # Plot and save the training and validation loss
         save_dir = "plots/encoder"
         os.makedirs(save_dir, exist_ok=True)
