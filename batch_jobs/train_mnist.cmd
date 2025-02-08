@@ -38,18 +38,22 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --use_validation \
         --lr 1e-5 \
         --step_size 50 \
-        --C 100 \
+        --C 100
 
-    echo "Testing performance on linear eval"
-    python train_linear_eval.py \
-        --batch_size 32 \
-        --dataset mnist \
-        --use_validation \
-        --num_iters 100 \
-        --step_size 30 \
-        --lr 1e-4 \
-        --model mnist_cnn_4layer_b \
-        --load_checkpoint models/mmcl/poly/mnist_cnn_4layer_b_poly_deegre_5_C_100.pkl \
-        --adv_img \
+    if [ $? -eq 0 ]; then
+        echo "Testing performance on linear eval"
+        python train_linear_eval.py \
+            --batch_size 32 \
+            --dataset mnist \
+            --use_validation \
+            --num_iters 100 \
+            --step_size 30 \
+            --lr 1e-4 \
+            --model mnist_cnn_4layer_b \
+            --load_checkpoint models/mmcl/poly/mnist_cnn_4layer_b_poly_deegre_5_C_100.pkl \
+            --adv_img \
+    else
+        echo "Training encoder failed, skipping linear evaluation."
+    fi
 
 EOF
