@@ -51,7 +51,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
             --lr 1e-4 \
             --model mnist_cnn_4layer_b \
             --load_checkpoint models/mmcl/poly/mnist_cnn_4layer_b_poly_deegre_5_C_100.pkl \
-            --adv_img \
+            --adv_img
     else
         echo "Training encoder failed, skipping linear evaluation."
     fi
