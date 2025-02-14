@@ -2,8 +2,8 @@
 #SBATCH -p lrz-hgx-h100-92x4
 #SBATCH --gres=gpu:1
 #SBATCH --time=5:00:00
-#SBATCH -o outs/cifar_C_1_100k.out
-#SBATCH -e outs/cifar_C_1_100k.out
+#SBATCH -o outs/cifar_C_1.out
+#SBATCH -e outs/cifar_C_1.out
 
 #!/bin/bash
 echo "Creating and starting the container..."
