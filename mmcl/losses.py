@@ -23,7 +23,7 @@ def compute_kernel(X, Y, gamma="auto", kernel_type="rbf", degree=3.0, coef0=1):
         distances = X_norm + Y_norm - 2 * torch.mm(X, Y.T)
         kernel = torch.exp(-gamma * distances)
     elif kernel_type == "poly":
-        kernel = torch.pow((1/512) * torch.mm(X, Y.T) + 0.5, degree)
+        kernel = torch.pow(gamma * torch.mm(X, Y.T) + 0.5, degree)
     elif kernel_type == "tanh":
         kernel = torch.tanh(gamma * torch.mm(X, Y.T))
     elif kernel_type == "min":
