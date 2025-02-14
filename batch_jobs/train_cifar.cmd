@@ -28,12 +28,11 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Training encoder"
     python train_encoder.py \
-        --model_save_name cifar_model_wide_poly_C_100_deegre_5 \
+        --model_save_name cifar_model_wide_linear \
         --model cifar_model_wide \
         --dataset cifar-10 \
         --batch_size 32 \
-        --kernel_type poly \
-        --deegre 5 \
+        --kernel_type linear \
         --num_iters 200 \
         --lr 1e-5 \
         --use_validation \
@@ -50,7 +49,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
             --step_size 30 \
             --lr 1e-4 \
             --model cifar_model_wide \
-            --load_checkpoint models/mmcl/poly/cifar_model_wide_poly_C_100_deegre_5.pkl \
+            --load_checkpoint models/mmcl/poly/cifar_model_wide_linear.pkl \
             --adv_img
     else
         echo "Training encoder failed, skipping linear evaluation."
