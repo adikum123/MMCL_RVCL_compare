@@ -8,14 +8,16 @@ from torch import nn
 from mmcl.solvers import *
 
 
-def compute_kernel(X, Y, gamma=0.1, kernel_type="rbf", degree=3.0):
+def compute_kernel(X, Y, gamma="auto", kernel_type="rbf", degree=3.0, coef0=1):
+    # set gamma value
+    if gamma == "auto":
+        gamma = 1.0 / X.shape[-1]
+    else:
+        gamma = float(gamma)
+    # compute kernel value
     if kernel_type == "linear":
         kernel = torch.mm(X, Y.T)
     elif kernel_type == "rbf":
-        if gamma == "auto":
-            gamma = 1.0 / X.shape[-1]
-        else:
-            gamma = float(gamma)
         X_norm = torch.sum(X**2, dim=1, keepdim=True)
         Y_norm = torch.sum(Y**2, dim=1, keepdim=True).T
         distances = X_norm + Y_norm - 2 * torch.mm(X, Y.T)
@@ -29,6 +31,8 @@ def compute_kernel(X, Y, gamma=0.1, kernel_type="rbf", degree=3.0):
         kernel = torch.min(
             torch.relu(X).unsqueeze(1), torch.relu(Y).unsqueeze(1).transpose(1, 0)
         ).sum(2)
+    elif kernel_type == "sigmoid":
+        kernel = torch.sigmoid(gamma * torch.mm(X, Y.T) + coef0)
 
     return kernel
 
