@@ -2,8 +2,8 @@
 #SBATCH -p lrz-hgx-h100-92x4
 #SBATCH --gres=gpu:1
 #SBATCH --time=5:00:00
-#SBATCH -o outs/cifar_100k.out
-#SBATCH -e outs/cifar_100k.out
+#SBATCH -o outs/cifar_C_10_100k.out
+#SBATCH -e outs/cifar_C_10_100k.out
 
 #!/bin/bash
 echo "Creating and starting the container..."
@@ -28,16 +28,16 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Training encoder"
     python train_encoder.py \
-        --model_save_name cifar_model_wide_linear \
-        --model cifar_model_wide \
+        --model_save_name cnn_4layer_b_C_10_rbf_gamma \
+        --model cnn_4layer_b \
         --dataset cifar-10 \
         --batch_size 32 \
-        --kernel_type linear \
+        --kernel_type rbf \
         --num_iters 200 \
-        --lr 1e-5 \
+        --lr 1e-4 \
         --use_validation \
         --step_size 50 \
-        --C 100
+        --C 10
 
     if [ $? -eq 0 ]; then
         echo "Testing performance on linear eval"
@@ -48,8 +48,8 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
             --num_iters 100 \
             --step_size 30 \
             --lr 1e-4 \
-            --model cifar_model_wide \
-            --load_checkpoint models/mmcl/poly/cifar_model_wide_linear.pkl \
+            --model cnn_4layer_b \
+            --load_checkpoint models/mmcl/rbf/cnn_4layer_b_C_10_rbf_gamma.pkl \
             --adv_img
     else
         echo "Training encoder failed, skipping linear evaluation."
