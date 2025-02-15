@@ -34,7 +34,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --batch_size 32 \
         --kernel_type rbf \
         --num_iters 200 \
-        --lr 1e-4 \
+        --lr 1e-3 \
         --use_validation \
         --step_size 50 \
         --C 1
@@ -47,7 +47,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
             --use_validation \
             --num_iters 100 \
             --step_size 30 \
-            --lr 1e-4 \
+            --lr 1e-3 \
             --model cnn_4layer_b \
             --load_checkpoint models/mmcl/rbf/cnn_4layer_b_C_1_rbf_gamma.pkl \
             --adv_img

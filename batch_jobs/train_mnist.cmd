@@ -47,7 +47,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
             --use_validation \
             --num_iters 100 \
             --step_size 30 \
-            --lr 1e-4 \
+            --lr 1e-3 \
             --model mnist_cnn_4layer_b \
             --load_checkpoint models/mmcl/poly/mnist_cnn_4layer_b_linear.pkl \
             --adv_img
