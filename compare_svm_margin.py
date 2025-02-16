@@ -1,5 +1,6 @@
 # Compute margin for mmcl and rvcl encoders using test samples
 import argparse
+import json
 import os
 import random
 from collections import defaultdict
