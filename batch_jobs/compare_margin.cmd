@@ -27,13 +27,13 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
 
     echo "Computing plots for svm margin"
     python compare_svm_margin.py \
-        --mmcl_model cifar_model_deep \
-        --mmcl_checkpoint models/mmcl/cifar_model_deep_rbf_C_gamma_auto_100.pkl \
-        --rvcl_model cifar_model_deep \
-        --rvcl_checkpoint models/unsupervised/cifar10_deep_adv4.pkl \
+        --mmcl_model cnn_4layer_b \
+        --mmcl_checkpoint models/mmcl/rbf/cnn_4layer_b_C_1_rbf_auto.pkl \
+        --rvcl_model cnn_4layer_b \
+        --rvcl_checkpoint models/unsupervised/cifar10_cnn_4layer_b.pkl \
         --dataset cifar-10 \
-        --C 100 \
+        --C 1 \
         --kernel_type rbf \
-        --class_sample_limit 200 \
+        --class_sample_limit 250
 
 EOF

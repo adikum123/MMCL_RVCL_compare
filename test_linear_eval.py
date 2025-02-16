@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 import rocl.data_loader as data_loader
 
-model_save_name = "cnn_4layer_b_C_1_rbf_gamma.pkl"
+model_save_name = "cnn_4layer_b_C_0.1_rbf_auto.pkl"
 linear_eval_save_name = f"linear_{model_save_name}"
 
 
