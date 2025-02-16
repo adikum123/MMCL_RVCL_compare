@@ -175,3 +175,21 @@ for class_name in tqdm(class_names):
     plot_path = os.path.join(save_dir, f"{class_name}_distribution.png")
     plt.savefig(plot_path, dpi=300, bbox_inches="tight")
     plt.close()
+
+save_dict = {
+    **vars(args),
+    "average_robust_radius": average_robust_radius
+}
+file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_kernel_type_{args.kernel_type}_C_{args.C}"
+# Ensure the directory exists
+save_dir = "radius_results"
+os.makedirs(save_dir, exist_ok=True)
+
+# Construct file path
+file_path = os.path.join(save_dir, f"{file_name}.json")
+
+# Save dictionary as JSON
+with open(file_path, "w") as f:
+    json.dump(save_dict, f, indent=4)
+
+print(f"Saved results to {file_path}")

@@ -170,7 +170,7 @@ save_dict = {
 }
 file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_kernel_type_{args.kernel_type}_C_{args.C}"
 # Ensure the directory exists
-save_dir = "margin_radius_results"
+save_dir = "margin_results"
 os.makedirs(save_dir, exist_ok=True)
 
 # Construct file path

@@ -37,11 +37,11 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     echo "Computing plots for robust radius..."
     python -u compare_robust_radius.py \
         --mmcl_model cifar_model_base \
-        --mmcl_checkpoint models/mmcl/rbf/cifar_model_base_rbf_C_100.pkl \
+        --mmcl_checkpoint models/mmcl/rbf/cnn_4layer_b_C_1_rbf_auto.pkl \
         --rvcl_model cifar_model_base \
-        --rvcl_checkpoint models/unsupervised/cifar10_base_adv4.pkl \
+        --rvcl_checkpoint models/unsupervised/cifar10_cnn_4layer_b_adv8.pkl \
         --dataset cifar-10 \
         --max_steps 100 \
-        --class_sample_limit 100
+        --class_sample_limit 20
 
 EOF
