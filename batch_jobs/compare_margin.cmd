@@ -30,7 +30,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --mmcl_model cnn_4layer_b \
         --mmcl_checkpoint models/mmcl/rbf/cnn_4layer_b_C_1_rbf_auto.pkl \
         --rvcl_model cnn_4layer_b \
-        --rvcl_checkpoint models/unsupervised/cifar10_cnn_4layer_b.pkl \
+        --rvcl_checkpoint models/unsupervised/cifar10_cnn_4layer_b_adv8.pkl \
         --dataset cifar-10 \
         --C 1 \
         --kernel_type rbf \
