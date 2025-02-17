@@ -202,4 +202,4 @@ def load_model_contrastive_test(
     except Exception as e:
         print(f"Error loading model: {e}")
         raise
-    return model_ori
+    return None

@@ -28,11 +28,11 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Training encoder"
     python train_encoder.py \
-        --model_save_name cnn_4layer_b_C_10_rbf_gamma \
+        --model_save_name cnn_4layer_b_C_10_poly_3 \
         --model cnn_4layer_b \
         --dataset cifar-10 \
         --batch_size 32 \
-        --kernel_type rbf \
+        --kernel_type poly \
         --num_iters 200 \
         --lr 1e-4 \
         --use_validation \
@@ -49,7 +49,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
             --step_size 30 \
             --lr 1e-3 \
             --model cnn_4layer_b \
-            --load_checkpoint models/mmcl/rbf/cnn_4layer_b_C_10_rbf_gamma.pkl \
+            --load_checkpoint models/mmcl/polu/cnn_4layer_b_C_10_poly_3.pkl \
             --adv_img
     else
         echo "Training encoder failed, skipping linear evaluation."
