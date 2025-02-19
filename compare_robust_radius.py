@@ -46,7 +46,6 @@ parser.add_argument(
 ##### arguments for model #####
 parser.add_argument('--train_type', default='contrastive', type=str, help='contrastive/linear eval/test/supervised')
 parser.add_argument('--dataset', default='cifar-10', type=str, help='cifar-10/mnist')
-parser.add_argument('--load_checkpoint', default='', type=str, help='PATH TO CHECKPOINT')
 parser.add_argument('--name', default='', type=str, help='name of run')
 parser.add_argument('--seed', default=1, type=int, help='random seed')
 ##### arguments for data augmentation #####

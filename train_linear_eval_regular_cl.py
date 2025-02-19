@@ -3,8 +3,8 @@ import argparse
 import torch
 
 from beta_crown.utils import print_args
-from mmcl.encoder import MMCL_Encoder
 from mmcl.linear_eval import LinearEval
+from regular_cl import RegularCLModel
 
 parser = argparse.ArgumentParser(description="unsupervised verification")
 
@@ -18,9 +18,7 @@ parser.add_argument(
     help="contrastive/linear eval/test/supervised",
 )
 parser.add_argument("--dataset", default="cifar-10", type=str, help="cifar-10/mnist")
-parser.add_argument(
-    "--load_checkpoint", default="", type=str, help="PATH TO CHECKPOINT"
-)
+
 parser.add_argument("--seed", default=1, type=int, help="random seed")
 parser.add_argument("--reg", default=0.1, type=float, help="Regularization")
 parser.add_argument(
@@ -83,7 +81,6 @@ parser.add_argument(
     help="maximum iteration when generating adversarial examples",
 )
 parser.add_argument("--random_start", type=bool, default=True, help="True for PGD")
-parser.add_argument("--kernel_gamma", type=str, default="auto")
 
 
 args = parser.parse_args()

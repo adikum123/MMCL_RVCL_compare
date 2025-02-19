@@ -27,7 +27,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
 
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Training encoder"
-    python train_encoder.py \
+    python train_mmcl.py \
         --model_save_name mnist_cnn_4layer_b_linear \
         --model mnist_cnn_4layer_b \
         --dataset mnist \
@@ -49,7 +49,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
             --step_size 30 \
             --lr 1e-3 \
             --model mnist_cnn_4layer_b \
-            --load_checkpoint models/mmcl/poly/mnist_cnn_4layer_b_linear.pkl \
+            --mmcl_checkpoint models/mmcl/poly/mnist_cnn_4layer_b_linear.pkl \
             --adv_img
     else
         echo "Training encoder failed, skipping linear evaluation."
