@@ -105,7 +105,6 @@ class MMCL_Encoder(nn.Module):
 
                 # Compute loss
                 loss, _, _, _, _, _ = self.crit(features)
-                # Backpropagation after full training phase
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
@@ -133,7 +132,7 @@ class MMCL_Encoder(nn.Module):
                 val_bar = tqdm(self.valloader, desc=f"Epoch {epoch + 1}")
                 # Validation Phase
                 self.model.eval()  # Set the model to evaluation mode
-                val_loss, val_num = 0.0, 0
+                total_loss, total_num = 0.0, 0
                 with torch.no_grad():
                     for iii, (ori_image, pos_1, pos_2, target) in enumerate(val_bar):
                         # Move data to device
@@ -149,16 +148,16 @@ class MMCL_Encoder(nn.Module):
 
                         loss, _, _, _, _, _ = self.crit(features)
                         batch_size = pos_1.size(0)
-                        val_num += batch_size
-                        val_loss += loss.item() * batch_size
+                        total_num += batch_size
+                        total_loss += loss.item() * batch_size
                         val_bar.set_description(
                             "Val Epoch: [{}/{}] Running Loss: {:.4e}".format(
                                 epoch + 1,
                                 self.hparams.num_iters,
-                                val_loss / val_num,
+                                total_loss / total_num,
                             )
                         )
-                val_loss /= val_num
+                val_loss = total_loss / len(self.valdst)
                 val_losses.append(val_loss)
                 # Early Stopping Check
                 if val_loss < best_val_loss:
@@ -188,8 +187,6 @@ class MMCL_Encoder(nn.Module):
                 "lr": self.get_lr(),
             }
             print(f"\nEpoch: {epoch+1}, Metrics: {json.dumps(metrics, indent=4)}\n")
-        if self.hparams.use_validation:
-            self.model = torch.load(os.path.join(f"models/mmcl/{self.hparams.kernel_type}", self.get_model_save_name()+".pkl"), map_location=self.device)
         # Plot and save the training and validation loss
         save_dir = "plots/encoder"
         os.makedirs(save_dir, exist_ok=True)

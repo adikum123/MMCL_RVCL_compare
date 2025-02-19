@@ -27,19 +27,19 @@ class RegularCLModel(nn.Module):
             self.model = utils.load_model_contrastive(
                 args=self.hparams, weights_loaded=False
             ).to(self.device)
-        # if self.hparams.use_validation:
-        #     (
-        #         self.trainloader,
-        #         self.traindst,
-        #         self.valloader,
-        #         self.valdst,
-        #         self.testloader,
-        #         self.testdst,
-        #     ) = data_loader.get_train_val_test_dataset(self.hparams)
-        # else:
-        self.trainloader, self.traindst, self.testloader, self.testdst = (
-            data_loader.get_dataset(self.hparams)
-        )
+        if self.hparams.use_validation:
+            (
+                self.trainloader,
+                self.traindst,
+                self.valloader,
+                self.valdst,
+                self.testloader,
+                self.testdst,
+            ) = data_loader.get_train_val_test_dataset(self.hparams)
+        else:
+            self.trainloader, self.traindst, self.testloader, self.testdst = (
+                data_loader.get_dataset(self.hparams)
+            )
         self.optimizer = optim.Adam(
             self.model.parameters(), lr=self.hparams.lr
         )
@@ -84,14 +84,13 @@ class RegularCLModel(nn.Module):
         return loss
 
     def train(self):
-        """
-        Trains the model using InfoNCE loss. The train loader is assumed to return
-        (original image, augmented view 1, augmented view 2, target). Only the two
-        augmented views are used for the contrastive loss.
-        """
-        # You may want to set a temperature in hparams (defaulting to 0.5 if not provided)
+        best_val_loss = float("inf")
+        patience_counter = 0
+        max_patience = 5  # Number of epochs to wait before stopping
+
+        train_losses = []
+        val_losses = []
         temperature = getattr(self.hparams, 'temperature', 0.5)
-        best_running_loss = float("inf")
         for epoch in range(self.hparams.num_iters):
             self.model.train()  # Set the model to training mode
             total_loss, total_samples = 0.0, 0
@@ -117,17 +116,76 @@ class RegularCLModel(nn.Module):
                 total_loss += loss.item() * batch_size
                 total_samples += batch_size
                 train_bar.set_postfix(loss=f"{total_loss / total_samples:.4f}")
-
+            running_loss = total_loss/total_samples
+            print(f"Epoch [{epoch+1}/{self.hparams.num_iters}] - Loss: {total_loss/total_samples:.4f}")
+            # validation
+            if self.hparams.use_validation:
+                val_bar = tqdm(self.valloader, desc=f"Epoch {epoch + 1}")
+                # Validation Phase
+                self.model.eval()  # Set the model to evaluation mode
+                total_loss, total_num = 0.0, 0
+                with torch.no_grad():
+                    for iii, (ori_image, pos_1, pos_2, target) in enumerate(val_bar):
+                        # Move augmented images to device
+                        pos_1 = pos_1.to(self.device)
+                        pos_2 = pos_2.to(self.device)
+                        # Forward pass for both augmented views
+                        f1 = self.model(pos_1)
+                        f2 = self.model(pos_2)
+                        # Compute InfoNCE loss
+                        loss = self.info_nce_loss(f1, f2, temperature)
+                        batch_size = pos_1.size(0)
+                        total_num += batch_size
+                        total_loss += loss.item() * batch_size
+                        val_bar.set_description(
+                            "Val Epoch: [{}/{}] Running Loss: {:.4e}".format(
+                                epoch + 1,
+                                self.hparams.num_iters,
+                                total_loss / total_num,
+                            )
+                        )
+                val_loss = total_loss / len(self.valdst)
+                val_losses.append(val_loss)
+                # Early Stopping Check
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    patience_counter = 0
+                    print(
+                        f"\nValidation loss improved to {val_loss:.4e}. Saving model..."
+                    )
+                    self.best_model_saved = False
+                    self.save()
+                    self.best_model_saved = True
+                else:
+                    patience_counter += 1
+                    print(
+                        f"\nValidation loss did not improve. Patience: {patience_counter}/{max_patience}"
+                    )
+                if patience_counter >= max_patience:
+                    print("\nEarly stopping triggered. Training terminated.")
+                    break
             # Step the learning rate scheduler at the end of each epoch
             self.scheduler.step()
-            running_loss = total_loss/total_samples
-            if running_loss < best_running_loss:
-                print(f"Best running loss improved from {best_running_loss} to {running_loss}")
-                best_running_loss = running_loss
-                self.best_model_saved = False
-                self.save()
-                self.best_model_saved = True
-            print(f"Epoch [{epoch+1}/{self.hparams.num_iters}] - Loss: {total_loss/total_samples:.4f}")
+        # Plot and save the training and validation loss
+        save_dir = "plots/encoder"
+        os.makedirs(save_dir, exist_ok=True)
+        save_path = os.path.join(
+            save_dir, f"{self.get_model_save_name()}_{time.time()}.png"
+        )
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(range(1, len(train_losses) + 1), train_losses, label="Training Loss")
+        if self.hparams.use_validation:
+            plt.plot(range(1, len(val_losses) + 1), val_losses, label="Validation Loss")
+        plt.title("Training and Validation Loss")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(save_path)
+        plt.close()
+        print(f"\nLoss plot saved to {save_path}")
+
 
     def save(self):
         if not self.best_model_saved:
