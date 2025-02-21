@@ -48,6 +48,11 @@ parser.add_argument(
 )
 parser.add_argument("--step_size", default=30, type=int, help="scheduler step size")
 parser.add_argument("--scheduler_gamma", default=0.1, type=float, help="gamma value for scheduler")
+parser.add_argument(
+    "--use_validation",
+    action="store_true",
+    help="Use validation set and stopping criteria",
+)
 
 args = parser.parse_args()
 print("Args:\n")

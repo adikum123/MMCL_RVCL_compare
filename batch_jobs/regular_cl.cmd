@@ -2,8 +2,8 @@
 #SBATCH -p lrz-hgx-h100-92x4
 #SBATCH --gres=gpu:1
 #SBATCH --time=3:00:00
-#SBATCH -o outs/mnist_100k.out
-#SBATCH -e outs/mnist_100k.out
+#SBATCH -o outs/regular_cl_100k.out
+#SBATCH -e outs/regular_cl_100k.out
 
 #!/bin/bash
 echo "Creating and starting the container..."
@@ -31,6 +31,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --model_save_name regular_cl_cnn_4layer_b_bs_32 \
         --model cnn_4layer_b \
         --dataset cifar-10 \
+        --use_validation \
         --batch_size 32 \
         --num_iters 200 \
         --lr 1e-4 \
