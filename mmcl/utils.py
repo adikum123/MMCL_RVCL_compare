@@ -191,8 +191,29 @@ def load_model_contrastive(args, weights_loaded=True, contrastive=True, linear=F
 
     return cut_model(model_ori, contrastive, linear)
 
+def load_model_contrastive_new(model, device, model_path, weights_loaded=True, contrastive=True, linear=False):
+    """
+    Load the model architectures and weights
+    """
+    model_ori = eval(model)()
+    print(f"Type of model after eval: {type(model_ori)}")
+    if not weights_loaded:
+        model = cut_model(model_ori, contrastive, linear)
+        print(f"Type of model after cutting: {model}")
+        return model
+    print("loading weight...")
+    map_location = device
+    if "cnn_4layer" not in model:
+        model_ori.load_state_dict(
+            torch.load(model_path, map_location)["state_dict"][0]
+        )
+    else:
+        model_ori.load_state_dict(torch.load(model_path, map_location))
 
-def load_model_contrastive_test(
+    return cut_model(model_ori, contrastive, linear)
+
+
+def load_model_contrastive_mmcl(
     model, model_path, device, weights_loaded=True, contrastive=True, linear=False
 ):
     map_location = device

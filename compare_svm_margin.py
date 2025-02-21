@@ -8,10 +8,16 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from torch.nn import ReLU, Sequential
+from torch.nn.modules.conv import Conv2d
+from torch.nn.modules.linear import Linear
+from torch.nn.modules.padding import ZeroPad2d
 from tqdm import tqdm
 
 import mmcl.utils as utils
 import rocl.data_loader as data_loader
+from beta_crown.modules import Flatten
+from mmcl.utils import Flatten as MMCLFlatten
 from svm_margin import compute_margin
 
 # arg parser and device
@@ -90,50 +96,39 @@ for idx, (image_batch, label_batch) in enumerate(testloader):
         if stop:
             break
 
+torch.serialization.add_safe_globals([Linear])
+torch.serialization.add_safe_globals([Flatten, MMCLFlatten])
+torch.serialization.add_safe_globals([ReLU])
+torch.serialization.add_safe_globals([Conv2d])
+torch.serialization.add_safe_globals([ZeroPad2d])
+torch.serialization.add_safe_globals([Sequential])
+torch.serialization.add_safe_globals([set])
+
 # load both models
-mmcl_model = utils.load_model_contrastive_test(
-    model=args.mmcl_model, model_path=args.mmcl_checkpoint, device=device
-)
-rvcl_model = utils.load_model_contrastive_test(
-    model=args.rvcl_model, model_path=args.rvcl_checkpoint, device=device
-)
+mmcl_model = torch.load(args.mmcl_checkpoint, device, weights_only=True)
+rvcl_model = torch.load(args.rvcl_checkpoint, device, weights_only=True)
 print(f"Loaded MMCL model: {mmcl_model}")
 print(f"Loaded RVCL model: {rvcl_model}")
+
+def encode_inputs_and_compute_margin(model, positive, negatives):
+    positive_encoding = model(positive.unsqueeze(0).to(device))
+    negative_encodings = torch.stack([model(neg.unsqueeze(0)) for neg in negatives]).squeeze(1)
+    return compute_margin(positive=positive_encoding, negatives=negative_encodings, args=args)
 
 # compute margin for each class
 for class_name in class_names:
     print(f"Processing items for class: {class_name}")
+    negatives = [
+        image.to(device)
+        for k, v in per_class_sampler.items()
+        for image in v
+        if k != class_name
+    ]
     for item in tqdm(per_class_sampler[class_name]):
         # Select one random image as positive and other images as negatives
         positive = item
-        negatives = [
-            image.to(device)
-            for k, v in per_class_sampler.items()
-            for image in v
-            if k != class_name
-        ]
-        # Add batch dimension to positive
-        positive = positive.unsqueeze(0).to(device)  # Shape: [1, 3, 32, 32]
-        # Compute MMCL margin
-        mmcl_positive_encoding = mmcl_model(positive)
-        mmcl_negative_encodings = torch.stack(
-            [mmcl_model(neg.unsqueeze(0)) for neg in negatives]
-        ).squeeze(1)
-        mmcl_margin = compute_margin(
-            positive=mmcl_positive_encoding,
-            negatives=mmcl_negative_encodings,
-            args=args,
-        )
-        # Compute RVCL margin
-        rvcl_positive_encoding = rvcl_model(positive)
-        rvcl_negative_encodings = torch.stack(
-            [rvcl_model(neg.unsqueeze(0)) for neg in negatives]
-        ).squeeze(1)
-        rvcl_margin = compute_margin(
-            positive=rvcl_positive_encoding,
-            negatives=rvcl_negative_encodings,
-            args=args,
-        )
+        mmcl_margin = encode_inputs_and_compute_margin(model=mmcl_model, positive=positive, negatives=negatives)
+        rvcl_margin = encode_inputs_and_compute_margin(model=rvcl_model, positive=positive, negatives=negatives)
         margins[class_name].append({"mmcl": mmcl_margin, "rvcl": rvcl_margin})
 
 
@@ -149,17 +144,23 @@ os.makedirs(save_dir, exist_ok=True)
 for class_name in tqdm(class_names):
     mmcl_values = [x["mmcl"] for x in margins[class_name]]
     rvcl_values = [x["rvcl"] for x in margins[class_name]]
-    # compute histogram data
-    min_value = min(mmcl_values + rvcl_values)
-    max_value = max(mmcl_values + rvcl_values)
-    bins = np.linspace(min_value, max_value, 100)
-    # Create and save plot
-    plt.figure()
-    plt.hist([mmcl_values, rvcl_values], bins, label=["MMCL", "RVCL"])
+    print(f"MMCL {class_name} {list(set(mmcl_values))}")
+    print(f"RVCL {class_name} {list(set(rvcl_values))}")
+    # Generate x-axis labels (Image {i})
+    image_indices = np.arange(len(mmcl_values))
+    image_labels = [f"Image {i}" for i in image_indices]
+
+    # Create the plot
+    plt.figure(figsize=(12, 6))
+    plt.scatter(image_indices, mmcl_values, color="blue", label="MMCL", alpha=0.7)
+    plt.scatter(image_indices, rvcl_values, color="red", label="RVCL", alpha=0.7)
+
+    # Customize plot
+    plt.xticks(image_indices[::max(len(image_indices)//20, 1)], image_labels[::max(len(image_indices)//20, 1)], rotation=45, ha="right")
     plt.legend(loc="upper right")
-    plt.title(f"Margin Distribution for {class_name}")
-    plt.xlabel("Margin")
-    plt.ylabel("Frequency")
+    plt.title(f"Margin Comparison for {class_name}")
+    plt.xlabel("Image Index")
+    plt.ylabel("Margin Value")
     plot_path = os.path.join(save_dir, f"{class_name}_distribution.png")
     plt.savefig(plot_path, dpi=300, bbox_inches="tight")
     plt.close()

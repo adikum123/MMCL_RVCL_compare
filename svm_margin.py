@@ -9,10 +9,7 @@ from sklearn.svm import SVC
 def compute_margin(positive, negatives, args):
     # Stack positive and negative samples
     X = np.vstack(
-        (
-            positive.detach().cpu().numpy(),
-            np.array([neg.detach().cpu().numpy() for neg in negatives]),
-        )
+        [positive.detach().cpu().numpy()] + [neg.detach().cpu().numpy() for neg in negatives]
     )
     # Create labels (1 for positive, -1 for negatives)
     Y = np.hstack((np.ones(1), -np.ones(len(negatives))))
@@ -21,7 +18,7 @@ def compute_margin(positive, negatives, args):
     svm_params = {
         "C": args.C,
         "kernel": args.kernel_type,
-        "gamma": getattr(args, "kernel_gamma", "scale"),
+        "gamma": getattr(args, "kernel_gamma", "auto"),
         "degree": getattr(args, "degree", 3),
         "coef0": getattr(args, "coef0", 0.0),
     }
@@ -37,9 +34,7 @@ def compute_margin(positive, negatives, args):
     # Compute kernel parameters
     kernel_type = svm_params["kernel"]
     if kernel_type == "rbf":
-        if svm_params["gamma"] == "scale":
-            svm_params["gamma"] = 1 / (X.shape[1] * X.var())
-        elif svm_params["gamma"] == "auto":
+        if svm_params["gamma"] == "auto":
             svm_params["gamma"] = 1 / X.shape[1]
         else:
             svm_params["gamma"] = float(svm_params["gamma"])
@@ -57,9 +52,7 @@ def compute_margin(positive, negatives, args):
 
     # Compute kernel matrix
     kernel_matrix = pairwise_kernels(X=support_vectors, metric=kernel_type, **kernel_params)
-
     # Compute ||w||^2
     w_norm_sq = np.dot(np.dot(dual_coefs, kernel_matrix), dual_coefs.T)
-
     # Return the margin (2 / ||w||)
     return 2 / math.sqrt(w_norm_sq) if w_norm_sq > 0 else w_norm_sq

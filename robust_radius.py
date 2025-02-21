@@ -23,7 +23,7 @@ class RobustRadius:
         self.device = torch.device('cpu')
         # Model
         print('==> Building model..')
-        self.model_ori = utils.load_model_contrastive_test(
+        self.model_ori = utils.load_model_contrastive_mmcl(
             model=self.args.mmcl_model if model_type=='mmcl' else self.args.rvcl_model,
             model_path=self.args.mmcl_checkpoint if model_type=='mmcl' else self.args.rvcl_load_checkpoint,
             device=self.device

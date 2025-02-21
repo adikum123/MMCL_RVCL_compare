@@ -61,7 +61,8 @@ parser.add_argument('--loss_type', type=str, default='mse', help='loss type for 
 ##### arguments for binary_search #####
 parser.add_argument('--mini_batch', type=int, default=10, help='mini batch for PGD')
 parser.add_argument('--max_steps', type=int, default=200, help='max steps for search')
-parser.add_argument("--class_sample_limit", type=int, default=5, help='max number of items to compare')
+parser.add_argument("--negatives_per_class", type=int, default=5, help='number of negative items chosen per class')
+parser.add_argument("--positives_per_class", type=int, default=5, help='number of negative items chosen per class')
 
 args = parser.parse_args()
 
@@ -70,11 +71,7 @@ torch.manual_seed(args.seed)
 torch.cuda.manual_seed_all(args.seed)
 random.seed(args.seed)
 np.random.seed(args.seed)
-
-print("Obtaining data")
-# get data
 _, _, _, _, testloader, testdst = data_loader.get_train_val_test_dataset(args=args)
-print("Obtained data")
 
 # creating verifiers
 mmcl_verifier = RobustRadius(hparams=args, model_type='mmcl')
@@ -89,15 +86,8 @@ stop = False  # Flag to stop early if all classes are sampled
 
 for idx, sample in enumerate(testdst):  # Use enumerate to get index and sample directly
     image, _, _, label = sample  # Unpack sample from dataset
-
     class_name = class_names[label]  # Get class name from label
-    if len(per_class_sampler[class_name]) < args.class_sample_limit:
-        per_class_sampler[class_name].append(image)
-
-        # Check if we have reached the limit for all classes
-        if all(len(images) >= args.class_sample_limit for images in per_class_sampler.values()):
-            stop = True
-            break  # Stop iterating once all classes are sampled
+    per_class_sampler[class_name].append(image)
 
 print("Constructed class sampler")
 
@@ -132,8 +122,9 @@ def compute_radius_and_update_storage(verifier, ori_image, target_image):
 average_robust_radius = defaultdict(list)
 for idx, class_name in enumerate(per_class_sampler):
     print(f'Processing class: {class_name}, already processed: {idx+1}/{len(class_names)} classes')
-    for ori_image in per_class_sampler[class_name]:
-        target_images = [image for k, v in per_class_sampler.items() for image in v if k != class_name]
+    ori_images = random.sample(per_class_sampler[class_name], args.positives_per_class)
+    target_images = [image for k, v in per_class_sampler.items() for image in random.sample(v, args.negatives_per_class) if k != class_name]
+    for ori_image in ori_images:
         mmcl_robust_radius = []
         rvcl_robust_radius = []
         for target_image in tqdm(target_images):
@@ -160,17 +151,23 @@ os.makedirs(save_dir, exist_ok=True)
 for class_name in tqdm(class_names):
     mmcl_values = [x["mmcl"] for x in average_robust_radius[class_name]]
     rvcl_values = [x["rvcl"] for x in average_robust_radius[class_name]]
-    # compute histogram data
-    min_value = min(mmcl_values + rvcl_values)
-    max_value = max(mmcl_values + rvcl_values)
-    bins = np.linspace(min_value, max_value, 300)
-    # Create and save plot
-    plt.figure()
-    plt.hist([mmcl_values, rvcl_values], bins, label=["MMCL", "RVCL"])
+    print(f"MMCL {class_name} {list(set(mmcl_values))}")
+    print(f"RVCL {class_name} {list(set(rvcl_values))}")
+    # Generate x-axis labels (Image {i})
+    image_indices = np.arange(len(mmcl_values))
+    image_labels = [f"Image {i}" for i in image_indices]
+
+    # Create the plot
+    plt.figure(figsize=(12, 6))
+    plt.scatter(image_indices, mmcl_values, color="blue", label="MMCL", alpha=0.7)
+    plt.scatter(image_indices, rvcl_values, color="red", label="RVCL", alpha=0.7)
+
+    # Customize plot
+    plt.xticks(image_indices[::max(len(image_indices)//20, 1)], image_labels[::max(len(image_indices)//20, 1)], rotation=45, ha="right")
     plt.legend(loc="upper right")
-    plt.title(f"Margin Distribution for {class_name}")
-    plt.xlabel("Margin")
-    plt.ylabel("Frequency")
+    plt.title(f"Margin Comparison for {class_name}")
+    plt.xlabel("Image Index")
+    plt.ylabel("Margin Value")
     plot_path = os.path.join(save_dir, f"{class_name}_distribution.png")
     plt.savefig(plot_path, dpi=300, bbox_inches="tight")
     plt.close()

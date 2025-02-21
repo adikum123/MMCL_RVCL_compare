@@ -39,9 +39,10 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --mmcl_model cifar_model_base \
         --mmcl_checkpoint models/mmcl/rbf/cnn_4layer_b_C_1_rbf_auto.pkl \
         --rvcl_model cifar_model_base \
-        --rvcl_checkpoint models/unsupervised/cifar10_cnn_4layer_b_adv8.pkl \
+        --rvcl_checkpoint models/unsupervised/cifar10_cnn_4layer_b.pkl \
         --dataset cifar-10 \
         --max_steps 100 \
-        --class_sample_limit 20
+        --positives_per_class 5 \
+        --negatives_per_class 5
 
 EOF
