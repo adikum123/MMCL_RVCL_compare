@@ -59,7 +59,9 @@ parser.add_argument("--finetune", action="store_true", help="finetune the model"
 parser.add_argument(
     "--ss", action="store_true", help="using self-supervised learning loss"
 )
-
+parser.add_argument(
+    "--regular_cl_checkpoint", default="", type=str
+)
 ##### arguments for PGD attack & Adversarial Training #####
 parser.add_argument("--attack_type", type=str, default="linf", help="adversarial l_p")
 parser.add_argument(
@@ -85,7 +87,7 @@ parser.add_argument("--random_start", type=bool, default=True, help="True for PG
 
 args = parser.parse_args()
 print_args(args)
-assert args.load_checkpoint != "", f"Empty load checkpoint provided: {args.load_checkpoint}"
+assert args.regular_cl_load_checkpoint != "", f"Empty load checkpoint provided: {args.regular_cl_load_checkpoint}"
 # Train model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Running on: {device}")
