@@ -28,18 +28,18 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Training encoder"
     python train_regular_cl.py \
-        --model_save_name regular_cl_cnn_4layer_b_bs_32 \
+        --model_save_name regular_cl_cnn_4layer_b_bs_32_lr_1e-3 \
         --model cnn_4layer_b \
         --dataset cifar-10 \
         --use_validation \
         --batch_size 32 \
         --num_iters 200 \
-        --lr 1e-4 \
+        --lr 1e-3 \
         --step_size 50
 
     if [ $? -eq 0 ]; then
         echo "Testing performance on linear eval"
-        python -u train_linear_eval.py \
+        python -u train_linear_eval_regular_cl.py \
             --batch_size 32 \
             --dataset cifar-10 \
             --use_validation \
@@ -47,7 +47,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
             --step_size 30 \
             --lr 1e-3 \
             --model cnn_4layer_b \
-            --regular_cl_checkpoint models/mmcl/poly/regular_cl_cnn_4layer_b_bs_32.pkl \
+            --regular_cl_checkpoint models/regular_cl/regular_cl_cnn_4layer_b_bs_32_lr_1e-3.pkl \
             --adv_img
     else
         echo "Training encoder failed, skipping linear evaluation."
