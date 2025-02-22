@@ -186,10 +186,15 @@ class RegularCLModel(nn.Module):
         plt.close()
         print(f"\nLoss plot saved to {save_path}")
 
+    def get_model_save_name(self):
+        if self.hparams.model_save_name:
+            return self.hparams.model_save_name
+        return f"regular_cl_bs_{self.hparams.batch_size}_{self.hparams.lr}.pkl"
+
 
     def save(self):
         if not self.best_model_saved:
-            save_dir = f'models/regular_cl/{self.hparams.kernel_type}'
+            save_dir = f'models/regular_cl'
             os.makedirs(save_dir, exist_ok=True)
             save_path = os.path.join(save_dir, self.get_model_save_name() + ".pkl")
             torch.save(self.model, save_path)
