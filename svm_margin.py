@@ -2,11 +2,15 @@ import argparse
 import math
 
 import numpy as np
+import torch.nn.functional as F
 from sklearn.metrics.pairwise import pairwise_kernels
 from sklearn.svm import SVC
 
 
 def compute_margin(positive, negatives, args):
+    if args.normalize:
+        positive = F.normalize(positive, p=2, dim=-1)
+        negatives = [F.normalize(x, p=2, dim=-1) for x in negatives]
     # Stack positive and negative samples
     X = np.vstack(
         [positive.detach().cpu().numpy()] + [neg.detach().cpu().numpy() for neg in negatives]
@@ -19,7 +23,7 @@ def compute_margin(positive, negatives, args):
         "C": args.C,
         "kernel": args.kernel_type,
         "gamma": getattr(args, "kernel_gamma", "auto"),
-        "degree": getattr(args, "degree", 3),
+        "degree": int(getattr(args, "degree", 3)),
         "coef0": getattr(args, "coef0", 0.0),
     }
 
@@ -33,7 +37,7 @@ def compute_margin(positive, negatives, args):
 
     # Compute kernel parameters
     kernel_type = svm_params["kernel"]
-    if kernel_type == "rbf":
+    if kernel_type in {"rbf", "poly"}:
         if svm_params["gamma"] == "auto":
             svm_params["gamma"] = 1 / X.shape[1]
         else:
@@ -49,7 +53,6 @@ def compute_margin(positive, negatives, args):
         kernel_params = {}
     else:
         raise ValueError(f"Unsupported kernel type: {kernel_type}")
-
     # Compute kernel matrix
     kernel_matrix = pairwise_kernels(X=support_vectors, metric=kernel_type, **kernel_params)
     # Compute ||w||^2

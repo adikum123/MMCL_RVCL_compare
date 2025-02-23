@@ -63,7 +63,7 @@ parser.add_argument(
     help="NUmber of random samples per class",
 )
 parser.add_argument("--kernel_gamma", type=str, default="auto")
-
+parser.add_argument("--normalize", action="store_true")
 
 args = parser.parse_args()
 

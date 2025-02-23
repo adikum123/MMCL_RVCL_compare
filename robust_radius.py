@@ -17,22 +17,14 @@ from rocl.attack_lib import FastGradientSignUntargeted, RepresentationAdv
 
 class RobustRadius:
 
-    def __init__(self, hparams, model_type=None):
-        assert model_type in ['mmcl', 'rvcl']
+    def __init__(self, hparams, model_ori):
         self.args = hparams
         self.device = torch.device('cpu')
-        # Model
-        print('==> Building model..')
-        self.model_ori = utils.load_model_contrastive_mmcl(
-            model=self.args.mmcl_model if model_type=='mmcl' else self.args.rvcl_model,
-            model_path=self.args.mmcl_checkpoint if model_type=='mmcl' else self.args.rvcl_load_checkpoint,
-            device=self.device
-        )
-        print(f"Built model: {self.model_ori}")
+        self.model_ori = model_ori
+        print(f"Input model model: {self.model_ori}")
         self.output_size = list(self.model_ori.children())[-1].weight.data.shape[0]
         self.img_clip = min_max_value(self.args)
         self.upper_eps = (torch.max(self.img_clip['max']) - torch.min(self.img_clip['min'])).item()
-
 
 
     def generate_attack(args, ori, target):

@@ -16,6 +16,8 @@ import torch.nn.functional as F
 from tqdm import tqdm
 
 import rocl.data_loader as data_loader
+from beta_crown.modules import Flatten
+from mmcl.utils import Flatten as Flatten1
 from robust_radius import RobustRadius
 
 parser = argparse.ArgumentParser(description='unsupervised binary search')
@@ -72,10 +74,16 @@ torch.cuda.manual_seed_all(args.seed)
 random.seed(args.seed)
 np.random.seed(args.seed)
 _, _, _, _, testloader, testdst = data_loader.get_train_val_test_dataset(args=args)
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+
+# load models then create verifiers
+mmcl_model = torch.load(args.mmcl_checkpoint, device, weights_only=False)
+rvcl_model = torch.load(args.rvcl_checkpoint, device, weights_only=False)
 
 # creating verifiers
-mmcl_verifier = RobustRadius(hparams=args, model_type='mmcl')
-rvcl_verifier = RobustRadius(hparams=args, model_type='mmcl')
+mmcl_verifier = RobustRadius(hparams=args, model_ori=mmcl_model)
+rvcl_verifier = RobustRadius(hparams=args, model_ori=rvcl_model)
 print("Loaded verifiers")
 # creating data
 class_names = testdst.classes
