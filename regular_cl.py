@@ -54,6 +54,9 @@ class RegularCLModel(nn.Module):
     def forward(self, x):
         return self.model(x)
 
+    def set_eval(self):
+        self.model.eval()
+
     def info_nce_loss(self, f1, f2, temperature=0.5):
         """
         Computes the InfoNCE loss given two sets of representations f1 and f2.
