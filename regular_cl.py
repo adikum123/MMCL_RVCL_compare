@@ -22,7 +22,8 @@ class RegularCLModel(nn.Module):
         self.device = device
         if 'regular_cl_checkpoint' in vars(self.hparams) and self.hparams.regular_cl_checkpoint:
             ckpt = self.hparams.regular_cl_checkpoint
-            self.model = utils.load_model_contrastive_test(model=self.hparams.model, model_path=ckpt, device=device)
+            print(f"Loading regular cl model with checkpoint: {ckpt}")
+            self.model = utils.load_model_contrastive_mmcl(model=self.hparams.model, model_path=ckpt, device=device)
         else:
             self.model = utils.load_model_contrastive(
                 args=self.hparams, weights_loaded=False

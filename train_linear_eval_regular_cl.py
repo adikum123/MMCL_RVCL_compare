@@ -87,11 +87,11 @@ parser.add_argument("--random_start", type=bool, default=True, help="True for PG
 
 args = parser.parse_args()
 print_args(args)
-assert args.regular_cl_load_checkpoint != "", f"Empty load checkpoint provided: {args.regular_cl_load_checkpoint}"
+assert args.regular_cl_checkpoint != "", f"Empty load checkpoint provided: {args.regular_cl_checkpoint}"
 # Train model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Running on: {device}")
-encoder = MMCL_Encoder(hparams=args, device=device)
+encoder = RegularCLModel(hparams=args, device=device)
 model = LinearEval(hparams=args, encoder=encoder, device=device)
 model.train()
 model.save()
