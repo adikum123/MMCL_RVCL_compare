@@ -260,7 +260,14 @@ class LinearEval(nn.Module):
         return metrics
 
     def get_model_save_name(self):
-        return self.hparams.model_save_name
+        ckpt = None
+        if 'mmcl_checkpoint' in vars(self.hparams):
+            ckpt = self.hparams.mmcl_checkpoint
+        if 'rvcl_checkpoint' in vars(self.hparams):
+            ckpt = self.hparams.rvcl_checkpoint
+        if 'regular_cl_checkpoint' in vars(self.hparams):
+            ckpt = self.hparams.regular_cl_checkpoint
+        return f"linear_{ckpt.split('/')[-1]}"
 
     def save(self):
         if not self.best_model_saved:
