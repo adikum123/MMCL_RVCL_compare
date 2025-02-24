@@ -120,8 +120,9 @@ class RegularCLModel(nn.Module):
                 total_loss += loss.item() * batch_size
                 total_samples += batch_size
                 train_bar.set_postfix(loss=f"{total_loss / total_samples:.4f}")
-            running_loss = total_loss/total_samples
-            print(f"Epoch [{epoch+1}/{self.hparams.num_iters}] - Loss: {total_loss/total_samples:.4f}")
+            train_loss = total_loss/len(self.traindst)
+            train_losses.append(train_loss)
+            print(f"Epoch [{epoch+1}/{self.hparams.num_iters}] - Loss: {train_loss:.4f}")
             # validation
             if self.hparams.use_validation:
                 val_bar = tqdm(self.valloader, desc=f"Epoch {epoch + 1}")
