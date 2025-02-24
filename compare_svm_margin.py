@@ -41,6 +41,12 @@ parser.add_argument(
 parser.add_argument(
     "--rvcl_checkpoint", type=str, default="", help="Model checkpoint for rvcl"
 )
+parser.add_argument(
+    "--regular_cl_model", type=str, default=""
+)
+parser.add_argument(
+    "--regular_cl_checkpoint", type=str, default=""
+)
 parser.add_argument("--train_type", default="test", type=str, help="Must be test")
 parser.add_argument("--batch_size", default=256, type=int, help="Batch size")
 parser.add_argument("--dataset", default="cifar-10", type=str, help="cifar-10/mnist")
@@ -107,8 +113,10 @@ torch.serialization.add_safe_globals([set])
 # load both models
 mmcl_model = torch.load(args.mmcl_checkpoint, device, weights_only=True)
 rvcl_model = torch.load(args.rvcl_checkpoint, device, weights_only=True)
+regular_cl_model = torch.load(args.regular_cl_checkpoint, device, weights_only=True)
 print(f"Loaded MMCL model: {mmcl_model}")
 print(f"Loaded RVCL model: {rvcl_model}")
+print(f"Loaded regular cl model: {regular_cl_model}")
 
 def encode_inputs_and_compute_margin(model, positive, negatives):
     positive_encoding = model(positive.unsqueeze(0).to(device))
@@ -129,12 +137,13 @@ for class_name in class_names:
         positive = item
         mmcl_margin = encode_inputs_and_compute_margin(model=mmcl_model, positive=positive, negatives=negatives)
         rvcl_margin = encode_inputs_and_compute_margin(model=rvcl_model, positive=positive, negatives=negatives)
-        margins[class_name].append({"mmcl": mmcl_margin, "rvcl": rvcl_margin})
+        regular_cl_margin = encode_inputs_and_compute_margin(model=regular_cl_model, positive=positive, negatives=negatives)
+        margins[class_name].append({"mmcl": mmcl_margin, "rvcl": rvcl_margin, "regular_cl": regular_cl_margin})
 
 
 
 # save all plots
-save_dir = f"plots/svm_margin/mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_kernel_type_{args.kernel_type}_C_{args.C}"
+save_dir = f"plots/svm_margin/mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}_kernel_type_{args.kernel_type}_C_{args.C}"
 if args.kernel_type == 'rbf':
     save_dir += f"_gamma_{args.kernel_gamma}"
 elif args.kernel_type == 'poly':
@@ -144,8 +153,10 @@ os.makedirs(save_dir, exist_ok=True)
 for class_name in tqdm(class_names):
     mmcl_values = [x["mmcl"] for x in margins[class_name]]
     rvcl_values = [x["rvcl"] for x in margins[class_name]]
+    regular_cl_values = [x["regular_cl"] for x in margins[class_name]]
     print(f"MMCL {class_name} {list(set(mmcl_values))}")
     print(f"RVCL {class_name} {list(set(rvcl_values))}")
+    print(f"Regular CL {class_name} {list(set(regular_cl_values))}")
     # Generate x-axis labels (Image {i})
     image_indices = np.arange(len(mmcl_values))
     image_labels = [f"Image {i}" for i in image_indices]
@@ -154,7 +165,7 @@ for class_name in tqdm(class_names):
     plt.figure(figsize=(12, 6))
     plt.scatter(image_indices, mmcl_values, color="blue", label="MMCL", alpha=0.7)
     plt.scatter(image_indices, rvcl_values, color="red", label="RVCL", alpha=0.7)
-
+    plt.scatter(image_indices, regular_cl_values, color="orange", label="Regular CL", alpha=0.7)
     # Customize plot
     plt.xticks(image_indices[::max(len(image_indices)//20, 1)], image_labels[::max(len(image_indices)//20, 1)], rotation=45, ha="right")
     plt.legend(loc="upper right")
@@ -169,7 +180,11 @@ save_dict = {
     **vars(args),
     "margins": margins
 }
-file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_kernel_type_{args.kernel_type}_C_{args.C}"
+file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}_kernel_type_{args.kernel_type}_C_{args.C}"
+if args.kernel_type == 'rbf':
+    file_name += f"_gamma_{args.kernel_gamma}"
+elif args.kernel_type == 'poly':
+    file_name += f"_deegre_{args.deegre}"
 # Ensure the directory exists
 save_dir = "margin_results"
 os.makedirs(save_dir, exist_ok=True)

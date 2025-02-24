@@ -260,7 +260,7 @@ class LinearEval(nn.Module):
         return metrics
 
     def get_model_save_name(self):
-        return f"linear_{self.hparams.load_checkpoint.split('/')[-1]}"
+        return self.hparams.get_model_save_name
 
     def save(self):
         if not self.best_model_saved:
