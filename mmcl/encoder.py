@@ -89,7 +89,7 @@ class MMCL_Encoder(nn.Module):
             # Training Phase
             self.model.train()  # Set the model to training mode
             total_loss, total_num = 0.0, 0
-            train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch + 1}")
+            train_bar = tqdm(self.trainloader, desc=f"Train Epoch {epoch + 1}")
 
             for iii, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
                 # Move data to device
@@ -130,7 +130,7 @@ class MMCL_Encoder(nn.Module):
 
             val_loss = None
             if self.hparams.use_validation:
-                val_bar = tqdm(self.valloader, desc=f"Epoch {epoch + 1}")
+                val_bar = tqdm(self.valloader, desc=f"Val Epoch {epoch + 1}")
                 # Validation Phase
                 self.model.eval()  # Set the model to evaluation mode
                 total_loss, total_num = 0.0, 0
