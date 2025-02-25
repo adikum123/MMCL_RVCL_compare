@@ -37,7 +37,7 @@ class MMCL_Encoder(nn.Module):
         if 'mmcl_checkpoint' in vars(self.hparams):
             ckpt = self.hparams.mmcl_checkpoint
             print(f"Loaded model with ckpt: {ckpt}")
-        self.model = utils.load_model_contrastive_mmcl(model=self.hparams.model, model_path=ckpt, device=device)
+            self.model = utils.load_model_contrastive_mmcl(model=self.hparams.model, model_path=ckpt, device=device)
         else:
             self.model = utils.load_model_contrastive(
                 args=self.hparams, weights_loaded=False
