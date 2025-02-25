@@ -150,7 +150,7 @@ for idx, class_name in enumerate(per_class_sampler):
 
 
 # save all plots
-save_dir = f"plots/robust_radius/mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}"
+save_dir = f"plots/robust_radius/mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}"
 os.makedirs(save_dir, exist_ok=True)
 # Loop through classes
 for class_name in tqdm(class_names):
