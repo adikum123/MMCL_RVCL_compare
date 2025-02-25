@@ -45,6 +45,15 @@ parser.add_argument(
 parser.add_argument(
     "--rvcl_checkpoint", type=str, default="", help="Model checkpoint for rvcl"
 )
+parser.add_argument(
+    "--regular_cl_model",
+    type=str,
+    default="",
+    help="model name (cifar_model, cifar_model_deep, cifar_model_wide, cnn_4layer, cnn_4layer_b, mnist_cnn_4layer)",
+)
+parser.add_argument(
+    "--regular_cl_checkpoint", type=str, default="", help="Model checkpoint for rvcl"
+)
 ##### arguments for model #####
 parser.add_argument('--train_type', default='contrastive', type=str, help='contrastive/linear eval/test/supervised')
 parser.add_argument('--dataset', default='cifar-10', type=str, help='cifar-10/mnist')
@@ -80,10 +89,12 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # load models then create verifiers
 mmcl_model = torch.load(args.mmcl_checkpoint, device, weights_only=False)
 rvcl_model = torch.load(args.rvcl_checkpoint, device, weights_only=False)
+regular_cl_model = torch.load(args.regular_cl_checkpoint, device, weights_only=False)
 
 # creating verifiers
 mmcl_verifier = RobustRadius(hparams=args, model_ori=mmcl_model)
 rvcl_verifier = RobustRadius(hparams=args, model_ori=rvcl_model)
+regular_cl_verifier = RobustRadius(hparams=args, model_ori=regular_cl_model)
 print("Loaded verifiers")
 # creating data
 class_names = testdst.classes
@@ -102,28 +113,7 @@ print("Constructed class sampler")
 result_storage = {}
 
 def compute_radius_and_update_storage(verifier, ori_image, target_image):
-    key = (
-        verifier,
-        tuple(ori_image.cpu().numpy().flatten()),
-        tuple(target_image.cpu().numpy().flatten())
-    )
-    reverse_key = (
-        verifier,
-        tuple(target_image.cpu().numpy().flatten()),
-        tuple(ori_image.cpu().numpy().flatten())
-    )
-    # Check if result already exists in storage
-    if key in result_storage:
-        print('Found in result storage')
-        return result_storage[key]
-    if reverse_key in result_storage:
-        print('Found in result storage')
-        return result_storage[reverse_key]
-    # Compute the robust radius
     curr_radius = verifier.verify(ori_image, target_image)
-    # Store the computed result
-    result_storage[key] = curr_radius
-    result_storage[reverse_key] = curr_radius  # Store for both orderings
     return curr_radius
 
 # for each sample in class we compute the average radius
@@ -135,6 +125,7 @@ for idx, class_name in enumerate(per_class_sampler):
     for ori_image in ori_images:
         mmcl_robust_radius = []
         rvcl_robust_radius = []
+        regular_cl_radius = []
         for target_image in tqdm(target_images):
             mmcl_robust_radius.append(
                 compute_radius_and_update_storage(
@@ -146,9 +137,15 @@ for idx, class_name in enumerate(per_class_sampler):
                     verifier=rvcl_verifier, ori_image=ori_image, target_image=target_image
                 )
             )
+            regular_cl_radius.append(
+                compute_radius_and_update_storage(
+                    verifier=regular_cl_verifier, ori_image=ori_image, target_image=target_image
+                )
+            )
         average_robust_radius[class_name].append({
             'mmcl': sum(mmcl_robust_radius) / len(mmcl_robust_radius),
-            'rvcl': sum(rvcl_robust_radius) / len(rvcl_robust_radius)
+            'rvcl': sum(rvcl_robust_radius) / len(rvcl_robust_radius),
+            'regular_cl': sum(regular_cl_radius) / len(regular_cl_radius)
         })
 
 
@@ -159,8 +156,10 @@ os.makedirs(save_dir, exist_ok=True)
 for class_name in tqdm(class_names):
     mmcl_values = [x["mmcl"] for x in average_robust_radius[class_name]]
     rvcl_values = [x["rvcl"] for x in average_robust_radius[class_name]]
+    regular_cl_values = [x["regular_cl"] for x in average_robust_radius[class_name]]
     print(f"MMCL {class_name} {list(set(mmcl_values))}")
     print(f"RVCL {class_name} {list(set(rvcl_values))}")
+    print(f"Regular CL {class_name} {list(set(regular_cl_values))}")
     # Generate x-axis labels (Image {i})
     image_indices = np.arange(len(mmcl_values))
     image_labels = [f"Image {i}" for i in image_indices]
@@ -169,7 +168,7 @@ for class_name in tqdm(class_names):
     plt.figure(figsize=(12, 6))
     plt.scatter(image_indices, mmcl_values, color="blue", label="MMCL", alpha=0.7)
     plt.scatter(image_indices, rvcl_values, color="red", label="RVCL", alpha=0.7)
-
+    plt.scatter(image_indices, regular_cl_values, color="orange", label="Regular CL", alpha=0.7)
     # Customize plot
     plt.xticks(image_indices[::max(len(image_indices)//20, 1)], image_labels[::max(len(image_indices)//20, 1)], rotation=45, ha="right")
     plt.legend(loc="upper right")
@@ -184,7 +183,7 @@ save_dict = {
     **vars(args),
     "average_robust_radius": average_robust_radius
 }
-file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_kernel_type_{args.kernel_type}_C_{args.C}"
+file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}"
 # Ensure the directory exists
 save_dir = "radius_results"
 os.makedirs(save_dir, exist_ok=True)

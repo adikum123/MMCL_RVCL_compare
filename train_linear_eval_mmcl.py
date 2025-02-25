@@ -88,7 +88,7 @@ parser.add_argument("--kernel_gamma", type=str, default="auto")
 
 args = parser.parse_args()
 print_args(args)
-assert args.load_checkpoint != "", f"Empty load checkpoint provided: {args.load_checkpoint}"
+assert args.mmcl_checkpoint != "", f"Empty load checkpoint provided: {args.mmcl_checkpoint}"
 # Train model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Running on: {device}")

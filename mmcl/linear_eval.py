@@ -222,6 +222,7 @@ class LinearEval(nn.Module):
         # Load best saved model as the classifier
         if self.hparams.use_validation:
             self.classifier = torch.load(os.path.join("models/linear_evaluate", self.get_model_save_name()), map_location=self.device)
+
     def test(self):
         """Evaluate the model on the test dataset."""
         self.classifier.eval()
