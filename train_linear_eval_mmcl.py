@@ -29,6 +29,11 @@ parser.add_argument(
     help="Use validation set and stopping criteria",
 )
 parser.add_argument(
+    "--relu_layer",
+    action="store_true",
+    help="Use additional relu layer in the downstream task",
+)
+parser.add_argument(
     "--num_iters", default=100, type=int, help="Num iters - PGD Solver"
 )
 

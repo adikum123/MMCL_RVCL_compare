@@ -26,7 +26,14 @@ class LinearEval(nn.Module):
         self.hparams = hparams
         self.encoder = encoder
         self.device = device
-        self.classifier = nn.Linear(feature_dim, num_classes).to(self.device)
+        if self.hparams.relu_layer:
+            self.classifier = nn.Sequential(
+                nn.Linear(feature_dim, 2 * feature_dim),  # Hidden layer (2x feature_dim)
+                nn.ReLU(),  # Activation function
+                nn.Linear(2 * feature_dim, num_classes)  # Output layer
+            ).to(self.device)
+        else:
+            self.classifier = nn.Linear(feature_dim, num_classes).to(self.device)
         self.criterion = nn.CrossEntropyLoss()
         (
             self.trainloader,
@@ -268,6 +275,8 @@ class LinearEval(nn.Module):
             ckpt = self.hparams.rvcl_checkpoint
         if 'regular_cl_checkpoint' in vars(self.hparams):
             ckpt = self.hparams.regular_cl_checkpoint
+        if self.hparams.relu_layer:
+            f"relu_linear_{ckpt.split('/')[-1]}"
         return f"linear_{ckpt.split('/')[-1]}"
 
     def save(self):
