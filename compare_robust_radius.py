@@ -74,7 +74,7 @@ parser.add_argument('--mini_batch', type=int, default=10, help='mini batch for P
 parser.add_argument('--max_steps', type=int, default=200, help='max steps for search')
 parser.add_argument("--negatives_per_class", type=int, default=5, help='number of negative items chosen per class')
 parser.add_argument("--positives_per_class", type=int, default=5, help='number of negative items chosen per class')
-
+parser.add_argument("--num_retries", type=int, default=3, help="number of retries to minimize effect of randomness")
 args = parser.parse_args()
 
 # add random seed
@@ -103,14 +103,16 @@ per_class_sampler = defaultdict(list)
 print("Iterating through the test dataset")
 stop = False  # Flag to stop early if all classes are sampled
 
+# get class sampler
 for idx, sample in enumerate(testdst):  # Use enumerate to get index and sample directly
     image, _, _, label = sample  # Unpack sample from dataset
     class_name = class_names[label]  # Get class name from label
     per_class_sampler[class_name].append(image)
 
-print("Constructed class sampler")
-
-result_storage = {}
+# construct postives
+positives = defaultdict(list)
+for class_name, values in per_class_sampler.items():
+    positives[class_name] = random.sample(per_class_sampler[class_name], args.positives_per_class)
 
 def compute_radius_and_update_storage(verifier, ori_image, target_image):
     curr_radius = verifier.verify(ori_image, target_image)
@@ -118,72 +120,101 @@ def compute_radius_and_update_storage(verifier, ori_image, target_image):
 
 # for each sample in class we compute the average radius
 average_robust_radius = defaultdict(list)
-for idx, class_name in enumerate(per_class_sampler):
-    print(f'Processing class: {class_name}, already processed: {idx+1}/{len(class_names)} classes')
-    ori_images = random.sample(per_class_sampler[class_name], args.positives_per_class)
-    target_images = [image for k, v in per_class_sampler.items() for image in random.sample(v, args.negatives_per_class) if k != class_name]
-    for ori_image in ori_images:
-        mmcl_robust_radius = []
-        rvcl_robust_radius = []
-        regular_cl_radius = []
-        for target_image in tqdm(target_images):
-            mmcl_robust_radius.append(
-                compute_radius_and_update_storage(
-                    verifier=mmcl_verifier, ori_image=ori_image, target_image=target_image
+for idx, (class_name, positives) in tqdm(enumerate(positives.items())):
+    print(f'Processing class: {class_name}, already processed: {idx}/{len(class_names)} classes')
+    for retry in range(args.num_retries):
+        target_images = [image for k, v in per_class_sampler.items() for image in random.sample(v, args.negatives_per_class)]
+        for index, ori_image in enumerate(positives):
+            mmcl_robust_radius = []
+            rvcl_robust_radius = []
+            regular_cl_radius = []
+            for target_image in target_images:
+                mmcl_robust_radius.append(
+                    compute_radius_and_update_storage(
+                        verifier=mmcl_verifier, ori_image=ori_image, target_image=target_image
+                    )
                 )
-            )
-            rvcl_robust_radius.append(
-                compute_radius_and_update_storage(
-                    verifier=rvcl_verifier, ori_image=ori_image, target_image=target_image
+                rvcl_robust_radius.append(
+                    compute_radius_and_update_storage(
+                        verifier=rvcl_verifier, ori_image=ori_image, target_image=target_image
+                    )
                 )
-            )
-            regular_cl_radius.append(
-                compute_radius_and_update_storage(
-                    verifier=regular_cl_verifier, ori_image=ori_image, target_image=target_image
+                regular_cl_radius.append(
+                    compute_radius_and_update_storage(
+                        verifier=regular_cl_verifier, ori_image=ori_image, target_image=target_image
+                    )
                 )
-            )
-        average_robust_radius[class_name].append({
-            'mmcl': sum(mmcl_robust_radius) / len(mmcl_robust_radius),
-            'rvcl': sum(rvcl_robust_radius) / len(rvcl_robust_radius),
-            'regular_cl': sum(regular_cl_radius) / len(regular_cl_radius)
+            average_robust_radius[f"class_name|{index}"].append({
+                'retry_num': f'retry_{retry+1}',
+                'mmcl': sum(mmcl_robust_radius) / len(mmcl_robust_radius),
+                'rvcl': sum(rvcl_robust_radius) / len(rvcl_robust_radius),
+                'regular_cl': sum(regular_cl_radius) / len(regular_cl_radius)
+            })
+
+# Convert defaultdict to a structured list
+data = []
+for key, values in average_robust_radius.items():
+    class_name, index = key.split("|")
+    index = int(index)  # Convert index to int
+    for entry in values:
+        data.append({
+            "class_name": class_name,
+            "index": index,
+            "retry_num": entry["retry_num"],
+            "mmcl": entry["mmcl"],
+            "rvcl": entry["rvcl"],
+            "regular_cl": entry["regular_cl"]
         })
+
+# Convert to DataFrame
+df = pd.DataFrame(data)
+
+# Compute mean and standard deviation per image for each model
+stats_df = df.groupby(["class_name", "index"]).agg(
+    mmcl_mean=("mmcl", "mean"),
+    mmcl_std=("mmcl", "std"),
+    rvcl_mean=("rvcl", "mean"),
+    rvcl_std=("rvcl", "std"),
+    regular_cl_mean=("regular_cl", "mean"),
+    regular_cl_std=("regular_cl", "std")
+).reset_index()
+
+# Create formatted x-axis labels
+stats_df["label"] = stats_df.apply(lambda row: f"image {row['index']} ({row['class_name']})", axis=1)
+
+# Plot
+plt.figure(figsize=(12, 6))
+x = np.arange(len(stats_df))  # X-axis positions
+
+plt.errorbar(x, stats_df["mmcl_mean"], yerr=stats_df["mmcl_std"], fmt='o-', capsize=5, label="MMCL", color='blue')
+plt.errorbar(x, stats_df["rvcl_mean"], yerr=stats_df["rvcl_std"], fmt='s-', capsize=5, label="RVCL", color='red')
+plt.errorbar(x, stats_df["regular_cl_mean"], yerr=stats_df["regular_cl_std"], fmt='^-', capsize=5, label="Regular CL", color='green')
+
+# Formatting
+plt.xticks(x, stats_df["label"], rotation=45, ha="right")
+plt.xlabel("Images")
+plt.ylabel("Robust Radius")
+plt.title("Average Robust Radius with Standard Deviation")
+plt.legend()
+plt.tight_layout()
+plt.show()
 
 
 # save all plots
 save_dir = f"plots/robust_radius/mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}"
 os.makedirs(save_dir, exist_ok=True)
-# Loop through classes
-for class_name in tqdm(class_names):
-    mmcl_values = [x["mmcl"] for x in average_robust_radius[class_name]]
-    rvcl_values = [x["rvcl"] for x in average_robust_radius[class_name]]
-    regular_cl_values = [x["regular_cl"] for x in average_robust_radius[class_name]]
-    print(f"MMCL {class_name} {list(set(mmcl_values))}")
-    print(f"RVCL {class_name} {list(set(rvcl_values))}")
-    print(f"Regular CL {class_name} {list(set(regular_cl_values))}")
-    # Generate x-axis labels (Image {i})
-    image_indices = np.arange(len(mmcl_values))
-    image_labels = [f"Image {i}" for i in image_indices]
-
-    # Create the plot
-    plt.figure(figsize=(12, 6))
-    plt.scatter(image_indices, mmcl_values, color="blue", label="MMCL", alpha=0.7)
-    plt.scatter(image_indices, rvcl_values, color="red", label="RVCL", alpha=0.7)
-    plt.scatter(image_indices, regular_cl_values, color="orange", label="Regular CL", alpha=0.7)
-    # Customize plot
-    plt.xticks(image_indices[::max(len(image_indices)//20, 1)], image_labels[::max(len(image_indices)//20, 1)], rotation=45, ha="right")
-    plt.legend(loc="upper right")
-    plt.title(f"Margin Comparison for {class_name}")
-    plt.xlabel("Image Index")
-    plt.ylabel("Margin Value")
-    plot_path = os.path.join(save_dir, f"{class_name}_distribution.png")
-    plt.savefig(plot_path, dpi=300, bbox_inches="tight")
-    plt.close()
 
 save_dict = {
     **vars(args),
     "average_robust_radius": average_robust_radius
 }
-file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}"
+
+def get_model_name_from_ckpt(ckpt):
+    model_name = ckpt.split("/")[-1]
+    return model_name[0: model_name.rindex(".")]
+
+
+file_name = f"mmcl_{get_model_name_from_ckpt(args.mmcl_checkpoint)}_rvcl_{get_model_name_from_ckpt(args.rvcl_checkpoint)}_regular_cl_{get_model_name_from_ckpt(args.regular_cl_checkpoint)}"
 # Ensure the directory exists
 save_dir = "radius_results"
 os.makedirs(save_dir, exist_ok=True)

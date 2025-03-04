@@ -51,7 +51,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
             --model cnn_4layer_b \
             --relu_layer \
             --trans \
-            --mmcl_checkpoint models/mmcl/linear/cnn_4layer_b_C_1_linear.pkl \
+            --mmcl_checkpoint models/mmcl/linear/cnn_4layer_b_C_1_linear.pkl
     else
         echo "Training encoder failed, skipping linear evaluation."
     fi
