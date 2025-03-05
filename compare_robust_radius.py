@@ -144,86 +144,96 @@ for idx, (class_name, positives) in tqdm(enumerate(positives.items())):
                         verifier=regular_cl_verifier, ori_image=ori_image, target_image=target_image
                     )
                 )
-            average_robust_radius[f"class_name|{index}"].append({
+            average_robust_radius[f"{class_name}|{index}"].append({
                 'retry_num': f'retry_{retry+1}',
                 'mmcl': sum(mmcl_robust_radius) / len(mmcl_robust_radius),
                 'rvcl': sum(rvcl_robust_radius) / len(rvcl_robust_radius),
                 'regular_cl': sum(regular_cl_radius) / len(regular_cl_radius)
             })
 
-# Convert defaultdict to a structured list
-data = []
-for key, values in average_robust_radius.items():
-    class_name, index = key.split("|")
-    index = int(index)  # Convert index to int
-    for entry in values:
-        data.append({
-            "class_name": class_name,
-            "index": index,
-            "retry_num": entry["retry_num"],
-            "mmcl": entry["mmcl"],
-            "rvcl": entry["rvcl"],
-            "regular_cl": entry["regular_cl"]
+def extract_mean_std_per_model(average_robust_radius):
+    for x in average_robust_radius.values():
+        retries[x["retry_num"]].append({
+            "mmcl": x["mmcl"],
+            "rvcl": x["rvcl"],
+            "regular_cl": x["regular_cl"],
         })
 
-# Convert to DataFrame
-df = pd.DataFrame(data)
+    averages_per_retry = defaultdict(list)
+    for retry, retry_values in retries.items():
+        averages_per_retry[retry].append({
+            "mmcl": np.mean(list(x["mmcl"] for x in retry_values)),
+            "rvcl": np.mean(list(x["rvcl"] for x in retry_values)),
+            "regular_cl": np.mean(list(x["regular_cl"] for x in retry_values))
+        })
 
-# Compute mean and standard deviation per image for each model
-stats_df = df.groupby(["class_name", "index"]).agg(
-    mmcl_mean=("mmcl", "mean"),
-    mmcl_std=("mmcl", "std"),
-    rvcl_mean=("rvcl", "mean"),
-    rvcl_std=("rvcl", "std"),
-    regular_cl_mean=("regular_cl", "mean"),
-    regular_cl_std=("regular_cl", "std")
-).reset_index()
+    per_model_extracted_values = defaultdict(list)
+    for retry, values in averages_per_retry.items():
+        for item in values:
+            for model, average_radius in item.items():
+                per_model_extracted_values[model].append(average_radius)
 
-# Create formatted x-axis labels
-stats_df["label"] = stats_df.apply(lambda row: f"image {row['index']} ({row['class_name']})", axis=1)
+    per_model_mean_std = defaultdict(list)
+    for model, values in per_model_extracted_values.items():
+        per_model_mean_std[model].append(
+            (np.mean(values), np.std(values))
+        )
 
-# Plot
-plt.figure(figsize=(12, 6))
-x = np.arange(len(stats_df))  # X-axis positions
-
-plt.errorbar(x, stats_df["mmcl_mean"], yerr=stats_df["mmcl_std"], fmt='o-', capsize=5, label="MMCL", color='blue')
-plt.errorbar(x, stats_df["rvcl_mean"], yerr=stats_df["rvcl_std"], fmt='s-', capsize=5, label="RVCL", color='red')
-plt.errorbar(x, stats_df["regular_cl_mean"], yerr=stats_df["regular_cl_std"], fmt='^-', capsize=5, label="Regular CL", color='green')
-
-# Formatting
-plt.xticks(x, stats_df["label"], rotation=45, ha="right")
-plt.xlabel("Images")
-plt.ylabel("Robust Radius")
-plt.title("Average Robust Radius with Standard Deviation")
-plt.legend()
-plt.tight_layout()
-plt.show()
-
-
-# save all plots
-save_dir = f"plots/robust_radius/mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}"
-os.makedirs(save_dir, exist_ok=True)
-
-save_dict = {
-    **vars(args),
-    "average_robust_radius": average_robust_radius
-}
+    return per_model_mean_std
 
 def get_model_name_from_ckpt(ckpt):
     model_name = ckpt.split("/")[-1]
     return model_name[0: model_name.rindex(".")]
 
+images_and_labels = list(average_robust_radius.keys())
+mmcl_means, mmcl_stds = [], []
+rvcl_means, rvcl_stds = [], []
+regular_cl_means, regular_cl_stds = [], []
 
-file_name = f"mmcl_{get_model_name_from_ckpt(args.mmcl_checkpoint)}_rvcl_{get_model_name_from_ckpt(args.rvcl_checkpoint)}_regular_cl_{get_model_name_from_ckpt(args.regular_cl_checkpoint)}"
-# Ensure the directory exists
-save_dir = "radius_results"
-os.makedirs(save_dir, exist_ok=True)
+for key, value in average_robust_radius.items():
+    class_name, image_index = key.split("|")
+    per_model_mean_std = extract_mean_std_per_model(value)
+    mmcl_mean, mmcl_std = per_model_mean_std["mmcl"]
+    rvcl_mean, rvcl_std = per_model_mean_std["rvcl"]
+    regular_cl_mean, regular_cl_std = per_model_mean_std["regular_cl"]
 
-# Construct file path
-file_path = os.path.join(save_dir, f"{file_name}.json")
+    mmcl_means.append(mmcl_mean)
+    mmcl_stds.append(mmcl_std)
+    rvcl_means.append(rvcl_mean)
+    rvcl_stds.append(rvcl_std)
+    regular_cl_means.append(regular_cl_mean)
+    regular_cl_stds.append(regular_cl_std)
+
+x = np.arange(len(class_labels))  # X positions
+
+plt.figure(figsize=(12, 6))
+
+# MMCL Model (Blue)
+plt.scatter(x, mmcl_means, color='blue', marker='o', label="MMCL Mean")
+plt.scatter(x, mmcl_stds, color='blue', marker='s', label="MMCL Std")
+
+# RVCL Model (Red)
+plt.scatter(x, rvcl_means, color='red', marker='o', label="RVCL Mean")
+plt.scatter(x, rvcl_stds, color='red', marker='s', label="RVCL Std")
+
+# Regular CL Model (Green)
+plt.scatter(x, regular_cl_means, color='green', marker='o', label="Regular CL Mean")
+plt.scatter(x, regular_cl_stds, color='green', marker='s', label="Regular CL Std")
+
+plt.xticks(x, class_labels, rotation=45, ha="right", fontsize=9)
+plt.ylabel("Mean & Standard Deviation")
+plt.title("Mean & Std Deviation per Model")
+plt.legend()
+plt.grid(axis='y', linestyle="--", alpha=0.7)
+plt.tight_layout()
+mmcl_name, rvcl_name, regular_cl_name = (
+    get_model_name_from_ckpt(args.mmcl_checkpoint),
+    get_model_name_from_ckpt(args.rvcl_checkpoint),
+    get_model_name_from_ckpt(args.regular_cl_checkpoint)
+)
+file_name = f"mmcl_{mmcl_name}_rvcl_{rvcl_name}_regular_cl_{regular_cl_name}"
+plt.savefig(f"/plots/robust_radius/{file_name}.png", dpi=300, bbox_inches="tight")
 
 # Save dictionary as JSON
-with open(file_path, "w") as f:
+with open(f"/plots/robust_radius/{file_name}.json", "w") as f:
     json.dump(save_dict, f, indent=4)
-
-print(f"Saved results to {file_path}")
