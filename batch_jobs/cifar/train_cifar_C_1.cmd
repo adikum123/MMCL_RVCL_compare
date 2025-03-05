@@ -50,7 +50,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
             --lr 1e-3 \
             --model cnn_4layer_b \
             --relu_layer \
-            --trans \
+            --clean \
             --mmcl_checkpoint models/mmcl/rbf/cnn_4layer_b_C_1_rbf_auto.pkl
     else
         echo "Training encoder failed, skipping linear evaluation."
