@@ -186,6 +186,11 @@ def get_model_name_from_ckpt(ckpt):
     model_name = ckpt.split("/")[-1]
     return model_name[0: model_name.rindex(".")]
 
+per_model_mean_std = extract_mean_std_per_model(average_robust_radius)
+# Save dictionary as JSON
+with open(f"/plots/robust_radius/{file_name}.json", "w") as f:
+    json.dump(per_model_mean_std, f, indent=4)
+
 images_and_labels = list(average_robust_radius.keys())
 mmcl_means, mmcl_stds = [], []
 rvcl_means, rvcl_stds = [], []
@@ -234,7 +239,3 @@ mmcl_name, rvcl_name, regular_cl_name = (
 )
 file_name = f"mmcl_{mmcl_name}_rvcl_{rvcl_name}_regular_cl_{regular_cl_name}"
 plt.savefig(f"/plots/robust_radius/{file_name}.png", dpi=300, bbox_inches="tight")
-
-# Save dictionary as JSON
-with open(f"/plots/robust_radius/{file_name}.json", "w") as f:
-    json.dump(save_dict, f, indent=4)

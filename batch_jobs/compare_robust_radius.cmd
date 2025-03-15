@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -p lrz-hgx-a100-80x4
 #SBATCH --gres=gpu:1
-#SBATCH --time=1-00:00:00
+#SBATCH --time=7:00:00
 #SBATCH -o outs/robust_radius_100k.out
 #SBATCH -e outs/robust_radius_100k.out
 
