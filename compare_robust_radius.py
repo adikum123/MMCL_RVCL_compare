@@ -120,11 +120,12 @@ def compute_radius_and_update_storage(verifier, ori_image, target_image):
 
 # for each sample in class we compute the average radius
 average_robust_radius = defaultdict(list)
-for idx, (class_name, positives) in tqdm(enumerate(positives.items())):
+for idx, (class_name, positives) in enumerate(positives.items()):
     print(f'Processing class: {class_name}, already processed: {idx}/{len(class_names)} classes')
     for retry in range(args.num_retries):
+        print(f"Processing retry: {retry+1}")
         target_images = [image for k, v in per_class_sampler.items() for image in random.sample(v, args.negatives_per_class)]
-        for index, ori_image in enumerate(positives):
+        for index, ori_image in enumerate(tqdm(positives)):
             mmcl_robust_radius = []
             rvcl_robust_radius = []
             regular_cl_radius = []

@@ -34,6 +34,7 @@ class LinearEval(nn.Module):
             ).to(self.device)
         else:
             self.classifier = nn.Linear(feature_dim, num_classes).to(self.device)
+        print(f"Classifier in downstream task:\n{self.classifier}")
         self.criterion = nn.CrossEntropyLoss()
         (
             self.trainloader,

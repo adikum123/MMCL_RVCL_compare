@@ -3,7 +3,7 @@ import argparse
 import torch
 
 from beta_crown.utils import print_args
-from mmcl.linear_eval import LinearEval
+from linear_eval import LinearEval
 from regular_cl import RegularCLModel
 
 parser = argparse.ArgumentParser(description="unsupervised verification")
