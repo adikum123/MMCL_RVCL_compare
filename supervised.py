@@ -26,10 +26,10 @@ class SupervisedModel(nn.Module):
                 nn.ReLU(),
                 nn.Conv2d(32, 128, (4, 4), stride=2, padding=1),
                 nn.ReLU(),
-                Flatten(),
+                nn.Flatten(),
                 nn.Linear(8192, 100),
                 nn.ReLU(),
-                nn.Linear(100, 200),
+                nn.Linear(100, 200), # adds additional relu layer
                 nn.ReLU(),
                 nn.Linear(200, 10)
             )
@@ -40,11 +40,25 @@ class SupervisedModel(nn.Module):
                 nn.ReLU(),
                 nn.Conv2d(32, 128, (4, 4), stride=2, padding=1),
                 nn.ReLU(),
-                Flatten(),
+                nn.Flatten(),
                 nn.Linear(8192, 100),
                 nn.ReLU(),
                 nn.Linear(100, 10)
             )
+        if self.hparams.use_validation:
+            (
+                self.trainloader,
+                self.traindst,
+                self.valloader,
+                self.valdst,
+                self.testloader,
+                self.testdst,
+            ) = data_loader.get_train_val_test_dataset(self.hparams)
+        else:
+            self.trainloader, self.traindst, self.testloader, self.testdst = (
+                data_loader.get_dataset(self.hparams)
+            )
+        print('Dataset loaded')
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(
             self.model.parameters(), lr=self.hparams.lr
@@ -55,45 +69,15 @@ class SupervisedModel(nn.Module):
             gamma=self.hparams.scheduler_gamma,
         )
         self.best_model_saved = False
-        # attacker info
-        attacker = None
-        save_name = ""
-        if self.hparams.name != "":
-            save_name = self.hparams.name + "_"
-        if self.hparams.adv_img:
-            attack_info = (
-                "Adv_train_epsilon_"
-                + str(self.hparams.epsilon)
-                + "_alpha_"
-                + str(self.hparams.alpha)
-                + "_max_iters_"
-                + str(self.hparams.k)
-                + "_type_"
-                + str(self.hparams.attack_type)
-                + "_randomstart_"
-                + str(self.hparams.random_start)
-            )
-            save_name += attack_info + "_"
-            print("Adversarial training info...")
-            print(attack_info)
-            img_clip = min_max_value(self.hparams)
-            self.attacker = FastGradientSignUntargeted(
-                self.encoder,
-                linear="None",
-                epsilon=self.hparams.epsilon,
-                alpha=self.hparams.alpha,
-                min_val=img_clip["min"].to(self.device),
-                max_val=img_clip["max"].to(self.device),
-                max_iters=self.hparams.k,
-                device=self.device,
-                _type=self.hparams.attack_type,
-            )
 
     def forward(self, x):
         return self.model(x)
 
     def set_eval(self):
         self.model.eval()
+
+    def get_model_save_name(self):
+        return f"supervised_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
 
     def train(self):
         best_val_loss = float("inf")
@@ -116,9 +100,10 @@ class SupervisedModel(nn.Module):
                 )
                 # Combine images and corresponding targets
                 images = torch.cat([ori_image, pos_1, pos_2], dim=0)
+                logits = self.model(images)
                 targets = torch.cat([target, target, target], dim=0)
                 # Backpropagation and optimizer step
-                loss = self.criterion(images, targets)
+                loss = self.criterion(logits, targets)
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
@@ -175,10 +160,10 @@ class SupervisedModel(nn.Module):
             # Step the learning rate scheduler at the end of each epoch
             self.scheduler.step()
         # Plot and save the training and validation loss
-        save_dir = "plots/encoder"
+        save_dir = "plots/supervised"
         os.makedirs(save_dir, exist_ok=True)
         save_path = os.path.join(
-            save_dir, f"{self.get_model_save_name()}_{time.time()}.png"
+            save_dir, f"{self.get_model_save_name()}.png"
         )
 
         plt.figure(figsize=(10, 6))
