@@ -114,7 +114,7 @@ positives = defaultdict(list)
 for class_name, values in per_class_sampler.items():
     positives[class_name] = random.sample(per_class_sampler[class_name], args.positives_per_class)
 
-def compute_radius_and_update_storage(verifier, ori_image, target_image):
+def compute_radius(verifier, ori_image, target_image):
     curr_radius = verifier.verify(ori_image, target_image)
     return curr_radius
 
@@ -131,111 +131,89 @@ for idx, (class_name, positives) in enumerate(positives.items()):
             regular_cl_radius = []
             for target_image in target_images:
                 mmcl_robust_radius.append(
-                    compute_radius_and_update_storage(
+                    compute_radius(
                         verifier=mmcl_verifier, ori_image=ori_image, target_image=target_image
                     )
                 )
                 rvcl_robust_radius.append(
-                    compute_radius_and_update_storage(
+                    compute_radius(
                         verifier=rvcl_verifier, ori_image=ori_image, target_image=target_image
                     )
                 )
                 regular_cl_radius.append(
-                    compute_radius_and_update_storage(
+                    compute_radius(
                         verifier=regular_cl_verifier, ori_image=ori_image, target_image=target_image
                     )
                 )
-            average_robust_radius[f"{class_name}|{index}"].append({
-                'retry_num': f'retry_{retry+1}',
+            average_robust_radius[f"{index}|{retry}"].append({
                 'mmcl': sum(mmcl_robust_radius) / len(mmcl_robust_radius),
                 'rvcl': sum(rvcl_robust_radius) / len(rvcl_robust_radius),
                 'regular_cl': sum(regular_cl_radius) / len(regular_cl_radius)
             })
-
-def extract_mean_std_per_model(average_robust_radius):
-    for x in average_robust_radius.values():
-        retries[x["retry_num"]].append({
-            "mmcl": x["mmcl"],
-            "rvcl": x["rvcl"],
-            "regular_cl": x["regular_cl"],
-        })
-
-    averages_per_retry = defaultdict(list)
-    for retry, retry_values in retries.items():
-        averages_per_retry[retry].append({
-            "mmcl": np.mean(list(x["mmcl"] for x in retry_values)),
-            "rvcl": np.mean(list(x["rvcl"] for x in retry_values)),
-            "regular_cl": np.mean(list(x["regular_cl"] for x in retry_values))
-        })
-
-    per_model_extracted_values = defaultdict(list)
-    for retry, values in averages_per_retry.items():
-        for item in values:
-            for model, average_radius in item.items():
-                per_model_extracted_values[model].append(average_radius)
-
-    per_model_mean_std = defaultdict(list)
-    for model, values in per_model_extracted_values.items():
-        per_model_mean_std[model].append(
-            (np.mean(values), np.std(values))
-        )
-
-    return per_model_mean_std
+print(f"Average robust radius dict:\n{json.dumps(average_robust_radius, indent=4)}")
+per_image_values = defaultdict(list)
+for index_retry, values in average_robust_radius.items():
+    image_index, retry = index_retry.split("|")
+    per_image_values[image_index].extend(values)
+print(f"Per image values: {json.dumps(per_image_values, indent=4)}")
+per_model_mean_std = defaultdict(list)
+for image_index, values in per_image_values.items():
+    mmcl_values = [x["mmcl"] for x in values]
+    rvcl_values = [x["rvcl"] for x in values]
+    regular_cl_values = [x["regular_cl"] for x in values]
+    per_model_mean_std[image_index] = {
+        "mmcl": (np.mean(mmcl_values), np.std(mmcl_values)),
+        "rvcl": (np.mean(rvcl_values), np.std(rvcl_values)),
+        "regular_cl": (np.mean(regular_cl_values), np.std(regular_cl_values))
+    }
+print(f"Per model mean and std:\n{json.dumps(per_model_mean_std)}")
 
 def get_model_name_from_ckpt(ckpt):
     model_name = ckpt.split("/")[-1]
     return model_name[0: model_name.rindex(".")]
 
-per_model_mean_std = extract_mean_std_per_model(average_robust_radius)
 # Save dictionary as JSON
 with open(f"/plots/robust_radius/{file_name}.json", "w") as f:
     json.dump(per_model_mean_std, f, indent=4)
 
-images_and_labels = list(average_robust_radius.keys())
-mmcl_means, mmcl_stds = [], []
-rvcl_means, rvcl_stds = [], []
-regular_cl_means, regular_cl_stds = [], []
+num_images = len(class_names) * args.positives_per_class
+assert len(per_model_mean_std.keys()) == len(class_names) * args.positives_per_class, (
+    f"Lengths do not match:\n{len(per_model_mean_std.keys())}\n{len(class_names)},{args.positives_per_class}"
+)
+mmcl_means, mmcl_stds = [0] * num_images, [0] * num_images
+rvcl_means, rvcl_stds = [0] * num_images, [0] * num_images
+regular_cl_means, regular_cl_stds = [0] * num_images, [0] * num_images
 
-for key, value in average_robust_radius.items():
-    class_name, image_index = key.split("|")
-    per_model_mean_std = extract_mean_std_per_model(value)
-    mmcl_mean, mmcl_std = per_model_mean_std["mmcl"]
-    rvcl_mean, rvcl_std = per_model_mean_std["rvcl"]
-    regular_cl_mean, regular_cl_std = per_model_mean_std["regular_cl"]
+for image_index, value in average_robust_radius.items():
+    if isinstance(image_index, str):
+        image_index = int(image_index)
+    mmcl_mean, mmcl_std = per_model_mean_std[str(image_index)]["mmcl"]
+    rvcl_mean, rvcl_std = per_model_mean_std[str(image_index)]["rvcl"]
+    regular_cl_mean, regular_cl_std = per_model_mean_std[str(image_index)]["regular_cl"]
 
-    mmcl_means.append(mmcl_mean)
-    mmcl_stds.append(mmcl_std)
-    rvcl_means.append(rvcl_mean)
-    rvcl_stds.append(rvcl_std)
-    regular_cl_means.append(regular_cl_mean)
-    regular_cl_stds.append(regular_cl_std)
+    mmcl_means[image_index] = mmcl_mean
+    mmcl_stds[image_index] = mmcl_std
+    rvcl_means[image_index] = rvcl_mean
+    rvcl_stds[image_index] = rvcl_std
+    regular_cl_means[image_index] = regular_cl_mean
+    regular_cl_stds[image_index] = regular_cl_std
 
-x = np.arange(len(class_labels))  # X positions
+x = list(range(num_images))
 
 plt.figure(figsize=(12, 6))
 
-# MMCL Model (Blue)
-plt.scatter(x, mmcl_means, color='blue', marker='o', label="MMCL Mean")
-plt.scatter(x, mmcl_stds, color='blue', marker='s', label="MMCL Std")
+# MMCL model
+plt.errorbar(x, mmcl_means, yerr=mmcl_stds, fmt='o', color='blue', label="MMCL", capsize=3)
 
-# RVCL Model (Red)
-plt.scatter(x, rvcl_means, color='red', marker='o', label="RVCL Mean")
-plt.scatter(x, rvcl_stds, color='red', marker='s', label="RVCL Std")
+# RVCL model
+plt.errorbar(x, rvcl_means, yerr=rvcl_stds, fmt='s', color='green', label="RVCL", capsize=3)
 
-# Regular CL Model (Green)
-plt.scatter(x, regular_cl_means, color='green', marker='o', label="Regular CL Mean")
-plt.scatter(x, regular_cl_stds, color='green', marker='s', label="Regular CL Std")
+# Regular CL model
+plt.errorbar(x, regular_cl_means, yerr=regular_cl_stds, fmt='^', color='red', label="Regular CL", capsize=3)
 
-plt.xticks(x, class_labels, rotation=45, ha="right", fontsize=9)
-plt.ylabel("Mean & Standard Deviation")
-plt.title("Mean & Std Deviation per Model")
+plt.xlabel("Image Index")
+plt.ylabel("Robust Radius (Mean ± Std)")
+plt.title("Robust Radius Comparison Across Models")
 plt.legend()
-plt.grid(axis='y', linestyle="--", alpha=0.7)
-plt.tight_layout()
-mmcl_name, rvcl_name, regular_cl_name = (
-    get_model_name_from_ckpt(args.mmcl_checkpoint),
-    get_model_name_from_ckpt(args.rvcl_checkpoint),
-    get_model_name_from_ckpt(args.regular_cl_checkpoint)
-)
-file_name = f"mmcl_{mmcl_name}_rvcl_{rvcl_name}_regular_cl_{regular_cl_name}"
-plt.savefig(f"/plots/robust_radius/{file_name}.png", dpi=300, bbox_inches="tight")
+plt.grid(True)
+plt.show()
