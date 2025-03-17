@@ -32,7 +32,7 @@ class SupervisedModel(nn.Module):
                 nn.Linear(100, 200), # adds additional relu layer
                 nn.ReLU(),
                 nn.Linear(200, 10)
-            )
+            ).to(self.device)
         else:
             self.model = nn.Sequential(
                 nn.ZeroPad2d((1, 2, 1, 2)),
@@ -44,7 +44,7 @@ class SupervisedModel(nn.Module):
                 nn.Linear(8192, 100),
                 nn.ReLU(),
                 nn.Linear(100, 10)
-            )
+            ).to(self.device)
         if self.hparams.use_validation:
             (
                 self.trainloader,
