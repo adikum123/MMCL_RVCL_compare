@@ -104,9 +104,9 @@ print("Iterating through the test dataset")
 stop = False  # Flag to stop early if all classes are sampled
 
 # get class sampler
-for idx, sample in enumerate(testdst):  # Use enumerate to get index and sample directly
-    image, _, _, label = sample  # Unpack sample from dataset
-    class_name = class_names[label]  # Get class name from label
+for idx, sample in enumerate(testdst):
+    image, _, _, label = sample
+    class_name = class_names[label]
     per_class_sampler[class_name].append(image)
 
 # construct postives

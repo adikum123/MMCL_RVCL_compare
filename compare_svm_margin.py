@@ -70,6 +70,8 @@ parser.add_argument(
 )
 parser.add_argument("--kernel_gamma", type=str, default="auto")
 parser.add_argument("--normalize", action="store_true")
+parser.add_argument("--positives_per_class", type=int, default=10)
+parser.add_argument("--negatives_per_class", type=int, default=100)
 
 args = parser.parse_args()
 
@@ -85,35 +87,22 @@ print("Class names:", class_names)
 per_class_sampler = defaultdict(list)
 margins = defaultdict(list)
 
-# create per class sampler
-for idx, (image_batch, label_batch) in enumerate(testloader):
-    stop = False
-    for image, label in zip(image_batch, label_batch):
-        class_name = class_names[label]
-        if len(per_class_sampler[class_name]) < args.class_sample_limit:
-            per_class_sampler[class_name].append(image)
-            if all(
-                len(images) >= args.class_sample_limit
-                for images in per_class_sampler.values()
-            ):
-                stop = True
-            if stop:
-                break
-        if stop:
-            break
+# get class sampler
+for idx, sample in enumerate(testdst):
+    image, _, _, label = sample
+    class_name = class_names[label]
+    per_class_sampler[class_name].append(image)
 
-torch.serialization.add_safe_globals([Linear])
-torch.serialization.add_safe_globals([Flatten, MMCLFlatten])
-torch.serialization.add_safe_globals([ReLU])
-torch.serialization.add_safe_globals([Conv2d])
-torch.serialization.add_safe_globals([ZeroPad2d])
-torch.serialization.add_safe_globals([Sequential])
-torch.serialization.add_safe_globals([set])
+# construct postives
+positives = defaultdict(list)
+for class_name, values in per_class_sampler.items():
+    positives[class_name] = random.sample(per_class_sampler[class_name], args.positives_per_class)
+
 
 # load both models
-mmcl_model = torch.load(args.mmcl_checkpoint, device, weights_only=True)
-rvcl_model = torch.load(args.rvcl_checkpoint, device, weights_only=True)
-regular_cl_model = torch.load(args.regular_cl_checkpoint, device, weights_only=True)
+mmcl_model = torch.load(args.mmcl_checkpoint, device)
+rvcl_model = torch.load(args.rvcl_checkpoint, device)
+regular_cl_model = torch.load(args.regular_cl_checkpoint, device)
 print(f"Loaded MMCL model: {mmcl_model}")
 print(f"Loaded RVCL model: {rvcl_model}")
 print(f"Loaded regular cl model: {regular_cl_model}")
@@ -126,20 +115,42 @@ def encode_inputs_and_compute_margin(model, positive, negatives):
 # compute margin for each class
 for class_name in class_names:
     print(f"Processing items for class: {class_name}")
-    negatives = [
-        image.to(device)
-        for k, v in per_class_sampler.items()
-        for image in v
-        if k != class_name
-    ]
     for item in tqdm(per_class_sampler[class_name]):
         # Select one random image as positive and other images as negatives
         positive = item
-        mmcl_margin = encode_inputs_and_compute_margin(model=mmcl_model, positive=positive, negatives=negatives)
-        rvcl_margin = encode_inputs_and_compute_margin(model=rvcl_model, positive=positive, negatives=negatives)
-        regular_cl_margin = encode_inputs_and_compute_margin(model=regular_cl_model, positive=positive, negatives=negatives)
-        margins[class_name].append({"mmcl": mmcl_margin, "rvcl": rvcl_margin, "regular_cl": regular_cl_margin})
+        for retry in args.num_retries:
+            negatives = [image for k, v in per_class_sampler.items() for image in random.sample(v, args.negatives_per_class)]
+            mmcl_margin = encode_inputs_and_compute_margin(model=mmcl_model, positive=positive, negatives=negatives)
+            rvcl_margin = encode_inputs_and_compute_margin(model=rvcl_model, positive=positive, negatives=negatives)
+            regular_cl_margin = encode_inputs_and_compute_margin(model=regular_cl_model, positive=positive, negatives=negatives)
+            margins[class_name].append({
+                "retry": retry+1,
+                "mmcl": mmcl_margin,
+                "rvcl": rvcl_margin,
+                "regular_cl": regular_cl_margin
+            })
 
+print(f"Obtained margin dict: {margins}")
+# get mean and std per class
+per_class_model_std = {}
+for class_name, values in margins:
+    mmcl_values = [x["mmcl"] for x in values]
+    rvcl_values = [x["rvcl"] for x in values]
+    regular_cl_values = [x["regular_cl"] for x in values]
+    per_class_model_std[class_name] = {
+        "mmcl": (
+            np.mean(mmcl_values),
+            np.std(mmcl_values)
+        ),
+        "rvcl": (
+            np.mean(rvcl_values),
+            np.std(rvcl_values)
+        ),
+        "regular_cl": (
+            np.mean(regular_cl_values),
+            np.std(regular_cl_values)
+        )
+    }
 
 
 # save all plots

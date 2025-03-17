@@ -100,7 +100,7 @@ class SupervisedModel(nn.Module):
                 )
                 # Combine images and corresponding targets
                 images = torch.cat([ori_image, pos_1, pos_2], dim=0)
-                logits = self.model(images)
+                logits = self.forward(x=images)
                 targets = torch.cat([target, target, target], dim=0)
                 # Backpropagation and optimizer step
                 loss = self.criterion(logits, targets)
@@ -131,9 +131,10 @@ class SupervisedModel(nn.Module):
                         )
                         # Combine images and corresponding targets
                         images = torch.cat([ori_image, pos_1, pos_2], dim=0)
+                        logits = self.forward(x=images)
                         targets = torch.cat([target, target, target], dim=0)
                         # Compute InfoNCE loss
-                        loss = self.criterion(images, targets)
+                        loss = self.criterion(logits, targets)
                         batch_size = pos_1.size(0)
                         total_num += batch_size
                         total_loss += loss.item() * batch_size
