@@ -83,7 +83,7 @@ torch.cuda.manual_seed_all(args.seed)
 random.seed(args.seed)
 np.random.seed(args.seed)
 _, _, _, _, testloader, testdst = data_loader.get_train_val_test_dataset(args=args)
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cpu')
 
 
 # load models then create verifiers
