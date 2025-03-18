@@ -182,7 +182,7 @@ class SupervisedModel(nn.Module):
 
     def test(self):
         """Evaluate the model on the test dataset."""
-        self.classifier.eval()
+        self.model.eval()
         total_correct, total_samples = 0, 0
         total_loss = 0.0
         test_bar = tqdm(self.testloader, desc="Testing")

@@ -168,7 +168,8 @@ elif args.kernel_type == 'poly':
 file_path = os.path.join(save_dir, f"{file_name}.json")
 # Save dictionary as JSON
 with open(file_path, "w") as f:
-    json.dump(per_class_mean_std, f, indent=4)
+    per_class_mean_std_str_keys = {str(k): v for k, v in per_class_mean_std.items()}
+    json.dump(per_class_mean_std_str_keys, f, indent=4)
 
 # Generate labels for each image
 image_labels = [f"Image {idx}, class: {class_name}" for class_name, idx in per_class_mean_std.keys()]
