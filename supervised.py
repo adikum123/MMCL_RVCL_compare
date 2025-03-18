@@ -218,8 +218,8 @@ class SupervisedModel(nn.Module):
         return metrics
 
         def save(self):
-        if not self.best_model_saved:
-            save_dir = f'models/supervised'
-            os.makedirs(save_dir, exist_ok=True)
-            save_path = os.path.join(save_dir, self.get_model_save_name() + ".pkl")
-            torch.save(self.model, save_path)
+            if not self.best_model_saved:
+                save_dir = f'models/supervised'
+                os.makedirs(save_dir, exist_ok=True)
+                save_path = os.path.join(save_dir, self.get_model_save_name() + ".pkl")
+                torch.save(self.model, save_path)
