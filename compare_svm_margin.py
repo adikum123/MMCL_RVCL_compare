@@ -115,9 +115,9 @@ def encode_inputs_and_compute_margin(model, positive, negatives):
     return compute_margin(positive=positive_encoding, negatives=negative_encodings, args=args)
 
 # compute margin for each class
-for idx, class_name in enumerate(class_names):
-    print(f"Processing items for class: {class_name} already processed: {idx+1}/{len(class_names)} classes")
-    for item in tqdm(positives[class_name]):
+for class_index, class_name in enumerate(class_names):
+    print(f"Processing items for class: {class_name} already processed: {class_index}/{len(class_names)} classes")
+    for image_index, item in tqdm(enumerate(positives[class_name])):
         # Select one random image as positive and other images as negatives
         positive = item
         for retry in range(args.num_retries):
@@ -127,7 +127,7 @@ for idx, class_name in enumerate(class_names):
             mmcl_margin = encode_inputs_and_compute_margin(model=mmcl_model, positive=positive, negatives=negatives)
             rvcl_margin = encode_inputs_and_compute_margin(model=rvcl_model, positive=positive, negatives=negatives)
             regular_cl_margin = encode_inputs_and_compute_margin(model=regular_cl_model, positive=positive, negatives=negatives)
-            margins[class_name].append({
+            margins[(class_name, image_index)].append({
                 "retry": retry+1,
                 "mmcl": mmcl_margin,
                 "rvcl": rvcl_margin,
@@ -137,11 +137,11 @@ for idx, class_name in enumerate(class_names):
 print(f"Obtained margin dict: {margins}")
 # get mean and std per class
 per_class_mean_std = {}
-for class_name, values in margins.items():
+for idx_class_tuple, values in margins.items():
     mmcl_values = [x["mmcl"] for x in values]
     rvcl_values = [x["rvcl"] for x in values]
     regular_cl_values = [x["regular_cl"] for x in values]
-    per_class_mean_std[class_name] = {
+    per_class_mean_std[idx_class_tuple] = {
         "mmcl": (
             np.mean(mmcl_values),
             np.std(mmcl_values)
@@ -170,37 +170,37 @@ file_path = os.path.join(save_dir, f"{file_name}.json")
 with open(file_path, "w") as f:
     json.dump(per_class_mean_std, f, indent=4)
 
-class_labels = list(per_class_mean_std.keys())
-mmcl_means = [per_class_mean_std[c]["mmcl"][0] for c in class_labels]
-mmcl_stds = [per_class_mean_std[c]["mmcl"][1] for c in class_labels]
+# Generate labels for each image
+image_labels = [f"Image {idx}, class: {class_name}" for class_name, idx in per_class_mean_std.keys()]
 
-rvcl_means = [per_class_mean_std[c]["rvcl"][0] for c in class_labels]
-rvcl_stds = [per_class_mean_std[c]["rvcl"][1] for c in class_labels]
+# Extract means and standard deviations
+mmcl_means = [per_class_mean_std[c]["mmcl"][0] for c in per_class_mean_std.keys()]
+mmcl_stds = [per_class_mean_std[c]["mmcl"][1] for c in per_class_mean_std.keys()]
 
-regular_means = [per_class_mean_std[c]["regular_cl"][0] for c in class_labels]
-regular_stds = [per_class_mean_std[c]["regular_cl"][1] for c in class_labels]
+rvcl_means = [per_class_mean_std[c]["rvcl"][0] for c in per_class_mean_std.keys()]
+rvcl_stds = [per_class_mean_std[c]["rvcl"][1] for c in per_class_mean_std.keys()]
 
-x = np.arange(len(class_labels))
+regular_means = [per_class_mean_std[c]["regular_cl"][0] for c in per_class_mean_std.keys()]
+regular_stds = [per_class_mean_std[c]["regular_cl"][1] for c in per_class_mean_std.keys()]
 
-plt.figure(figsize=(12, 6))
+# Define x-axis positions
+x = np.arange(len(image_labels))
+
+# Plot the error bars for each method
+plt.figure(figsize=(16, 8))
 plt.errorbar(x, mmcl_means, yerr=mmcl_stds, fmt='o-', label="MMCL", capsize=5)
 plt.errorbar(x, rvcl_means, yerr=rvcl_stds, fmt='s-', label="RVCL", capsize=5)
 plt.errorbar(x, regular_means, yerr=regular_stds, fmt='d-', label="Regular CL", capsize=5)
 
-plt.xticks(x, class_labels, rotation=45)
-plt.xlabel("Class")
+# Formatting the plot
+plt.xticks(x, image_labels, rotation=90, fontsize=8)  # Rotate x labels for better readability
+plt.xlabel("Image")
 plt.ylabel("Margin Mean ± Std")
-plt.title("SVM Margin Comparison Across Classes")
+plt.title("SVM Margin Comparison Across Images")
 plt.legend()
-plt.grid(True)
+plt.grid(True, linestyle="--", alpha=0.7)
 
-# save all plots
-save_dir = f"plots/svm_margin/mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}_kernel_type_{args.kernel_type}_C_{args.C}"
-if args.kernel_type == 'rbf':
-    save_dir += f"_gamma_{args.kernel_gamma}"
-elif args.kernel_type == 'poly':
-    save_dir += f"_deegre_{args.deegre}"
+# Save and show the plot
 os.makedirs(save_dir, exist_ok=True)
-plt.savefig(os.path.join(save_dir, file_name), bbox_inches="tight")
+plt.savefig(os.path.join(save_dir, f"{file_name}.jpg"), bbox_inches="tight", dpi=300)
 plt.show()
-
