@@ -155,7 +155,7 @@ for idx_class_tuple, values in margins.items():
             np.std(regular_cl_values)
         )
     }
-print(f"Obtained following mean and std per class dict:\n{json.dumps(per_class_mean_std)}")
+print(f"Obtained following mean and std per class dict:\n{per_class_mean_std}")
 # Ensure the directory exists
 save_dir = "margin_results"
 os.makedirs(save_dir, exist_ok=True)
