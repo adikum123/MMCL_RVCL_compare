@@ -200,6 +200,7 @@ if args.kernel_type == 'rbf':
     save_dir += f"_gamma_{args.kernel_gamma}"
 elif args.kernel_type == 'poly':
     save_dir += f"_deegre_{args.deegre}"
-plt.savefig(save_dir, bbox_inches="tight")
+os.makedirs(save_dir, exist_ok=True)
+plt.savefig(os.path.join(save_dir, file_name), bbox_inches="tight")
 plt.show()
 
