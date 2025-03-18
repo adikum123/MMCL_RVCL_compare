@@ -115,12 +115,12 @@ def encode_inputs_and_compute_margin(model, positive, negatives):
     return compute_margin(positive=positive_encoding, negatives=negative_encodings, args=args)
 
 # compute margin for each class
-for class_name in class_names:
-    print(f"Processing items for class: {class_name}")
-    for item in per_class_sampler[class_name]:
+for idx, class_name in enumerate(class_names):
+    print(f"Processing items for class: {class_name} already processed: {idx+1}/{len(class_names)} classes")
+    for item in tqdm(positives[class_name]):
         # Select one random image as positive and other images as negatives
         positive = item
-        for retry in tqdm(range(args.num_retries)):
+        for retry in range(args.num_retries):
             print(f"Processing retry: {retry+1}")
             indices = random.sample(range(len(testdst)), args.num_negatives)
             negatives = [testdst[i][0] for i in indices]
@@ -137,7 +137,7 @@ for class_name in class_names:
 print(f"Obtained margin dict: {margins}")
 # get mean and std per class
 per_class_mean_std = {}
-for class_name, values in margins:
+for class_name, values in margins.items():
     mmcl_values = [x["mmcl"] for x in values]
     rvcl_values = [x["rvcl"] for x in values]
     regular_cl_values = [x["regular_cl"] for x in values]
