@@ -114,18 +114,20 @@ positives = defaultdict(list)
 for class_name, values in per_class_sampler.items():
     positives[class_name] = random.sample(per_class_sampler[class_name], args.positives_per_class)
 
+print(f"Total images: {sum(len(v) for v in positives.values)}")
+
 def compute_radius(verifier, ori_image, target_image):
     curr_radius = verifier.verify(ori_image, target_image)
     return curr_radius
 
 # for each sample in class we compute the average radius
 average_robust_radius = defaultdict(list)
-for idx, (class_name, positives) in enumerate(positives.items()):
-    print(f'Processing class: {class_name}, already processed: {idx}/{len(class_names)} classes')
+for class_index, (class_name, positives) in enumerate(positives.items()):
+    print(f'Processing class: {class_name}, already processed: {class_index}/{len(class_names)} classes')
     for retry in range(args.num_retries):
         print(f"Processing retry: {retry+1}")
         target_images = [image for k, v in per_class_sampler.items() for image in random.sample(v, args.negatives_per_class)]
-        for index, ori_image in enumerate(tqdm(positives)):
+        for image_index, ori_image in enumerate(tqdm(positives)):
             mmcl_robust_radius = []
             rvcl_robust_radius = []
             regular_cl_radius = []
@@ -145,7 +147,7 @@ for idx, (class_name, positives) in enumerate(positives.items()):
                         verifier=regular_cl_verifier, ori_image=ori_image, target_image=target_image
                     )
                 )
-            average_robust_radius[f"{index}|{retry}"].append({
+            average_robust_radius[f"{image_index}|{retry}"].append({
                 'mmcl': sum(mmcl_robust_radius) / len(mmcl_robust_radius),
                 'rvcl': sum(rvcl_robust_radius) / len(rvcl_robust_radius),
                 'regular_cl': sum(regular_cl_radius) / len(regular_cl_radius)
