@@ -9,7 +9,6 @@ from mmcl.solvers import *
 
 
 def compute_kernel(X, Y, gamma="auto", kernel_type="rbf", degree=3.0, coef0=1):
-    print(X.shape)
     # set gamma value
     if gamma == "auto":
         gamma = 1.0 / X.shape[-1]
