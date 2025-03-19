@@ -173,6 +173,7 @@ def get_model_name_from_ckpt(ckpt):
     return model_name[0: model_name.rindex(".")]
 
 # Save dictionary as JSON
+file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}
 with open(f"/plots/robust_radius/{file_name}.json", "w") as f:
     json.dump(per_model_mean_std, f, indent=4)
 

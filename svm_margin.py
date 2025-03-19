@@ -8,9 +8,8 @@ from sklearn.svm import SVC
 
 
 def compute_margin(positive, negatives, args):
-    if args.normalize:
-        positive = F.normalize(positive, p=2, dim=-1)
-        negatives = [F.normalize(x, p=2, dim=-1) for x in negatives]
+    positive = F.normalize(positive, p=2, dim=-1)
+    negatives = [F.normalize(x, p=2, dim=-1) for x in negatives]
     # Stack positive and negative samples
     X = np.vstack(
         [positive.detach().cpu().numpy()] + [neg.detach().cpu().numpy() for neg in negatives]
