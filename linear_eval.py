@@ -87,6 +87,7 @@ class LinearEval(nn.Module):
                 _type=self.hparams.attack_type,
             )
         self.best_model_saved = False
+        self.min_epochs = 60
 
     def forward(self, x):
         with torch.no_grad():
@@ -186,7 +187,10 @@ class LinearEval(nn.Module):
                     print(f"Validation loss did not improve. Patience: {patience_counter}/{max_patience}")
 
                 if patience_counter >= max_patience:
-                    print("Early stopping triggered. Training terminated.")
+                    print("\nEarly stopping triggered. Training terminated.")
+                    if epoch + 1 >= self.min_epochs:
+                        print("Min number of epohcs not reached yet. Continue training.")
+                        continue
                     break
 
             # Scheduler step
