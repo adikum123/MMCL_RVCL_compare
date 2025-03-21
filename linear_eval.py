@@ -113,10 +113,10 @@ class LinearEval(nn.Module):
 
             for i, (ori_image, input1, input2, targets) in enumerate(train_bar):
                 ori_image, input1, input2, targets = (
-                    ori_image.to(device),
-                    input1.to(device),
-                    input2.to(device),
-                    targets.to(device)
+                    ori_image.to(self.device),
+                    input1.to(self.device),
+                    input2.to(self.device),
+                    targets.to(self.device)
                 )
                 # Combine images and corresponding targets
                 images = torch.cat([ori_image, input1, input2], dim=0)
