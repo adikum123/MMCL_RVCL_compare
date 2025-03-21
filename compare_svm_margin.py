@@ -117,7 +117,8 @@ def encode_inputs_and_compute_margin(model, positive, negatives):
 # compute margin for each class
 for class_index, class_name in enumerate(class_names):
     print(f"Processing items for class: {class_name} already processed: {class_index}/{len(class_names)} classes")
-    for image_index, item in tqdm(enumerate(positives[class_name])):
+    for image_index_in_class, item in tqdm(enumerate(positives[class_name])):
+        image_index = class_index * args.positives_per_class + image_index_in_class
         # Select one random image as positive and other images as negatives
         positive = item
         for retry in range(args.num_retries):

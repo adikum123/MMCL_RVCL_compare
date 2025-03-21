@@ -66,6 +66,7 @@ class MMCL_Encoder(nn.Module):
             gamma=self.hparams.scheduler_gamma,
         )
         self.best_model_saved = False
+        self.min_epochs = 70
 
     def set_eval(self):
         self.model.eval()
@@ -175,7 +176,7 @@ class MMCL_Encoder(nn.Module):
                     print(
                         f"\nValidation loss did not improve. Patience: {patience_counter}/{max_patience}"
                     )
-                if patience_counter >= max_patience:
+                if patience_counter >= max_patience and epoch >= self.min_epochs:
                     print("\nEarly stopping triggered. Training terminated.")
                     break
             # Scheduler step

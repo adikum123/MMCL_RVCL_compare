@@ -110,11 +110,11 @@ for idx, sample in enumerate(testdst):
     per_class_sampler[class_name].append(image)
 
 # construct postives
-positives = defaultdict(list)
+original_images = defaultdict(list)
 for class_name, values in per_class_sampler.items():
-    positives[class_name] = random.sample(per_class_sampler[class_name], args.positives_per_class)
+    original_images[class_name] = random.sample(per_class_sampler[class_name], args.positives_per_class)
 
-print(f"Total images: {sum(len(v) for v in positives.values)}")
+print(f"Total images: {sum(len(v) for v in original_images.values())}")
 
 def compute_radius(verifier, ori_image, target_image):
     curr_radius = verifier.verify(ori_image, target_image)
@@ -122,16 +122,20 @@ def compute_radius(verifier, ori_image, target_image):
 
 # for each sample in class we compute the average radius
 average_robust_radius = defaultdict(list)
-for class_index, (class_name, positives) in enumerate(positives.items()):
+for class_index, (class_name, class_ori_images) in enumerate(original_images.items()):
     print(f'Processing class: {class_name}, already processed: {class_index}/{len(class_names)} classes')
     for retry in range(args.num_retries):
         print(f"Processing retry: {retry+1}")
         target_images = [image for k, v in per_class_sampler.items() for image in random.sample(v, args.negatives_per_class)]
-        for image_index, ori_image in enumerate(tqdm(positives)):
+        print(f"Target images size: {len(target_images)}")
+        print(f"Original images for current class size: {len(class_ori_images)}")
+        for image_index_in_class, ori_image in tqdm(enumerate(class_ori_images)):
+            image_index = class_index * args.positives_per_class + image_index_in_class
             mmcl_robust_radius = []
             rvcl_robust_radius = []
             regular_cl_radius = []
-            for target_image in target_images:
+            print(f"Image index: {image_index}, retry:{retry}")
+            for target_image in tqdm(target_images):
                 mmcl_robust_radius.append(
                     compute_radius(
                         verifier=mmcl_verifier, ori_image=ori_image, target_image=target_image
@@ -147,6 +151,7 @@ for class_index, (class_name, positives) in enumerate(positives.items()):
                         verifier=regular_cl_verifier, ori_image=ori_image, target_image=target_image
                     )
                 )
+            print(f"Calculated lists of values:\nmmcl:{mmcl_robust_radius}\nrvcl:{rvcl_robust_radius}\nregular cl: {regular_cl_radius}")
             average_robust_radius[f"{image_index}|{retry}"].append({
                 'mmcl': sum(mmcl_robust_radius) / len(mmcl_robust_radius),
                 'rvcl': sum(rvcl_robust_radius) / len(rvcl_robust_radius),
@@ -175,8 +180,8 @@ def get_model_name_from_ckpt(ckpt):
     return model_name[0: model_name.rindex(".")]
 
 # Save dictionary as JSON
-file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}
-with open(f"/plots/robust_radius/{file_name}.json", "w") as f:
+file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}"
+with open(f"plots/robust_radius/{file_name}.json", "w") as f:
     json.dump(per_model_mean_std, f, indent=4)
 
 num_images = len(class_names) * args.positives_per_class
@@ -187,7 +192,7 @@ mmcl_means, mmcl_stds = [0] * num_images, [0] * num_images
 rvcl_means, rvcl_stds = [0] * num_images, [0] * num_images
 regular_cl_means, regular_cl_stds = [0] * num_images, [0] * num_images
 
-for image_index, value in average_robust_radius.items():
+for image_index, value in per_model_mean_std.items():
     if isinstance(image_index, str):
         image_index = int(image_index)
     mmcl_mean, mmcl_std = per_model_mean_std[str(image_index)]["mmcl"]
