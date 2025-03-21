@@ -178,7 +178,7 @@ class MMCL_Encoder(nn.Module):
                     )
                 if patience_counter >= max_patience:
                     print("\nEarly stopping triggered. Training terminated.")
-                    if epoch + 1 >= self.min_epochs:
+                    if epoch + 1 <= self.min_epochs:
                         print("Min number of epohcs not reached yet. Continue training.")
                         continue
                     break
