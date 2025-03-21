@@ -75,7 +75,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--svm_lr",
-    default=1e-4,
+    default=1e-3,
     type=float,
     help="learning rate for SVM optimisation problem in MMCL",
 )

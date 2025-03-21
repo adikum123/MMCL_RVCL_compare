@@ -97,42 +97,6 @@ class LinearEval(nn.Module):
         for param_group in self.optimizer.param_groups:
             return param_group["lr"]
 
-    def get_total_inputs_and_targets(self, ori_image, input1, input2, targets):
-        # Move data to device
-        ori_image, input1, input2, targets = (
-            ori_image.to(self.device),
-            input1.to(self.device),
-            input2.to(self.device),
-            targets.to(self.device),
-        )
-        # Configure inputs based on args
-        if self.hparams.trans:
-            inputs = input1
-        else:
-            inputs = ori_image
-        input_flag = False
-        if self.hparams.adv_img:
-            advinputs = self.attacker.perturb(
-                original_images=inputs,
-                labels=targets,
-                random_start=self.hparams.random_start,
-            )
-        if self.hparams.clean:
-            total_inputs = inputs
-            total_targets = targets
-            input_flag = True
-        if self.hparams.ss:
-            total_inputs = torch.cat((inputs, input2))
-            total_targets = torch.cat((targets, targets))
-        if self.hparams.adv_img:
-            if input_flag:
-                total_inputs = torch.cat((total_inputs, advinputs))
-                total_targets = torch.cat((total_targets, targets))
-            else:
-                total_inputs = advinputs
-                total_targets = targets
-        return total_inputs, total_targets
-
     def train(self):
         best_val_loss = float("inf")
         patience_counter = 0
@@ -148,18 +112,22 @@ class LinearEval(nn.Module):
             train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch + 1}")
 
             for i, (ori_image, input1, input2, targets) in enumerate(train_bar):
-                total_inputs, total_targets = self.get_total_inputs_and_targets(
-                    ori_image, input1, input2, targets
+                ori_image, input1, input2, targets = (
+                    ori_image.to(device),
+                    input1.to(device),
+                    input2.to(device),
+                    targets.to(device)
                 )
-
+                # Combine images and corresponding targets
+                images = torch.cat([ori_image, input1, input2], dim=0)
+                total_targets = torch.cat([target, target, target], dim=0)
                 # Forward pass through the model
-                logits = self.forward(x=total_inputs)
+                logits = self.forward(x=images)
                 loss = self.criterion(logits, total_targets)
                 # Backpropagation after full training phase
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-
                 # Update metrics
                 batch_size = total_inputs.size(0)
                 total_num += batch_size
