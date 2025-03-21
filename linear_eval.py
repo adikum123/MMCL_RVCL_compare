@@ -154,14 +154,19 @@ class LinearEval(nn.Module):
 
                 with torch.no_grad():
                     for i, (ori_image, input1, input2, targets) in enumerate(val_bar):
-                        total_inputs, total_targets = self.get_total_inputs_and_targets(
-                            ori_image, input1, input2, targets
+                        ori_image, input1, input2, targets = (
+                            ori_image.to(self.device),
+                            input1.to(self.device),
+                            input2.to(self.device),
+                            targets.to(self.device)
                         )
-
+                        # Combine images and corresponding targets
+                        images = torch.cat([ori_image, input1, input2], dim=0)
+                        total_targets = torch.cat([targets, targets, targets], dim=0)
                         # Compute validation loss
-                        logits = self.forward(x=total_inputs)
+                        logits = self.forward(x=images)
                         loss = self.criterion(logits, total_targets)
-                        batch_size = input1.size(0)
+                        batch_size = images.size(0)
                         val_num += batch_size
                         val_loss += loss.item() * batch_size
 
