@@ -117,32 +117,35 @@ def encode_inputs_and_compute_margin(model, positive, negatives):
 # compute margin for each class
 for class_index, class_name in enumerate(class_names):
     print(f"Processing items for class: {class_name} already processed: {class_index}/{len(class_names)} classes")
-    for image_index_in_class, item in tqdm(enumerate(positives[class_name])):
+    for image_index_in_class, item in enumerate(positives[class_name]):
         image_index = class_index * args.positives_per_class + image_index_in_class
         # Select one random image as positive and other images as negatives
         positive = item
         for retry in range(args.num_retries):
-            print(f"Processing retry: {retry+1}")
+            print(f"Processing image: {image_index}, retry: {retry+1}")
             indices = random.sample(range(len(testdst)), args.num_negatives)
             negatives = [testdst[i][0] for i in indices]
             mmcl_margin = encode_inputs_and_compute_margin(model=mmcl_model, positive=positive, negatives=negatives)
             rvcl_margin = encode_inputs_and_compute_margin(model=rvcl_model, positive=positive, negatives=negatives)
             regular_cl_margin = encode_inputs_and_compute_margin(model=regular_cl_model, positive=positive, negatives=negatives)
-            margins[(class_name, image_index)].append({
-                "retry": retry+1,
+            margins[f"{image_index}|{retry}"].append({
                 "mmcl": mmcl_margin,
                 "rvcl": rvcl_margin,
                 "regular_cl": regular_cl_margin
             })
 
-print(f"Obtained margin dict: {margins}")
+per_image_values = defaultdict(list)
+for image_index_retry, values in margins.items():
+    image_index, retry = image_index_retry.split("|")
+    per_image_values[image_index].extend(values)
+print(f"Obtained following per_image_values dict")
 # get mean and std per class
-per_class_mean_std = {}
-for idx_class_tuple, values in margins.items():
+per_model_mean_std = {}
+for image_index, values in per_image_values.items():
     mmcl_values = [x["mmcl"] for x in values]
     rvcl_values = [x["rvcl"] for x in values]
     regular_cl_values = [x["regular_cl"] for x in values]
-    per_class_mean_std[idx_class_tuple] = {
+    per_model_mean_std[image_index] = {
         "mmcl": (
             np.mean(mmcl_values),
             np.std(mmcl_values)
@@ -156,7 +159,10 @@ for idx_class_tuple, values in margins.items():
             np.std(regular_cl_values)
         )
     }
-print(f"Obtained following mean and std per class dict:\n{per_class_mean_std}")
+    print(f"MMCL values: {mmcl_values}\nmean: {np.mean(mmcl_values)}\nstd: {np.std(mmcl_values)}")
+    print(f"RVCL values: {rvcl_values}\nmean: {np.mean(rvcl_values)}\nstd: {np.std(rvcl_values)}")
+    print(f"Regular cl values: {regular_cl_values}\nmean: {np.mean(regular_cl_values)}\nstd: {np.std(regular_cl_values)}")
+print(f"Obtained following mean and std per class dict:\n{per_model_mean_std}")
 # Ensure the directory exists
 save_dir = "margin_results"
 os.makedirs(save_dir, exist_ok=True)
@@ -169,40 +175,38 @@ elif args.kernel_type == 'poly':
 file_path = os.path.join(save_dir, f"{file_name}.json")
 # Save dictionary as JSON
 with open(file_path, "w") as f:
-    per_class_mean_std_str_keys = {str(k): v for k, v in per_class_mean_std.items()}
-    json.dump(per_class_mean_std_str_keys, f, indent=4)
-
-# Generate labels for each image
-image_labels = [f"Image {idx}, class: {class_name}" for class_name, idx in per_class_mean_std.keys()]
+    json.dump(per_model_mean_std, f, indent=4)
 
 # Extract means and standard deviations
-mmcl_means = [per_class_mean_std[c]["mmcl"][0] for c in per_class_mean_std.keys()]
-mmcl_stds = [per_class_mean_std[c]["mmcl"][1] for c in per_class_mean_std.keys()]
+mmcl_means = [per_model_mean_std[c]["mmcl"][0] for c in per_model_mean_std.keys()]
+mmcl_stds = [per_model_mean_std[c]["mmcl"][1] for c in per_model_mean_std.keys()]
 
-rvcl_means = [per_class_mean_std[c]["rvcl"][0] for c in per_class_mean_std.keys()]
-rvcl_stds = [per_class_mean_std[c]["rvcl"][1] for c in per_class_mean_std.keys()]
+rvcl_means = [per_model_mean_std[c]["rvcl"][0] for c in per_model_mean_std.keys()]
+rvcl_stds = [per_model_mean_std[c]["rvcl"][1] for c in per_model_mean_std.keys()]
 
-regular_means = [per_class_mean_std[c]["regular_cl"][0] for c in per_class_mean_std.keys()]
-regular_stds = [per_class_mean_std[c]["regular_cl"][1] for c in per_class_mean_std.keys()]
+regular_means = [per_model_mean_std[c]["regular_cl"][0] for c in per_model_mean_std.keys()]
+regular_stds = [per_model_mean_std[c]["regular_cl"][1] for c in per_model_mean_std.keys()]
+
+# Improved visualization
+plt.figure(figsize=(20, 6))
 
 # Define x-axis positions
+image_labels = [f"Image {idx}" for idx in sorted(per_model_mean_std.keys(), key=int)]
 x = np.arange(len(image_labels))
 
-# Plot the error bars for each method
-plt.figure(figsize=(16, 8))
-plt.errorbar(x, mmcl_means, yerr=mmcl_stds, fmt='o-', label="MMCL", capsize=5)
-plt.errorbar(x, rvcl_means, yerr=rvcl_stds, fmt='s-', label="RVCL", capsize=5)
-plt.errorbar(x, regular_means, yerr=regular_stds, fmt='d-', label="Regular CL", capsize=5)
+# Plot the error bars with smaller markers and thinner lines
+plt.errorbar(x, mmcl_means, yerr=mmcl_stds, fmt='o-', markersize=3, linewidth=1, capsize=3, label="MMCL", alpha=0.8)
+plt.errorbar(x, rvcl_means, yerr=rvcl_stds, fmt='s-', markersize=3, linewidth=1, capsize=3, label="RVCL", alpha=0.8)
+plt.errorbar(x, regular_means, yerr=regular_stds, fmt='d-', markersize=3, linewidth=1, capsize=3, label="Regular CL", alpha=0.8)
 
 # Formatting the plot
-plt.xticks(x, image_labels, rotation=90, fontsize=8)  # Rotate x labels for better readability
+plt.xticks(x[::5], image_labels[::5], rotation=45, fontsize=10)  # Show every 5th label for better readability
 plt.xlabel("Image")
 plt.ylabel("Margin Mean ± Std")
-plt.title("SVM Margin Comparison Across Images")
-plt.legend()
-plt.grid(True, linestyle="--", alpha=0.7)
+plt.title("SVM Margin Comparison Across Images", fontsize=14)
+plt.legend(fontsize=10)
+plt.grid(True, linestyle="--", alpha=0.6)
 
 # Save and show the plot
-os.makedirs(save_dir, exist_ok=True)
 plt.savefig(os.path.join(save_dir, f"{file_name}.jpg"), bbox_inches="tight", dpi=300)
 plt.show()
