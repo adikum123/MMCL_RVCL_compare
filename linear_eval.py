@@ -129,7 +129,7 @@ class LinearEval(nn.Module):
                 loss.backward()
                 self.optimizer.step()
                 # Update metrics
-                batch_size = total_inputs.size(0)
+                batch_size = images.size(0)
                 total_num += batch_size
                 total_loss += loss.item() * batch_size
 
