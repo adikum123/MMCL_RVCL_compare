@@ -120,7 +120,7 @@ class LinearEval(nn.Module):
                 )
                 # Combine images and corresponding targets
                 images = torch.cat([ori_image, input1, input2], dim=0)
-                total_targets = torch.cat([target, target, target], dim=0)
+                total_targets = torch.cat([targets, targets, targets], dim=0)
                 # Forward pass through the model
                 logits = self.forward(x=images)
                 loss = self.criterion(logits, total_targets)
