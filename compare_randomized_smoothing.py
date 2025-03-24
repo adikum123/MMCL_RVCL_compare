@@ -53,6 +53,12 @@ parser.add_argument(
 parser.add_argument(
     "--regular_cl_checkpoint", type=str, default="", help="Model checkpoint for rvcl"
 )
+parser.add_argument(
+    "--supervised_model", type=str, default="", help="model name (cifar_model, cifar_model_deep, cifar_model_wide, cnn_4layer, cnn_4layer_b, mnist_cnn_4layer)"
+)
+parser.add_argument(
+    "--supervised_checkpoint", type=str, default="", help="Model checkpoint for rvcl"
+)
 parser.add_argument('--train_type', default='contrastive', type=str, help='contrastive/linear eval/test/supervised')
 parser.add_argument('--dataset', default='cifar-10', type=str, help='cifar-10/mnist')
 parser.add_argument('--name', default='', type=str, help='name of run')
@@ -88,6 +94,7 @@ class CombinedModel(nn.Module):
         return output
 
 def load_combined_model(args, model_type):
+    assert model_type in {"mmcl", "regular_cl", "rvcl", "supervised"}
     if model_type in {"mmcl", "regular_cl"}:
         encoder_ckpt = (
             args.mmcl_checkpoint if model_type == "mmcl"
@@ -99,8 +106,9 @@ def load_combined_model(args, model_type):
             encoder=torch.load(encoder_ckpt, device),
             eval_=torch.load(eval_ckpt, device)
         )
-    print(f"Loading rvcl")
-    return torch.load(args.rvcl_checkpoint, device)
+    ckpt = args.rvcl_checkpoint if model_type == "rvcl" else args.supervised_checkpoint
+    print(f"Loading model with checkpoint: {ckpt}")
+    return torch.load(ckpt, device)
 
 def get_ori_model_predicition(model, x):
     return torch.argmax(model(x.unsqueeze(0)), dim=-1).item()
@@ -110,10 +118,12 @@ def get_ori_model_predicition(model, x):
 mmcl_model = load_combined_model(args, "mmcl")
 regular_cl_model = load_combined_model(args, "regular_cl")
 rvcl_model = load_combined_model(args, "rvcl")
+supervised_model = load_combined_model(args, "supervised")
 # create verifiers
 mmcl_verifier = Smooth(base_classifier=mmcl_model, num_classes=10, sigma=args.sigma)
 regular_cl_verifier = Smooth(base_classifier=regular_cl_model, num_classes=10, sigma=args.sigma)
 rvcl_verifier = Smooth(base_classifier=rvcl_model, num_classes=10, sigma=args.sigma)
+supervised_verifier = Smooth(base_classifier=supervised_model, num_classes=10, sigma=args.sigma)
 print("Loaded verifiers")
 # creating data
 class_names = testdst.classes
@@ -133,7 +143,8 @@ picks = defaultdict(list)
 for class_name, values in per_class_sampler.items():
     picks[class_name] = random.sample(per_class_sampler[class_name], args.positives_per_class)
 
-rs_raidus = defaultdict(list)
+rs_radius_per_model = defaultdict(list)
+instance_accuracy = defaultdict(int)
 for class_name, values in picks.items():
     print(f"Processing class name: {class_name}")
     for image, label in values:
@@ -141,12 +152,24 @@ for class_name, values in picks.items():
         mmcl_prediction, mmcl_radius = mmcl_verifier.certify(
             image, args.N0, args.N, args.alpha, args.batch
         )
+        rs_radius_per_model["mmcl"].append(mmcl_radius)
+        if mmcl_prediction == label:
+            instance_accuracy["mmcl"] += 1
         print(f"True label: {label}\tOriginal prediction: {get_ori_model_predicition(mmcl_model, image)}\tMMCL smoothed prediction: {mmcl_prediction}\tMMCL radius: {mmcl_radius}")
         regular_cl_prediction, regular_cl_radius = regular_cl_verifier.certify(
             image, args.N0, args.N, args.alpha, args.batch
         )
-        print(f"True label: {label}\tOriginal prediction: {get_ori_model_predicition(regular_cl_model, image)}\tRegular CL smoothed prediction: {mmcl_prediction}\tRegular CL radius: {mmcl_radius}")
+        rs_radius_per_model["regular_cl"].append(regular_cl_radius)
+        print(f"True label: {label}\tOriginal prediction: {get_ori_model_predicition(regular_cl_model, image)}\tRegular CL smoothed prediction: {regular_cl_prediction}\tRegular CL radius: {regular_cl_radius}")
         rvcl_prediction, rvcl_radius = rvcl_verifier.certify(
             image, args.N0, args.N, args.alpha, args.batch
         )
+        rs_radius_per_model["rvcl"].append(rvcl_radius)
         print(f"True label: {label}\tOriginal prediction: {get_ori_model_predicition(rvcl_model, image)}\tRVCL smoothed prediction: {rvcl_prediction}\tRVCL radius: {rvcl_radius}")
+        supervised_prediction, supervised_radius = supervised_verifier.certify(
+            image, args.N0, args.N, args.alpha, args.batch
+        )
+        rs_radius_per_model["supervised"].append(supervised_radius)
+        print(f"True label: {label}\tOriginal prediction: {get_ori_model_predicition(supervised_model, image)}\tSupervised smoothed prediction: {supervised_prediction}\tSupervised radius: {supervised_radius}")
+average_rs_radius = {key: np.mean(values) for key, values in rs_radius_per_model.items()}
+print(f"For sigma: {args.sigma} and alpha: {args.alpha} following results were obtained:\n{json.dumps(average_rs_radius, indent=4)}")

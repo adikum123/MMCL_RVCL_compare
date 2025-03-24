@@ -7,3 +7,4 @@ appdirs
 oslo_concurrency
 pandas==1.2.4  # Compatible version to avoid np.bool issues
 scipy==1.7.3
+statsmodel
