@@ -62,6 +62,11 @@ parser.add_argument(
 parser.add_argument(
     "--regular_cl_checkpoint", default="", type=str
 )
+parser.add_argument(
+    "--relu_layer",
+    action="store_true",
+    help="Use additional relu layer in the downstream task",
+)
 ##### arguments for PGD attack & Adversarial Training #####
 parser.add_argument("--attack_type", type=str, default="linf", help="adversarial l_p")
 parser.add_argument(

@@ -102,6 +102,9 @@ def load_combined_model(args, model_type):
     print(f"Loading rvcl")
     return torch.load(args.rvcl_checkpoint, device)
 
+def get_ori_model_predicition(model, x):
+    return torch.argmax(model(x.unsqueeze(0)), dim=-1).item()
+
 
 # load models then create verifiers
 mmcl_model = load_combined_model(args, "mmcl")
@@ -132,17 +135,18 @@ for class_name, values in per_class_sampler.items():
 
 rs_raidus = defaultdict(list)
 for class_name, values in picks.items():
+    print(f"Processing class name: {class_name}")
     for image, label in values:
         image = image.to(device)
         mmcl_prediction, mmcl_radius = mmcl_verifier.certify(
             image, args.N0, args.N, args.alpha, args.batch
         )
-        print(f"Original label: {label}\tMMCL prediction: {mmcl_prediction}\tMMCL radius: {mmcl_radius}")
+        print(f"True label: {label}\tOriginal prediction: {get_ori_model_predicition(mmcl_model, image)}\tMMCL smoothed prediction: {mmcl_prediction}\tMMCL radius: {mmcl_radius}")
         regular_cl_prediction, regular_cl_radius = regular_cl_verifier.certify(
             image, args.N0, args.N, args.alpha, args.batch
         )
-        print(f"Original label: {label}\tRegular CL prediction: {mmcl_prediction}\tRegular CL radius: {mmcl_radius}")
+        print(f"True label: {label}\tOriginal prediction: {get_ori_model_predicition(regular_cl_model, image)}\tRegular CL smoothed prediction: {mmcl_prediction}\tRegular CL radius: {mmcl_radius}")
         rvcl_prediction, rvcl_radius = rvcl_verifier.certify(
             image, args.N0, args.N, args.alpha, args.batch
         )
-        print(f"Original label: {label}\tRVCL prediction: {rvcl_prediction}\tRVCL radius: {rvcl_radius}")
+        print(f"True label: {label}\tOriginal prediction: {get_ori_model_predicition(rvcl_model, image)}\tRVCL smoothed prediction: {rvcl_prediction}\tRVCL radius: {rvcl_radius}")
