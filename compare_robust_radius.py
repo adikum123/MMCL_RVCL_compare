@@ -173,15 +173,18 @@ for image_index, values in per_image_values.items():
         "rvcl": (np.mean(rvcl_values), np.std(rvcl_values)),
         "regular_cl": (np.mean(regular_cl_values), np.std(regular_cl_values))
     }
-print(f"Per model mean and std:\n{json.dumps(per_model_mean_std)}")
+print(f"Per model mean and std:\n{json.dumps(per_model_mean_std, indent=4)}")
 
 def get_model_name_from_ckpt(ckpt):
     model_name = ckpt.split("/")[-1]
     return model_name[0: model_name.rindex(".")]
 
 # Save dictionary as JSON
+save_dir = "radius_results"
+# Ensure the directory exists
+os.makedirs(save_dir, exist_ok=True)
 file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}"
-with open(f"plots/robust_radius/{file_name}.json", "w") as f:
+with open(os.path.join(save_dir, f"{file_name}.json"), "w") as f:
     json.dump(per_model_mean_std, f, indent=4)
 
 num_images = len(class_names) * args.positives_per_class

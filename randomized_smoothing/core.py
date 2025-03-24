@@ -1,7 +1,8 @@
-import torch
-from scipy.stats import norm, binom_test
-import numpy as np
 from math import ceil
+
+import numpy as np
+import torch
+from scipy.stats import binom_test, norm
 from statsmodels.stats.proportion import proportion_confint
 
 
@@ -20,6 +21,7 @@ class Smooth(object):
         self.base_classifier = base_classifier
         self.num_classes = num_classes
         self.sigma = sigma
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def certify(self, x: torch.tensor, n0: int, n: int, alpha: float, batch_size: int) -> (int, float):
         """ Monte Carlo algorithm for certifying that g's prediction around x is constant within some L2 radius.
@@ -88,7 +90,7 @@ class Smooth(object):
                 num -= this_batch_size
 
                 batch = x.repeat((this_batch_size, 1, 1, 1))
-                noise = torch.randn_like(batch, device='cuda') * self.sigma
+                noise = torch.randn_like(batch, device=self.device) * self.sigma
                 predictions = self.base_classifier(batch + noise).argmax(1)
                 counts += self._count_arr(predictions.cpu().numpy(), self.num_classes)
             return counts
