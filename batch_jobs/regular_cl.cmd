@@ -48,7 +48,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
             --lr 1e-3 \
             --model cnn_4layer_b \
             --regular_cl_checkpoint models/regular_cl/regular_cl_cnn_4layer_b_bs_32_lr_1e-3.pkl \
-            --adv_img
+            --finetune
     else
         echo "Training encoder failed, skipping linear evaluation."
     fi
