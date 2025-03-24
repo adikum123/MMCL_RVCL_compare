@@ -71,6 +71,15 @@ class MMCL_Encoder(nn.Module):
     def set_eval(self):
         self.model.eval()
 
+    def set_train(self):
+
+        self.model.train()
+        if self.crit is None:
+            print("Warning: Loss function (crit) is not initialized. Check MMCL_PGD initialization.")
+        if hasattr(self, "optimizer") and self.optimizer is not None:
+            self.optimizer.zero_grad()  # Reset gradients
+        print("Encoder set to training mode.")
+
     def forward(self, x):
         return self.model(x)
 

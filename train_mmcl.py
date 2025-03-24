@@ -47,6 +47,11 @@ parser.add_argument(
     action="store_true",
     help="Use validation set and stopping criteria",
 )
+parser.add_argument(
+    "--finetune",
+    action="store_true",
+    help="Finetune encoder weights if set to true",
+)
 parser.add_argument("--num_iters", default=500, type=int, help="Num iters - PGD Solver")
 parser.add_argument("--eta", default=1e-5, type=float, help="Eta - PGD Solver")
 parser.add_argument(

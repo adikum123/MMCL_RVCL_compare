@@ -24,8 +24,14 @@ class LinearEval(nn.Module):
     ):
         super(LinearEval, self).__init__()
         self.hparams = hparams
-        self.encoder = encoder
         self.device = device
+        self.encoder = encoder.to(self.device)
+        if self.hparams.finetune:
+            for param in self.encoder.parameters():
+                param.requires_grad = True  # Unfreeze encoder for fine-tuning
+        else:
+            for param in self.encoder.parameters():
+                param.requires_grad = False  # Keep encoder frozen
         if self.hparams.relu_layer:
             self.classifier = nn.Sequential(
                 nn.Linear(feature_dim, 2 * feature_dim),  # Hidden layer (2x feature_dim)
@@ -44,10 +50,13 @@ class LinearEval(nn.Module):
             self.testloader,
             self.testdst,
         ) = data_loader.get_train_val_test_dataset(self.hparams)
-        self.optimizer = optim.Adam(
-            self.classifier.parameters(), lr=self.hparams.lr
-        )
-        print(f"Step size: {self.hparams.step_size}")
+        if self.hparams.finetune:
+            self.optimizer = optim.Adam(
+                list(self.encoder.parameters()) + list(self.classifier.parameters()),
+                lr=self.hparams.lr
+            )
+        else:
+            self.optimizer = optim.Adam(self.classifier.parameters(), lr=self.hparams.lr)
         self.scheduler = optim.lr_scheduler.StepLR(
             self.optimizer,
             step_size=self.hparams.step_size,
@@ -90,8 +99,11 @@ class LinearEval(nn.Module):
         self.min_epochs = 60
 
     def forward(self, x):
-        with torch.no_grad():
-            features = self.encoder(x)
+        if self.hparams.finetune:
+            features = self.encoder(x)  # Allow gradient updates
+        else:
+            with torch.no_grad():
+                features = self.encoder(x)  # Keep frozen
         return self.classifier(features)
 
     def get_lr(self):
@@ -108,7 +120,9 @@ class LinearEval(nn.Module):
 
         for epoch in range(self.hparams.num_iters):
             # Training Phase
-            self.classifier.train()  # Set the classifier to training mode
+            self.classifier.train()
+            if self.hparams.finetune:
+                self.encoder.set_train()  # Ensure encoder is in training mode
             total_loss, total_num = 0.0, 0
             train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch + 1}")
 
@@ -255,6 +269,8 @@ class LinearEval(nn.Module):
             ckpt = self.hparams.regular_cl_checkpoint
         if self.hparams.relu_layer:
             f"relu_linear_{ckpt.split('/')[-1]}"
+        if self.hparams.finetune:
+            return f"linear_finetune_{ckpt.split('/')[-1]}"
         return f"linear_{ckpt.split('/')[-1]}"
 
     def save(self):
