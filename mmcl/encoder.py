@@ -72,7 +72,6 @@ class MMCL_Encoder(nn.Module):
         self.model.eval()
 
     def set_train(self):
-
         self.model.train()
         if self.crit is None:
             print("Warning: Loss function (crit) is not initialized. Check MMCL_PGD initialization.")
