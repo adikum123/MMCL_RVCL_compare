@@ -54,6 +54,9 @@ class RegularCLModel(nn.Module):
     def forward(self, x):
         return self.model(x)
 
+    def set_train(self):
+        self.model.train()
+
     def set_eval(self):
         self.model.eval()
 
