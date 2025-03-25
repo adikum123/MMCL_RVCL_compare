@@ -1,46 +1,49 @@
 import json
-from collections import defaultdict
 
+import matplotlib.pyplot as plt
 import numpy as np
 
-file_path = "radius_results/mmcl_cnn_4layer_b_C_1_rbf_auto_rvcl_cifar10_cnn_4layer_b_adv2_regular_cl_regular_cl_cnn_4layer_b_bs_32_lr_1e-3.json"
+# Load the JSON file
+with open('radius_results/mmcl_cnn_4layer_b_rvcl_cnn_4layer_b_adv_regular_cl_cnn_4layer_b.json', 'r') as f:
+    radius_results = json.load(f)
 
-with open(file_path, "r") as f:
-    average_robust_radius = json.load(f)
+# Extract data
+mmcl_means = [radius_results[key]['mmcl'][0] for key in radius_results]
+mmcl_stds = [radius_results[key]['mmcl'][1] for key in radius_results]
+rvcl_means = [radius_results[key]['rvcl'][0] for key in radius_results]
+rvcl_stds = [radius_results[key]['rvcl'][1] for key in radius_results]
+regular_cl_means = [radius_results[key]['regular_cl'][0] for key in radius_results]
+regular_cl_stds = [radius_results[key]['regular_cl'][1] for key in radius_results]
 
-retries = defaultdict(list)
+# Combine into lists for plotting
+data = [mmcl_means, rvcl_means, regular_cl_means]
+labels = ['MMCL', 'RVCL', 'Regular CL']
+colors = ['blue', 'green', 'red']
 
-for key, value in average_robust_radius["average_robust_radius"].items():
-    for x in value:
-        retries[x["retry_num"]].append({
-            "mmcl": x["mmcl"],
-            "rvcl": x["rvcl"],
-            "regular_cl": x["regular_cl"],
-        })
+# Create a box plot
+plt.figure(figsize=(8, 6))
+bp = plt.boxplot(data, patch_artist=True, vert=True, labels=labels)
 
-print(json.dumps(retries, indent=4))
+# Set colors
+for patch, color in zip(bp['boxes'], colors):
+    patch.set(facecolor=color, alpha=0.5)
 
-averages_per_retry = defaultdict(list)
-for retry, retry_values in retries.items():
-    averages_per_retry[retry].append({
-        "mmcl": np.mean(list(x["mmcl"] for x in retry_values)),
-        "rvcl": np.mean(list(x["rvcl"] for x in retry_values)),
-        "regular_cl": np.mean(list(x["regular_cl"] for x in retry_values))
-    })
+# Overlay scatter plot with error bars
+for i, (means, stds, color) in enumerate(zip([mmcl_means, rvcl_means, regular_cl_means],
+                                             [mmcl_stds, rvcl_stds, regular_cl_stds],
+                                             colors)):
+    x = np.random.normal(i + 1, 0.04, size=len(means))  # Jitter for better visibility
+    plt.errorbar(x, means, yerr=stds, fmt='o', color=color, alpha=0.6,
+                 ecolor='black', capsize=3, markersize=5)
 
-print(json.dumps(averages_per_retry, indent=4))
+# Labels and title
+plt.xlabel('Model')
+plt.ylabel('Robust Radius')
+plt.title('Comparison of Robust Radius Across Models')
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.tight_layout()
 
-per_model_extracted_values = defaultdict(list)
-for retry, values in averages_per_retry.items():
-    for item in values:
-        for model, average_radius in item.items():
-            per_model_extracted_values[model].append(average_radius)
-
-per_model_mean_std = defaultdict(list)
-for model, values in per_model_extracted_values.items():
-    per_model_mean_std[model].append({
-        "mean": np.mean(values),
-        "std": np.std(values)
-    })
-
-print(per_model_mean_std)
+# Save the new plot
+output_path = 'plots/robust_radius/robust_radius_comparison_boxplot.png'
+plt.savefig(output_path)
+plt.show()

@@ -208,5 +208,5 @@ plt.legend(fontsize=10)
 plt.grid(True, linestyle="--", alpha=0.6)
 
 # Save and show the plot
-plt.savefig(os.path.join(save_dir, f"{file_name}.jpg"), bbox_inches="tight", dpi=300)
+plt.savefig(os.path.join("plots/svm_margin", f"{file_name}.jpg"), bbox_inches="tight", dpi=300)
 plt.show()
