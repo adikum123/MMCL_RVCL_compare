@@ -68,7 +68,6 @@ parser.add_argument("--picks_per_class", type=int, default=5, help='number of ne
 parser.add_argument("--N0", type=int, default=100)
 parser.add_argument("--N", type=int, default=100000, help="number of samples to use")
 parser.add_argument("--alpha", type=float, default=0.001, help="failure probability")
-parser.add_argument("--sigma", type=float, default=0.1, help="Sigma for randomized smoothing")
 parser.add_argument("--positives_per_class", type=int, default=5, help='number of negative items chosen per class')
 parser.add_argument("--batch", type=int, default=1000, help="batch size")
 parser.add_argument("--finetune", action="store_true", help="Finetune the model")
@@ -100,7 +99,7 @@ def load_combined_model(args, model_type):
             args.mmcl_checkpoint if model_type == "mmcl"
             else args.regular_cl_checkpoint
         )
-        if args.finetune and model_type == "mmcl":
+        if args.finetune:
             eval_ckpt = f"models/linear_evaluate/linear_finetune_{encoder_ckpt.split('/')[-1]}"
         else:
             eval_ckpt = f"models/linear_evaluate/linear_{encoder_ckpt.split('/')[-1]}"
@@ -125,6 +124,7 @@ def update_results(
     print(f"Radius: {radius}")
     predicted_label = get_ori_model_predicition(ori_model, image)
     results[model_name].append({
+        "sigma": verifier.sigma,
         "radius": radius,
         "true_label": true_label,
         "predicted_label": predicted_label,
@@ -137,11 +137,6 @@ mmcl_model = load_combined_model(args, "mmcl")
 regular_cl_model = load_combined_model(args, "regular_cl")
 rvcl_model = load_combined_model(args, "rvcl")
 supervised_model = load_combined_model(args, "supervised")
-# create verifiers
-mmcl_verifier = Smooth(base_classifier=mmcl_model, num_classes=10, sigma=args.sigma)
-regular_cl_verifier = Smooth(base_classifier=regular_cl_model, num_classes=10, sigma=args.sigma)
-rvcl_verifier = Smooth(base_classifier=rvcl_model, num_classes=10, sigma=args.sigma)
-supervised_verifier = Smooth(base_classifier=supervised_model, num_classes=10, sigma=args.sigma)
 print("Loaded verifiers")
 # creating data
 class_names = testdst.classes
@@ -161,25 +156,46 @@ picks = defaultdict(list)
 for class_name, values in per_class_sampler.items():
     picks[class_name] = random.sample(per_class_sampler[class_name], args.positives_per_class)
 results = defaultdict(list)
-for class_name, values in picks.items():
-    print(f"Processing class name: {class_name}")
-    for image, label in values:
-        image = image.to(device)
-        update_results(
-            verifier=mmcl_verifier, ori_model=mmcl_model, results=results, model_name="mmcl", true_label=label, image=image
-        )
-        update_results(
-            verifier=regular_cl_verifier, ori_model=regular_cl_model, results=results, model_name="regular_cl", true_label=label, image=image
-        )
-        update_results(
-            verifier=rvcl_verifier, ori_model=rvcl_model, results=results, model_name="rvcl", true_label=label, image=image
-        )
-        update_results(
-            verifier=supervised_verifier, ori_model=supervised_model, results=results, model_name="supervised", true_label=label, image=image
-        )
-print(f"For sigma: {args.sigma} and alpha: {args.alpha} following average robust radius results were obtained:\n{json.dumps(results, indent=4)}")
-results = dict(results)
-file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}_supervised_{args.supervised_model}.json"
-# save results
+sigma_values = [0.1 * x for x in range(1, 11)]
+for sigma in sigma_values:
+    # create verifiers
+    mmcl_verifier = Smooth(base_classifier=mmcl_model, num_classes=10, sigma=sigma)
+    regular_cl_verifier = Smooth(base_classifier=regular_cl_model, num_classes=10, sigma=sigma)
+    rvcl_verifier = Smooth(base_classifier=rvcl_model, num_classes=10, sigma=sigma)
+    supervised_verifier = Smooth(base_classifier=supervised_model, num_classes=10, sigma=sigma)
+    print(f"Processing sigma: {sigma}")
+    for class_name, values in picks.items():
+        print(f"Processing class name: {class_name}")
+        for image, label in values:
+            image = image.to(device)
+            update_results(
+                verifier=mmcl_verifier, ori_model=mmcl_model, results=results, model_name="mmcl", true_label=label, image=image
+            )
+            update_results(
+                verifier=regular_cl_verifier, ori_model=regular_cl_model, results=results, model_name="regular_cl", true_label=label, image=image
+            )
+            update_results(
+                verifier=rvcl_verifier, ori_model=rvcl_model, results=results, model_name="rvcl", true_label=label, image=image
+            )
+            update_results(
+                verifier=supervised_verifier, ori_model=supervised_model, results=results, model_name="supervised", true_label=label, image=image
+            )
+    print(f"For sigma: {args.sigma} and alpha: {args.alpha} following average robust radius results were obtained:\n{json.dumps(results, indent=4)}")
+    results = dict(results)
+    file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}_supervised_{args.supervised_model}.json"
+
+# get average radius and certified accuracy per sigma
+per_sigma_results = defaultdict(list)
+for sigma in sigma_values:
+    for model_name in ["mmcl", "rvcl", "regular_cl", "supervised"]:
+        curr_model_values = [x for x in results[model_name] if x["sigma"] == sigma]
+        avg_radius = sum([x["radius"] for x in curr_model_values]) / len(curr_model_values)
+        certified_accuracy = sum([x["true_label"] == x["rs_label"] for x in curr_model_values]) / len(curr_model_values)
+        per_sigma_results[sigma].append({
+            "model_name": model_name,
+            "avg_radius": avg_radius,
+            "certified_accuracy": certified_accuracy
+        })
+# save per sigma results
 with open(f"rs_results/{file_name}.json", "w") as f:
-    json.dump(results, f)
+    json.dump(per_sigma_results, f)
