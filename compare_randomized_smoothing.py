@@ -116,6 +116,21 @@ def load_combined_model(args, model_type):
 def get_ori_model_predicition(model, x):
     return torch.argmax(model(x.unsqueeze(0)), dim=-1).item()
 
+def update_results(
+    verifier, ori_model, results, model_name, true_label, image
+):
+    rs_label, radius = verifier.certify(
+        image, args.N0, args.N, args.alpha, args.batch
+    )
+    print(f"Radius: {radius}")
+    predicted_label = get_ori_model_predicition(ori_model, image)
+    results[model_name].append({
+        "radius": radius,
+        "true_label": true_label,
+        "predicted_label": predicted_label,
+        "rs_label": rs_label
+    })
+
 
 # load models then create verifiers
 mmcl_model = load_combined_model(args, "mmcl")
@@ -145,42 +160,26 @@ for idx, sample in enumerate(testdst):
 picks = defaultdict(list)
 for class_name, values in per_class_sampler.items():
     picks[class_name] = random.sample(per_class_sampler[class_name], args.positives_per_class)
-
-rs_radius_per_model = defaultdict(list)
-instance_accuracy = defaultdict(int)
+results = defaultdict(list)
 for class_name, values in picks.items():
     print(f"Processing class name: {class_name}")
     for image, label in values:
         image = image.to(device)
-        mmcl_prediction, mmcl_radius = mmcl_verifier.certify(
-            image, args.N0, args.N, args.alpha, args.batch
+        update_results(
+            verifier=mmcl_verifier, ori_model=mmcl_model, results=results, model_name="mmcl", true_label=label, image=image
         )
-        rs_radius_per_model["mmcl"].append(mmcl_radius)
-        if mmcl_prediction == label:
-            instance_accuracy["mmcl"] += 1
-        print(f"True label: {label}\tOriginal prediction: {get_ori_model_predicition(mmcl_model, image)}\tMMCL smoothed prediction: {mmcl_prediction}\tMMCL radius: {mmcl_radius}")
-        regular_cl_prediction, regular_cl_radius = regular_cl_verifier.certify(
-            image, args.N0, args.N, args.alpha, args.batch
+        update_results(
+            verifier=regular_cl_verifier, ori_model=regular_cl_model, results=results, model_name="regular_cl", true_label=label, image=image
         )
-        rs_radius_per_model["regular_cl"].append(regular_cl_radius)
-        if regular_cl_prediction == label:
-            instance_accuracy["regular_cl"] += 1
-        print(f"True label: {label}\tOriginal prediction: {get_ori_model_predicition(regular_cl_model, image)}\tRegular CL smoothed prediction: {regular_cl_prediction}\tRegular CL radius: {regular_cl_radius}")
-        rvcl_prediction, rvcl_radius = rvcl_verifier.certify(
-            image, args.N0, args.N, args.alpha, args.batch
+        update_results(
+            verifier=rvcl_verifier, ori_model=rvcl_model, results=results, model_name="rvcl", true_label=label, image=image
         )
-        rs_radius_per_model["rvcl"].append(rvcl_radius)
-        if rvcl_prediction == label:
-            instance_accuracy["rvcl"] += 1
-        print(f"True label: {label}\tOriginal prediction: {get_ori_model_predicition(rvcl_model, image)}\tRVCL smoothed prediction: {rvcl_prediction}\tRVCL radius: {rvcl_radius}")
-        supervised_prediction, supervised_radius = supervised_verifier.certify(
-            image, args.N0, args.N, args.alpha, args.batch
+        update_results(
+            verifier=supervised_verifier, ori_model=supervised_model, results=results, model_name="supervised", true_label=label, image=image
         )
-        rs_radius_per_model["supervised"].append(supervised_radius)
-        if supervised_prediction == label:
-            instance_accuracy["supervised"] += 1
-        print(f"True label: {label}\tOriginal prediction: {get_ori_model_predicition(supervised_model, image)}\tSupervised smoothed prediction: {supervised_prediction}\tSupervised radius: {supervised_radius}")
-average_rs_radius = {key: np.mean(values) for key, values in rs_radius_per_model.items()}
-print(f"For sigma: {args.sigma} and alpha: {args.alpha} following average robust radius results were obtained:\n{json.dumps(average_rs_radius, indent=4)}")
-instance_accuracy = {key: value / (args.positives_per_class * len(class_names)) for key, value in instance_accuracy.items()}
-print(f"Instance accuracy for each model: {json.dumps(instance_accuracy, indent=4)}")
+print(f"For sigma: {args.sigma} and alpha: {args.alpha} following average robust radius results were obtained:\n{json.dumps(results, indent=4)}")
+results = dict(results)
+file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}_supervised_{args.supervised_model}.json"
+# save results
+with open(f"rs_results/{file_name}.json", "w") as f:
+    json.dump(results, f)
