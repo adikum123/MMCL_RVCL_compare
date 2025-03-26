@@ -105,8 +105,8 @@ def load_combined_model(args, model_type):
             eval_ckpt = f"models/linear_evaluate/linear_{encoder_ckpt.split('/')[-1]}"
         print(f"Encoder: {encoder_ckpt}, eval_ckpt: {eval_ckpt}")
         return CombinedModel(
-            encoder=torch.load(encoder_ckpt, device),
-            eval_=torch.load(eval_ckpt, device)
+            encoder=torch.load(encoder_ckpt, device, weights_only=False),
+            eval_=torch.load(eval_ckpt, device, weights_only=False)
         )
     ckpt = args.rvcl_checkpoint if model_type == "rvcl" else args.supervised_checkpoint
     print(f"Loading model with checkpoint: {ckpt}")

@@ -2,8 +2,8 @@
 #SBATCH -p lrz-hgx-h100-94x4
 #SBATCH --gres=gpu:1
 #SBATCH --time=28:00:00
-#SBATCH -o outs/robust_radius_100k.out
-#SBATCH -e outs/robust_radius_100k.out
+#SBATCH -o outs/randomized_smoothing_100k.out
+#SBATCH -e outs/randomized_smoothing_100k.out
 
 echo "Creating and starting the container..."
 
