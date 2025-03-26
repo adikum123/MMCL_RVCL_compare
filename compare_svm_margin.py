@@ -110,6 +110,9 @@ print(f"Loaded RVCL model: {rvcl_model}")
 print(f"Loaded regular cl model: {regular_cl_model}")
 
 def encode_inputs_and_compute_margin(model, positive, negatives):
+    model = model.to(device)
+    positive = positive.to(device)
+    negatives = [neg.to(device) for neg in negatives]
     positive_encoding = model(positive.unsqueeze(0).to(device))
     negative_encodings = torch.stack([model(neg.unsqueeze(0)) for neg in negatives]).squeeze(1)
     return compute_margin(positive=positive_encoding, negatives=negative_encodings, args=args)

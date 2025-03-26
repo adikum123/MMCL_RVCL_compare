@@ -164,9 +164,8 @@ for sigma in sigma_values:
     rvcl_verifier = Smooth(base_classifier=rvcl_model, num_classes=10, sigma=sigma)
     supervised_verifier = Smooth(base_classifier=supervised_model, num_classes=10, sigma=sigma)
     print(f"Processing sigma: {sigma}")
-    for class_name, values in picks.items():
-        print(f"Processing class name: {class_name}")
-        for image, label in values:
+    for class_name, values in tqdm(picks.items()):
+        for image, label in tqdm(values):
             image = image.to(device)
             update_results(
                 verifier=mmcl_verifier, ori_model=mmcl_model, results=results, model_name="mmcl", true_label=label, image=image
