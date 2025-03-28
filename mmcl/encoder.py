@@ -222,7 +222,7 @@ class MMCL_Encoder(nn.Module):
 
     def get_model_save_name(self):
         if self.hparams.model_save_name:
-            return f"{self.hparams.model_save_name}_bs_{self.hparams.bs}_lr_{self.hparams.lr}"
+            return f"{self.hparams.model_save_name}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
         raise ValueError("Model save name not provided. Please set --model_save_name.")
 
     def save(self):
