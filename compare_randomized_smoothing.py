@@ -156,7 +156,7 @@ picks = defaultdict(list)
 for class_name, values in per_class_sampler.items():
     picks[class_name] = random.sample(per_class_sampler[class_name], args.positives_per_class)
 results = defaultdict(list)
-sigma_values = [0.1 * x for x in range(1, 11)]
+sigma_values = [0.25, 0.5, 1]
 for sigma in sigma_values:
     # create verifiers
     mmcl_verifier = Smooth(base_classifier=mmcl_model, num_classes=10, sigma=sigma)
@@ -179,22 +179,19 @@ for sigma in sigma_values:
             update_results(
                 verifier=supervised_verifier, ori_model=supervised_model, results=results, model_name="supervised", true_label=label, image=image
             )
-    print(f"For sigma: {args.sigma} and alpha: {args.alpha} following average robust radius results were obtained:\n{json.dumps(results, indent=4)}")
-    results = dict(results)
-    file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}_supervised_{args.supervised_model}.json"
-
-# get average radius and certified accuracy per sigma
-per_sigma_results = defaultdict(list)
-for sigma in sigma_values:
-    for model_name in ["mmcl", "rvcl", "regular_cl", "supervised"]:
-        curr_model_values = [x for x in results[model_name] if x["sigma"] == sigma]
-        avg_radius = sum([x["radius"] for x in curr_model_values]) / len(curr_model_values)
-        certified_accuracy = sum([x["true_label"] == x["rs_label"] for x in curr_model_values]) / len(curr_model_values)
-        per_sigma_results[sigma].append({
-            "model_name": model_name,
-            "avg_radius": avg_radius,
-            "certified_accuracy": certified_accuracy
-        })
-# save per sigma results
+results = dict(results)
+file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}_supervised_{args.supervised_model}.json"
 with open(f"rs_results/{file_name}.json", "w") as f:
-    json.dump(per_sigma_results, f)
+    json.dump(results, f)
+
+certified_radius_choices = [0, 0.5, 1, 1.5, 2, 2.5, 3]
+for model_name in ["mmcl", "rvcl", "regular_cl", "supervised"]:
+    values = results[model_name]
+    for radius in certified_radius_choices:
+        for sigma in sigma_values:
+            curr_values = [x for x in values if x["sigma"] == sigma and x["radius"] >= radius]
+            print(curr_values)
+            if len(curr_values) > 0:
+                certified_instance_accuracy = sum(1 for x in curr_values if x["true_label"] == x["rs_label"]) / len(curr_values)
+                unchanged_percentage = sum(1 for x in curr_values if x["rs_label"] == x["predicted_label"]) / len(curr_values)
+                print(f"Model: {model_name}, sigma: {sigma}, radius: {radius}, certified_instance_accuracy: {certified_instance_accuracy}, unchanged_percentage: {unchanged_percentage}")

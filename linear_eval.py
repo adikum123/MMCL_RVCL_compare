@@ -62,39 +62,6 @@ class LinearEval(nn.Module):
             step_size=self.hparams.step_size,
             gamma=self.hparams.scheduler_gamma,
         )
-        # attacker info
-        attacker = None
-        save_name = ""
-        if self.hparams.name != "":
-            save_name = self.hparams.name + "_"
-        if self.hparams.adv_img:
-            attack_info = (
-                "Adv_train_epsilon_"
-                + str(self.hparams.epsilon)
-                + "_alpha_"
-                + str(self.hparams.alpha)
-                + "_max_iters_"
-                + str(self.hparams.k)
-                + "_type_"
-                + str(self.hparams.attack_type)
-                + "_randomstart_"
-                + str(self.hparams.random_start)
-            )
-            save_name += attack_info + "_"
-            print("Adversarial training info...")
-            print(attack_info)
-            img_clip = min_max_value(self.hparams)
-            self.attacker = FastGradientSignUntargeted(
-                self.encoder,
-                linear="None",
-                epsilon=self.hparams.epsilon,
-                alpha=self.hparams.alpha,
-                min_val=img_clip["min"].to(self.device),
-                max_val=img_clip["max"].to(self.device),
-                max_iters=self.hparams.k,
-                device=self.device,
-                _type=self.hparams.attack_type,
-            )
         self.best_model_saved = False
         self.min_epochs = 60
 
@@ -221,6 +188,8 @@ class LinearEval(nn.Module):
         # Load best saved model as the classifier
         if self.hparams.use_validation:
             self.classifier = torch.load(os.path.join("models/linear_evaluate", self.get_model_save_name()), map_location=self.device)
+        if self.hparams.finetune:
+            self.encoder.save_finetune()
 
     def test(self):
         """Evaluate the model on the test dataset."""

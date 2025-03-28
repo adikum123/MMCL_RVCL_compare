@@ -247,3 +247,9 @@ class MMCL_Encoder(nn.Module):
             os.makedirs(save_dir, exist_ok=True)
             save_path = os.path.join(save_dir, self.get_model_save_name() + ".pkl")
             torch.save(self.model, save_path)
+
+    def save_finetune(self):
+        save_dir = f'models/mmcl/{self.hparams.kernel_type}'
+        os.makedirs(save_dir, exist_ok=True)
+        save_path = os.path.join(save_dir, f"{self.get_model_save_name()}_finetune.pkl")
+        torch.save(self.model, save_path)
