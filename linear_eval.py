@@ -229,7 +229,7 @@ class LinearEval(nn.Module):
         return metrics
 
     def get_model_save_name(self):
-        ckpt = None
+        ckpt, prefix = None, ""
         if 'mmcl_checkpoint' in vars(self.hparams):
             ckpt = self.hparams.mmcl_checkpoint
         if 'rvcl_checkpoint' in vars(self.hparams):
@@ -237,9 +237,9 @@ class LinearEval(nn.Module):
         if 'regular_cl_checkpoint' in vars(self.hparams):
             ckpt = self.hparams.regular_cl_checkpoint
         if self.hparams.relu_layer:
-            f"relu_linear_{ckpt.split('/')[-1]}"
+            prefix = "relu_"
         if self.hparams.finetune:
-            return f"linear_finetune_{ckpt.split('/')[-1]}"
+            return f"{prefix}linear_finetune_{ckpt.split('/')[-1]}"
         return f"linear_{ckpt.split('/')[-1]}"
 
     def save(self):
