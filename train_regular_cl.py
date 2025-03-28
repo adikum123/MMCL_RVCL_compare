@@ -53,6 +53,9 @@ parser.add_argument(
     action="store_true",
     help="Use validation set and stopping criteria",
 )
+parser.add_argument("--loss_type", default="", help=["Select info_nce, nce, cosine or barlow"])
+parser.add_argument("--temperature", default=0.5, help="Temperature for info_nce loss"),
+parser.add_argument("--lambda_param", default=5e-3, help="Lambda for Barlow loss")
 
 args = parser.parse_args()
 print("Args:\n")

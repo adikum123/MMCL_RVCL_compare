@@ -14,6 +14,97 @@ import rocl.data_loader as data_loader
 from mmcl.losses import MMCL_PGD as MMCL_pgd
 
 
+class ContrastiveLoss(nn.Module):
+
+    def __init__(self, loss_type="info_nce", temperature=0.5, lambda_param=5e-3):
+        """
+        Initializes the ContrastiveLoss module.
+        Args:
+            loss_type: String indicating which loss to use: "info_nce", "nce", "cosine", or "barlow".
+            temperature: Temperature parameter for applicable losses.
+            lambda_param: Lambda parameter for the Barlow Twins loss.
+        """
+        super(ContrastiveLoss, self).__init__()
+        self.loss_type = loss_type
+        self.temperature = temperature
+        self.lambda_param = lambda_param
+
+    def forward(self, f1, f2):
+        if self.loss_type == "info_nce":
+            return self.info_nce_loss(f1, f2)
+        elif self.loss_type == "nce":
+            return self.nce_loss(f1, f2)
+        elif self.loss_type == "cosine":
+            return self.cosine_similarity_loss(f1, f2)
+        elif self.loss_type == "barlow":
+            return self.barlow_twins_loss(f1, f2)
+        else:
+            raise ValueError(f"Unknown loss type: {self.loss_type}")
+
+    def info_nce_loss(self, f1, f2):
+        """
+        Computes the InfoNCE (NT-Xent) loss.
+        """
+        batch_size = f1.size(0)
+        f1 = F.normalize(f1, dim=1)
+        f2 = F.normalize(f2, dim=1)
+        features = torch.cat([f1, f2], dim=0)  # (2N, d)
+        similarity_matrix = torch.matmul(features, features.T)  # (2N, 2N)
+        logits = similarity_matrix / self.temperature
+        # Mask self-similarity by setting diagonal to a very low value
+        mask = torch.eye(2 * batch_size, device=logits.device).bool()
+        logits.masked_fill_(mask, -1e9)
+        # For each sample, the positive is the corresponding augmented view.
+        positive_indices = (torch.arange(2 * batch_size, device=logits.device) + batch_size) % (2 * batch_size)
+        loss = F.cross_entropy(logits, positive_indices)
+        return loss
+
+    def nce_loss(self, f1, f2):
+        """
+        Computes the Noise Contrastive Estimation (NCE) loss.
+        """
+        batch_size = f1.size(0)
+        f1 = F.normalize(f1, dim=1)
+        f2 = F.normalize(f2, dim=1)
+        logits = torch.matmul(f1, f2.T) / self.temperature  # (N, N) similarity matrix
+        positives = torch.diag(logits)
+        logsumexp = torch.logsumexp(logits, dim=1)
+        loss = - (positives - logsumexp).mean()
+        return loss
+
+    def cosine_similarity_loss(self, f1, f2):
+        """
+        Computes a loss based on the negative cosine similarity.
+        """
+        f1 = F.normalize(f1, dim=1)
+        f2 = F.normalize(f2, dim=1)
+        loss = - (f1 * f2).sum(dim=1).mean()
+        return loss
+
+    def off_diagonal(self, x):
+        """
+        Returns a flattened view of the off-diagonal elements of a square matrix.
+        """
+        n, m = x.shape
+        assert n == m
+        return x.flatten()[:-1].view(n - 1, n + 1)[:, 1:].flatten()
+
+    def barlow_twins_loss(self, f1, f2):
+        """
+        Computes the Barlow Twins loss.
+        """
+        batch_size = f1.size(0)
+        f1_norm = (f1 - f1.mean(0)) / f1.std(0)
+        f2_norm = (f2 - f2.mean(0)) / f2.std(0)
+        c = torch.mm(f1_norm.T, f2_norm) / batch_size  # Cross-correlation matrix
+        # On-diagonal: encourage values to be 1
+        on_diag = torch.diagonal(c).add_(-1).pow(2).sum()
+        # Off-diagonal: encourage values to be 0
+        off_diag = self.off_diagonal(c).pow(2).sum()
+        loss = on_diag + self.lambda_param * off_diag
+        return loss
+
+
 class RegularCLModel(nn.Module):
 
     def __init__(self, hparams, device):
@@ -49,6 +140,11 @@ class RegularCLModel(nn.Module):
             step_size=self.hparams.step_size,
             gamma=self.hparams.scheduler_gamma,
         )
+        self.crit = ContrastiveLoss(
+            loss_type=self.hparams.loss_type,
+            temperature=self.hparams.temperature,
+            lambda_param=self.hparams.lambda_param,
+        )
         self.best_model_saved = False
 
     def forward(self, x):
@@ -59,36 +155,6 @@ class RegularCLModel(nn.Module):
 
     def set_eval(self):
         self.model.eval()
-
-    def info_nce_loss(self, f1, f2, temperature=0.5):
-        """
-        Computes the InfoNCE loss given two sets of representations f1 and f2.
-        Args:
-            f1: Tensor of shape (N, d) from first augmented view.
-            f2: Tensor of shape (N, d) from second augmented view.
-            temperature: Temperature scaling factor.
-        Returns:
-            A scalar InfoNCE loss.
-        """
-        batch_size = f1.size(0)
-        # Normalize the representations
-        f1 = F.normalize(f1, dim=1)
-        f2 = F.normalize(f2, dim=1)
-        # Concatenate along the batch dimension -> (2N, d)
-        features = torch.cat([f1, f2], dim=0)
-        # Compute similarity matrix (2N x 2N)
-        similarity_matrix = torch.matmul(features, features.T)
-        # Scale by temperature
-        logits = similarity_matrix / temperature
-        # To avoid trivial self-comparison, mask out the diagonal
-        mask = torch.eye(2 * batch_size, device=logits.device).bool()
-        logits.masked_fill_(mask, -1e9)
-
-        # For each sample i in the batch, the positive example is at index (i+batch_size) % (2N)
-        positive_indices = (torch.arange(2 * batch_size, device=logits.device) + batch_size) % (2 * batch_size)
-        # Compute cross entropy loss using the positive indices as targets.
-        loss = F.cross_entropy(logits, positive_indices)
-        return loss
 
     def train(self):
         best_val_loss = float("inf")
@@ -111,7 +177,7 @@ class RegularCLModel(nn.Module):
                 f1 = self.model(pos_1)
                 f2 = self.model(pos_2)
                 # Compute InfoNCE loss
-                loss = self.info_nce_loss(f1, f2, temperature)
+                loss = self.crit(f1, f2)
 
                 # Backpropagation and optimizer step
                 self.optimizer.zero_grad()
@@ -197,7 +263,7 @@ class RegularCLModel(nn.Module):
     def get_model_save_name(self):
         if self.hparams.model_save_name:
             return self.hparams.model_save_name
-        return f"regular_cl_bs_{self.hparams.batch_size}_{self.hparams.lr}.pkl"
+        return f"regular_cl_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}.pkl"
 
 
     def save(self):

@@ -221,25 +221,9 @@ class MMCL_Encoder(nn.Module):
         print(f"\nLoss plot saved to {save_path}")
 
     def get_model_save_name(self):
-        def get_train_data_desc(hparams):
-            if hparams.clean:
-                return "clean"
-            if hparams.adv_img:
-                return "adversarial"
-            if hparams.trans:
-                return "transformed"
-
         if self.hparams.model_save_name:
-            return self.hparams.model_save_name
-        return (
-            self.hparams.model
-            + "_C_"
-            + str(self.hparams.C)
-            + "_kernel_type_"
-            + str(self.hparams.kernel_type)
-            + "_train_data_"
-            + (get_train_data_desc(self.hparams))
-        )
+            return f"{self.hparams.model_save_name}_bs_{self.hparams.bs}_lr_{self.hparams.lr}"
+        raise ValueError("Model save name not provided. Please set --model_save_name.")
 
     def save(self):
         if not self.best_model_saved:
