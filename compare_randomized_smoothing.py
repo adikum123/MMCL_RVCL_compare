@@ -185,12 +185,13 @@ with open(f"rs_results/{file_name}.json", "w") as f:
     json.dump(results, f)
 
 certified_radius_choices = [0, 0.5, 1, 1.5, 2, 2.5, 3]
+df =
 for model_name in ["mmcl", "rvcl", "regular_cl", "supervised"]:
     values = results[model_name]
     for radius in certified_radius_choices:
         for sigma in sigma_values:
             curr_values = [x for x in values if x["sigma"] == sigma and x["radius"] >= radius]
-            print(curr_values)
+            certified_instance_accuracy, unchanged_percentage = 0, 0
             if len(curr_values) > 0:
                 certified_instance_accuracy = sum(1 for x in curr_values if x["true_label"] == x["rs_label"]) / len(curr_values)
                 unchanged_percentage = sum(1 for x in curr_values if x["rs_label"] == x["predicted_label"]) / len(curr_values)

@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -p lrz-hgx-h100-94x4
+#SBATCH -p lrz-hgx-a100-80x4
 #SBATCH --gres=gpu:1
 #SBATCH --time=28:00:00
 #SBATCH -o outs/randomized_smoothing_100k.out
