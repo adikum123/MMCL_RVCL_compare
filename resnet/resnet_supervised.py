@@ -22,7 +22,7 @@ class ResnetSupervised(nn.Module):
         print(self.hparams.resnet_supervised_ckpt == "")
         if self.hparams.resnet_supervised_ckpt == "":
             self.model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1).to(self.device)
-            self.model.fc = torch.nn.Linear(2048, 10)
+            self.model.fc = torch.nn.Linear(2048, 10).to(self.device)
         else:
             self.model = torch.load(
                 self.hparams.resnet_supervised_ckpt,
@@ -146,7 +146,7 @@ class ResnetSupervised(nn.Module):
             # Step the learning rate scheduler at the end of each epoch
             self.scheduler.step()
         # Plot and save the training and validation loss
-        save_dir = "plots/supervised"
+        save_dir = "plots/resnet_supervised"
         os.makedirs(save_dir, exist_ok=True)
         save_path = os.path.join(
             save_dir, f"{self.get_model_save_name()}.png"
