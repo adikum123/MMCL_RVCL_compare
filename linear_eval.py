@@ -189,7 +189,7 @@ class LinearEval(nn.Module):
         if self.hparams.use_validation:
             self.classifier = torch.load(os.path.join("models/linear_evaluate", self.get_model_save_name()), map_location=self.device)
         if self.hparams.finetune:
-            self.encoder.save_finetune()
+            self.save_encoder_finetune()
 
     def test(self):
         """Evaluate the model on the test dataset."""
@@ -228,19 +228,23 @@ class LinearEval(nn.Module):
         print(f"Test Results: {json.dumps(metrics, indent=4)}")
         return metrics
 
-    def get_model_save_name(self):
-        ckpt, prefix = None, ""
+    def get_encoder_ckpt(self):
         if 'mmcl_checkpoint' in vars(self.hparams):
-            ckpt = self.hparams.mmcl_checkpoint
+            return self.hparams.mmcl_checkpoint
         if 'rvcl_checkpoint' in vars(self.hparams):
-            ckpt = self.hparams.rvcl_checkpoint
+            return self.hparams.rvcl_checkpoint
         if 'regular_cl_checkpoint' in vars(self.hparams):
-            ckpt = self.hparams.regular_cl_checkpoint
+            return self.hparams.regular_cl_checkpoint
+        raise ValueError("Checkpoint not found in hparams.")
+
+    def get_model_save_name(self):
+        prefix = ""
+        ckpt = self.get_encoder_ckpt()
         if self.hparams.relu_layer:
             prefix = "relu_"
         if self.hparams.finetune:
             return f"{prefix}linear_finetune_{ckpt.split('/')[-1]}"
-        return f"linear_{ckpt.split('/')[-1]}"
+        return f"{prefix}linear_{ckpt.split('/')[-1]}"
 
     def save(self):
         if not self.best_model_saved:
@@ -248,3 +252,8 @@ class LinearEval(nn.Module):
             os.makedirs(save_dir, exist_ok=True)
             save_path = os.path.join(save_dir, self.get_model_save_name())
             torch.save(self.classifier, save_path)
+
+    def save_encoder_finetune(self):
+        ckpt = self.get_encoder_ckpt()
+        model_name = ckpt.split("/")[-1]
+        self.encoder.save_finetune(model_name=model_name)

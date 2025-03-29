@@ -1,6 +1,16 @@
+import json
+import os
+
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
+import torch.nn.functional as F  # Add this line
+import torch.optim as optim
 import torchvision.models as models
+from tqdm import tqdm
+
+import mmcl.utils as utils
+import rocl.data_loader as data_loader
 
 
 class ResnetSupervised(nn.Module):
@@ -9,9 +19,10 @@ class ResnetSupervised(nn.Module):
         super(ResnetSupervised, self).__init__()
         self.hparams = hparams
         self.device = device
-        if hparams.resnet_supervised_ckpt:
+        print(self.hparams.resnet_supervised_ckpt == "")
+        if self.hparams.resnet_supervised_ckpt == "":
             self.model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
-            self.model.fc = torch.nn.Linear(in_features=2048, out_features=10, bias=True)
+            self.model.fc = torch.nn.Linear(2048, 10)
         else:
             self.model = torch.load(
                 self.hparams.resnet_supervised_ckpt,
@@ -195,5 +206,5 @@ class ResnetSupervised(nn.Module):
         if not self.best_model_saved:
             save_dir = f"models/resnet"
             os.makedirs(save_dir, exist_ok=True)
-            save_path = os.path.join(save_dir, self.get_model_save_name() + ".pkl")
-            torch.save(self.model, save_path)
+            save_path = os.path.join(save_dir, self.get_model_save_name() + ".pt")
+            torch.save(self.model.state_dict(), save_path)  # Save state_dict instead
