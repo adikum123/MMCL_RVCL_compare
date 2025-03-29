@@ -21,7 +21,7 @@ class ResnetSupervised(nn.Module):
         self.device = device
         print(self.hparams.resnet_supervised_ckpt == "")
         if self.hparams.resnet_supervised_ckpt == "":
-            self.model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
+            self.model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1).to(self.device)
             self.model.fc = torch.nn.Linear(2048, 10)
         else:
             self.model = torch.load(
