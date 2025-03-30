@@ -19,7 +19,7 @@ class ResnetUnsupervised(nn.Module):
         super(ResnetUnsupervised, self).__init__()
         self.hparams = hparams
         self.device = device
-        self.encoder = self.load_resnet_encoder_from_ckpt(self.hparams.resnet_unsupervised_ckpt)
+        self.encoder = self.load_resnet_encoder_from_ckpt(self.hparams.resnet_unsupervised_ckpt).to(self.device)
         for param in self.encoder.parameters():
             param.requires_grad = False
         self.classifier = nn.Linear(2048, 10).to(self.device)
