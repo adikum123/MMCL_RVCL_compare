@@ -53,7 +53,7 @@ class ResnetUnsupervised(nn.Module):
         new_state_dict = {k.replace("convnet.", ""): v for k, v in state_dict.items() if not k.startswith("projection.")}
         model = models.resnet50(pretrained=False)
         model.load_state_dict(new_state_dict, strict=True)
-        model.fc = torch.nn.Identity()
+        model.fc = torch.nn.Identity().to(self.device)
         return model
 
     def forward(self, x):
@@ -88,9 +88,9 @@ class ResnetUnsupervised(nn.Module):
                     target.to(self.device),
                 )
                 # Combine images and corresponding targets
-                images = torch.cat([ori_image, pos_1, pos_2], dim=0)
+                images = torch.cat([ori_image, pos_1, pos_2], dim=0).to(self.device)
                 logits = self.forward(x=images)
-                targets = torch.cat([target, target, target], dim=0)
+                targets = torch.cat([target, target, target], dim=0).to(self.device)
                 # Backpropagation and optimizer step
                 loss = self.criterion(logits, targets)
                 self.optimizer.zero_grad()
