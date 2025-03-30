@@ -26,7 +26,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     pip install -r requirements.txt
 
     export PYTHONPATH=$(pwd):$PYTHONPATH
-    echo "Training supervised model"
+    echo "Training unsupervised model"
     python -u train_resnet_unsupervised.py \
         --resnet_unsupervised_ckpt models/resnet_pretrained_models/resnet50_imagenet_bs2k_epochs600.pth.tar \
         --dataset cifar-10 \

@@ -76,6 +76,7 @@ class ResnetUnsupervised(nn.Module):
 
         train_losses = []
         val_losses = []
+        self.model = self.model.to(self.device)
         for epoch in range(self.hparams.num_iters):
             self.classifier.train()  # Set the model to training mode
             total_loss, total_samples = 0.0, 0
