@@ -26,7 +26,7 @@ class ResnetUnsupervised(nn.Module):
             self.classifier = nn.Sequential(
                 nn.Linear(2048, 4096),
                 nn.ReLU(),
-                nn.Linear(2048, 10),
+                nn.Linear(4096, 10),
             ).to(self.device)
         else:
             self.classifier = nn.Linear(2048, 10).to(self.device)
