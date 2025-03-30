@@ -2,8 +2,8 @@
 #SBATCH -p lrz-hgx-h100-94x4
 #SBATCH --gres=gpu:1
 #SBATCH --time=5:00:00
-#SBATCH -o outs/resnet_supervised.out
-#SBATCH -e outs/resnet_supervised.out
+#SBATCH -o outs/resnet_unsupervised.out
+#SBATCH -e outs/resnet_unsupervised.out
 
 #!/bin/bash
 echo "Creating and starting the container..."
