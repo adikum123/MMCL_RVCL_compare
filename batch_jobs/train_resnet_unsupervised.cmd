@@ -34,6 +34,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --num_iters 200 \
         --lr 1e-3 \
         --use_validation \
+        --relu_layer \
         --step_size 25
 
 EOF

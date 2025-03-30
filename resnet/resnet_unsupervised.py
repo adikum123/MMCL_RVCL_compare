@@ -22,7 +22,14 @@ class ResnetUnsupervised(nn.Module):
         print(f"Using device: {self.device}")
         self.encoder = self.load_resnet_encoder_from_ckpt(self.hparams.resnet_unsupervised_ckpt)
         self.encoder.to(self.device)
-        self.classifier = nn.Linear(2048, 10).to(self.device)
+        if self.hparams.relu_layer:
+            self.classifier = nn.Sequential(
+                nn.Linear(2048, 4096),
+                nn.ReLU(),
+                nn.Linear(2048, 10),
+            ).to(self.device)
+        else:
+            self.classifier = nn.Linear(2048, 10).to(self.device)
         if self.hparams.use_validation:
             (
                 self.trainloader,
@@ -67,7 +74,8 @@ class ResnetUnsupervised(nn.Module):
         self.classifier.eval()
 
     def get_model_save_name(self):
-        return f"linear_eval_resnet_unsupervised_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
+        prefix = "relu_" if self.hparams.relu_layer else ""
+        return f"{prefix}linear_eval_resnet_unsupervised_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
 
     def train(self):
         best_val_loss = float("inf")

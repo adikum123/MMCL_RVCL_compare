@@ -2,7 +2,7 @@ import torch
 from torchvision import models
 
 # Path to your .pth.tar file
-checkpoint_path = "models/resnet_pretrained_models/resnet50_imagenet_bs2k_epochs600.pth.tar"
+checkpoint_path = "models/resnet_pretrained_models/resnet50_cifar10_bs1024_epochs1000.pth.tar"
 
 # Load the checkpoint
 checkpoint = torch.load(checkpoint_path, map_location='cpu')
@@ -26,7 +26,7 @@ model.fc = torch.nn.Identity()
 model.eval()
 
 # Generate a random image as input
-random_image = torch.randn(1, 3, 224, 224)  # Example random image
+random_image = torch.randn(1, 3, 32, 224)  # Example random image
 
 # Forward pass through the model
 with torch.no_grad():
