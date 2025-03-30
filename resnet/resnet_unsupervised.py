@@ -152,7 +152,7 @@ class ResnetUnsupervised(nn.Module):
                     print(
                         f"\nValidation loss did not improve. Patience: {patience_counter}/{max_patience}"
                     )
-                if patience_counter >= max_patience:
+                if patience_counter >= max_patience and epoch > 50:
                     print("\nEarly stopping triggered. Training terminated.")
                     break
             # Step the learning rate scheduler at the end of each epoch

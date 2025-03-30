@@ -27,7 +27,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
 
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Training encoder"
-    python train_regular_cl.py \
+    python train_models/train_regular_cl.py \
         --model_save_name regular_cl_cnn_4layer_b_bs_32_lr_1e-3 \
         --model cnn_4layer_b \
         --dataset cifar-10 \

@@ -27,7 +27,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
 
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Training supervised model"
-    python -u train_supervised.py \
+    python -u train_models/train_supervised.py \
         --dataset cifar-10 \
         --relu_layer \
         --batch_size 32 \

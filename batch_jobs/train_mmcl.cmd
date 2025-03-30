@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH -p lrz-hgx-h100-92x4
+#SBATCH -p lrz-hgx-h100-94x4
 #SBATCH --gres=gpu:1
-#SBATCH --time=3:00:00
-#SBATCH -o outs/mnist_100k.out
-#SBATCH -e outs/mnist_100k.out
+#SBATCH --time=5:00:00
+#SBATCH -o outs/cifar.out
+#SBATCH -e outs/cifar.out
 
 #!/bin/bash
 echo "Creating and starting the container..."
@@ -27,30 +27,32 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
 
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Training encoder"
-    python train_mmcl.py \
-        --model_save_name mnist_cnn_4layer_b_linear \
-        --model mnist_cnn_4layer_b \
-        --dataset mnist \
+    python train_models/train_mmcl.py \
+        --model_save_name cnn_4layer_b_C_1_rbf_auto \
+        --model cnn_4layer_b \
+        --dataset cifar-10 \
         --batch_size 32 \
-        --kernel_type linear \
+        --kernel_type rbf \
         --num_iters 200 \
+        --lr 1e-4 \
         --use_validation \
-        --lr 1e-5 \
         --step_size 25 \
-        --C 100
+        --C 1
 
     if [ $? -eq 0 ]; then
         echo "Testing performance on linear eval"
-        python train_linear_eval.py \
+        python -u train_linear_eval_mmcl.py \
             --batch_size 32 \
-            --dataset mnist \
+            --dataset cifar-10 \
             --use_validation \
             --num_iters 100 \
             --step_size 30 \
             --lr 1e-3 \
-            --model mnist_cnn_4layer_b \
-            --mmcl_checkpoint models/mmcl/poly/mnist_cnn_4layer_b_linear.pkl \
-            --adv_img
+            --model cnn_4layer_b \
+            --relu_layer \
+            --clean \
+            --mmcl_checkpoint models/mmcl/rbf/cnn_4layer_b_C_1_rbf_auto.pkl \
+            --finetune
     else
         echo "Training encoder failed, skipping linear evaluation."
     fi
