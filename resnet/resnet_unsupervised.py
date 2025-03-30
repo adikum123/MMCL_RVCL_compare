@@ -48,7 +48,7 @@ class ResnetUnsupervised(nn.Module):
         self.best_model_saved = False
 
     def load_resnet_encoder_from_ckpt(self, ckpt):
-        checkpoint = torch.load(ckpt, map_location=seld.device)
+        checkpoint = torch.load(ckpt, map_location=self.device)
         state_dict = checkpoint['state_dict']
         new_state_dict = {k.replace("convnet.", ""): v for k, v in state_dict.items() if not k.startswith("projection.")}
         model = models.resnet50(pretrained=False)
