@@ -36,7 +36,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --num_iters 200 \
         --lr 1e-4 \
         --use_validation \
-        --step_size 50 \
+        --step_size 25 \
         --C 1
 
     if [ $? -eq 0 ]; then

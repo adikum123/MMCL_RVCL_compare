@@ -35,7 +35,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --batch_size 32 \
         --num_iters 200 \
         --lr 1e-3 \
-        --step_size 50
+        --step_size 25
 
     if [ $? -eq 0 ]; then
         echo "Testing performance on linear eval"
