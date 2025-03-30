@@ -19,9 +19,9 @@ class ResnetUnsupervised(nn.Module):
         super(ResnetUnsupervised, self).__init__()
         self.hparams = hparams
         self.device = device
-        self.encoder = self.load_resnet_encoder_from_ckpt(self.hparams.resnet_unsupervised_ckpt).to(self.device)
-        for param in self.encoder.parameters():
-            param.requires_grad = False
+        print(f"Using device: {self.device}")
+        self.encoder = self.load_resnet_encoder_from_ckpt(self.hparams.resnet_unsupervised_ckpt)
+        self.encoder.to(self.device)
         self.classifier = nn.Linear(2048, 10).to(self.device)
         if self.hparams.use_validation:
             (
@@ -76,7 +76,7 @@ class ResnetUnsupervised(nn.Module):
 
         train_losses = []
         val_losses = []
-        self.model = self.model.to(self.device)
+        self.encoder.to(self.device)
         for epoch in range(self.hparams.num_iters):
             self.classifier.train()  # Set the model to training mode
             total_loss, total_samples = 0.0, 0
