@@ -19,7 +19,7 @@ class ResnetUnsupervised(nn.Module):
         super(ResnetUnsupervised, self).__init__()
         self.hparams = hparams
         self.device = device
-        self.encoder = self.load_resnet_encoder_from_ckpt(self.hparams.resnet_unsupervised_ckpt).to(self.device)
+        self.encoder = self.load_resnet_encoder_from_ckpt(self.hparams.resnet_unsupervised_ckpt)
         for param in self.encoder.parameters():
             param.requires_grad = False
         self.classifier = nn.Linear(2048, 10).to(self.device)
@@ -48,7 +48,7 @@ class ResnetUnsupervised(nn.Module):
         self.best_model_saved = False
 
     def load_resnet_encoder_from_ckpt(self, ckpt):
-        checkpoint = torch.load(ckpt, map_location='cpu')
+        checkpoint = torch.load(ckpt, map_location=seld.device)
         state_dict = checkpoint['state_dict']
         new_state_dict = {k.replace("convnet.", ""): v for k, v in state_dict.items() if not k.startswith("projection.")}
         model = models.resnet50(pretrained=False)
