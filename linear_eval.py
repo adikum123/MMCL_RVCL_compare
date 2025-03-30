@@ -176,7 +176,6 @@ class LinearEval(nn.Module):
 
             # Scheduler step
             self.scheduler.step()
-
             # Logging metrics
             metrics = {
                 "total_train_loss": train_loss,

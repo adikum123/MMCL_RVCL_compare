@@ -19,16 +19,16 @@ class ResnetSupervised(nn.Module):
         super(ResnetSupervised, self).__init__()
         self.hparams = hparams
         self.device = device
-        print(self.hparams.resnet_supervised_ckpt == "")
         if self.hparams.resnet_supervised_ckpt == "":
             self.model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1).to(self.device)
             self.model.fc = torch.nn.Linear(2048, 10).to(self.device)
         else:
-            self.model = torch.load(
-                self.hparams.resnet_supervised_ckpt,
-                map_location=self.device,
-                weights_only=False
-            )
+            # Load checkpoint (ensure it's moved to the correct device)
+            self.model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
+            self.model.fc = torch.nn.Linear(2048, 10)
+            checkpoint = torch.load(self.hparams.resnet_supervised_ckpt, map_location=self.device)
+            self.model.load_state_dict(checkpoint)
+            self.model.to(self.device)  # Move model to device after loading
         if self.hparams.use_validation:
             (
                 self.trainloader,
