@@ -37,6 +37,6 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --model cnn_4layer_b \
         --relu_layer \
         --finetune \
-        --mmcl_checkpoint models/mmcl/rbf/cnn_4layer_b_C_1_rbf_auto.pkl
+        --mmcl_checkpoint models/mmcl/rbf/cnn_4layer_b_C_1_rbf_auto_bs_32_lr_0.0001.pkl
 
 EOF
