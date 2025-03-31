@@ -28,14 +28,14 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Training encoder"
     python train_models/train_regular_cl.py \
-        --model_save_name regular_cl_cnn_4layer_b_bs_32_lr_1e-3 \
+        --model_save_name regular_cl_info_nce_cnn_4layer_b_bs_32_lr_1e-3 \
         --model cnn_4layer_b \
         --dataset cifar-10 \
         --use_validation \
         --batch_size 32 \
         --num_iters 200 \
         --lr 1e-3 \
-        --los_type info_nce \
+        --loss_type info_nce \
         --step_size 25
 
     if [ $? -eq 0 ]; then
@@ -48,7 +48,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
             --step_size 30 \
             --lr 1e-3 \
             --model cnn_4layer_b \
-            --regular_cl_checkpoint models/regular_cl/regular_cl_cnn_4layer_b_bs_32_lr_1e-3.pkl \
+            --regular_cl_checkpoint models/regular_cl/regular_cl_info_nce_cnn_4layer_b_bs_32_lr_1e-3.pkl \
             --finetune
     else
         echo "Training encoder failed, skipping linear evaluation."
