@@ -140,11 +140,14 @@ class RegularCLModel(nn.Module):
             step_size=self.hparams.step_size,
             gamma=self.hparams.scheduler_gamma,
         )
-        self.crit = ContrastiveLoss(
-            loss_type=self.hparams.loss_type,
-            temperature=self.hparams.temperature,
-            lambda_param=self.hparams.lambda_param,
-        )
+        try:
+            self.crit = ContrastiveLoss(
+                loss_type=self.hparams.loss_type,
+                temperature=self.hparams.temperature,
+                lambda_param=self.hparams.lambda_param,
+            )
+        except Exception:
+            self.crit = None
         self.best_model_saved = False
 
     def forward(self, x):
