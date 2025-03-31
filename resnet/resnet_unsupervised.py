@@ -158,7 +158,7 @@ class ResnetUnsupervised(nn.Module):
             # Step the learning rate scheduler at the end of each epoch
             self.scheduler.step()
         # Plot and save the training and validation loss
-        save_dir = "plots/resnet_supervised"
+        save_dir = "plots/resnet_unsupervised"
         os.makedirs(save_dir, exist_ok=True)
         save_path = os.path.join(
             save_dir, f"{self.get_model_save_name()}.png"
