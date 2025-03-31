@@ -207,7 +207,7 @@ class RegularCLModel(nn.Module):
                         f1 = self.model(pos_1)
                         f2 = self.model(pos_2)
                         # Compute InfoNCE loss
-                        loss = self.info_nce_loss(f1, f2, temperature)
+                        loss = self.crit(f1, f2)
                         batch_size = pos_1.size(0)
                         total_num += batch_size
                         total_loss += loss.item() * batch_size
