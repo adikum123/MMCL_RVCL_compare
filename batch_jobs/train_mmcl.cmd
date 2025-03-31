@@ -46,7 +46,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
             --dataset cifar-10 \
             --use_validation \
             --num_iters 100 \
-            --step_size 30 \
+            --step_size 25 \
             --lr 1e-3 \
             --model cnn_4layer_b \
             --relu_layer \
