@@ -71,6 +71,7 @@ parser.add_argument("--alpha", type=float, default=0.001, help="failure probabil
 parser.add_argument("--positives_per_class", type=int, default=5, help='number of negative items chosen per class')
 parser.add_argument("--batch", type=int, default=1000, help="batch size")
 parser.add_argument("--finetune", action="store_true", help="Finetune the model")
+parser.add_argument("--relu_layer", action="store_true", help="Use classifier with additional relu layer")
 args = parser.parse_args()
 
 # add random seed
@@ -97,14 +98,14 @@ def load_combined_model(args, model_type):
     if model_type in {"mmcl", "regular_cl"}:
         encoder_ckpt = (
             args.mmcl_checkpoint if model_type == "mmcl"
-            else args.regular_cl_checkpoint if model_type == "regular_cl"
+            else args.regular_cl_checkpoint
         )
         prefix = ""
         if args.relu_layer:
             prefix += "relu_"
         if args.finetune:
-            prefix+= "linear_finetune"
-        eval_ckpt = f"models/linear_evaluate/{prefix}{encoder_ckpt.split('/')[-1].replace("finetune_", "")}"
+            prefix+= "linear_finetune_"
+        eval_ckpt = f"models/linear_evaluate/{prefix}{encoder_ckpt.split('/')[-1].replace('finetune_', '')}"
         print(f"Encoder: {encoder_ckpt}, eval_ckpt: {eval_ckpt}")
         return CombinedModel(
             encoder=torch.load(encoder_ckpt, device, weights_only=False),
