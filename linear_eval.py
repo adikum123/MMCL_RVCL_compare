@@ -239,6 +239,10 @@ class LinearEval(nn.Module):
     def get_model_save_name(self):
         prefix = ""
         ckpt = self.get_encoder_ckpt()
+        model_name = ckpt.split("/")[-1]
+        model_name = (
+            model_name.replace("finetune_", "") if model_name.startswith("finetune_") else model_name
+        )
         if self.hparams.relu_layer:
             prefix = "relu_"
         if self.hparams.finetune:
