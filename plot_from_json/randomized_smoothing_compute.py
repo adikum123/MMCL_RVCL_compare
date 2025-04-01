@@ -2,6 +2,8 @@ import json
 import os
 from collections import defaultdict
 
+import pandas as pd
+
 file_name = "mmcl_cnn_4layer_b_rvcl_cnn_4layer_b_adv_regular_cl_cnn_4layer_b_supervised_cnn_4layer_b"
 with open(f"../rs_results/{file_name}.json", "r") as f:
     data = json.load(f)
@@ -29,5 +31,24 @@ for model in model_names:
                 "unchanged_percentage": unchanged_percentage
             })
 
-print(f"per_model: {json.dumps(per_model, indent=4)}")
-print(f"per_sigma_radius: {json.dumps(per_sigma_radius, indent=4)}")
+per_sigma_radius_updated = {}
+for key, values in per_sigma_radius.items():
+    max_certified_instance_accuracy = max(x["certified_instance_accuracy"] for x in values)
+    best_certified_instance_accuracy_model = (
+        [x["model"] for x in values if x["certified_instance_accuracy"] == max_certified_instance_accuracy]
+        if max_certified_instance_accuracy > 0
+        else []
+    )
+    max_unchanged_percentage = max(x["unchanged_percentage"] for x in values)
+    best_unchanged_percentage_model = (
+        [x["model"] for x in values if x["unchanged_percentage"] == max_unchanged_percentage]
+        if max_unchanged_percentage > 0
+        else []
+    )
+    per_sigma_radius[key] = {
+        "per_model_values": values,
+        "best_certified_instance_accuracy_models": best_certified_instance_accuracy_model,
+        "best_unchanged_percentage_models": best_unchanged_percentage_model
+    }
+
+print(json.dumps(per_sigma_radius, indent=4))
