@@ -281,5 +281,5 @@ class RegularCLModel(nn.Module):
             model_name = model_name[:-4]
         save_dir = f"models/regular_cl"
         os.makedirs(save_dir, exist_ok=True)
-        save_path = os.path.join(save_dir, f"{model_name}_finetune.pkl")
+        save_path = os.path.join(save_dir, f"finetune_{model_name}.pkl")
         torch.save(self.model, save_path)
