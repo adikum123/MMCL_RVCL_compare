@@ -264,8 +264,6 @@ class RegularCLModel(nn.Module):
         print(f"\nLoss plot saved to {save_path}")
 
     def get_model_save_name(self):
-        if self.hparams.model_save_name:
-            return self.hparams.model_save_name
         return f"regular_cl_loss_{self.hparams.loss_type}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}.pkl"
 
 
