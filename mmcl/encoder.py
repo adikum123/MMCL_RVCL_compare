@@ -233,5 +233,6 @@ class MMCL_Encoder(nn.Module):
             model_name = model_name[:-4]
         save_dir = f'models/mmcl/rbf'
         os.makedirs(save_dir, exist_ok=True)
-        save_path = os.path.join(save_dir, f"finetune_{model_name}.pkl")
+        save_name = f"finetune_{model_name}.pkl" if not model_name.startswith("finetune_") else model_name
+        save_path = os.path.join(save_dir, f"{save_name}.pkl")
         torch.save(self.model, save_path)
