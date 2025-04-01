@@ -97,12 +97,14 @@ def load_combined_model(args, model_type):
     if model_type in {"mmcl", "regular_cl"}:
         encoder_ckpt = (
             args.mmcl_checkpoint if model_type == "mmcl"
-            else args.regular_cl_checkpoint
+            else args.regular_cl_checkpoint if model_type == "regular_cl"
         )
+        prefix = ""
+        if args.relu_layer:
+            prefix += "relu_"
         if args.finetune:
-            eval_ckpt = f"models/linear_evaluate/linear_finetune_{encoder_ckpt.split('/')[-1]}"
-        else:
-            eval_ckpt = f"models/linear_evaluate/linear_{encoder_ckpt.split('/')[-1]}"
+            prefix+= "linear_finetune"
+        eval_ckpt = f"models/linear_evaluate/{prefix}{encoder_ckpt.split('/')[-1].replace("finetune_", "")}"
         print(f"Encoder: {encoder_ckpt}, eval_ckpt: {eval_ckpt}")
         return CombinedModel(
             encoder=torch.load(encoder_ckpt, device, weights_only=False),

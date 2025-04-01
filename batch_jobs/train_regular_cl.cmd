@@ -32,7 +32,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --model cnn_4layer_b \
         --dataset cifar-10 \
         --use_validation \
-        --batch_size 32 \
+        --batch_size 256 \
         --num_iters 200 \
         --lr 1e-3 \
         --loss_type barlow \
@@ -41,7 +41,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     if [ $? -eq 0 ]; then
         echo "Testing performance on linear eval"
         python -u train_models/train_linear_eval_regular_cl.py \
-            --batch_size 32 \
+            --batch_size 256 \
             --dataset cifar-10 \
             --use_validation \
             --num_iters 100 \
