@@ -87,11 +87,14 @@ class CombinedModel(nn.Module):
         super(CombinedModel, self).__init__()
         self.encoder = encoder
         self.eval_ = eval_
+        self.encoder.to(device)
+        self.eval_.to(device)
 
     def forward(self, x):
-        features = self.encoder(x)
-        output = self.eval_(features)
-        return output
+        with torch.no_grad():
+            features = self.encoder(x)
+            output = self.eval_(features)
+            return output
 
 def load_combined_model(args, model_type):
     assert model_type in {"mmcl", "regular_cl", "rvcl", "supervised"}
@@ -139,7 +142,9 @@ def update_results(
 mmcl_model = load_combined_model(args, "mmcl")
 regular_cl_model = load_combined_model(args, "regular_cl")
 rvcl_model = load_combined_model(args, "rvcl")
+rvcl_model.to(device)
 supervised_model = load_combined_model(args, "supervised")
+supervised_model.to(device)
 print("Loaded verifiers")
 # creating data
 class_names = testdst.classes
