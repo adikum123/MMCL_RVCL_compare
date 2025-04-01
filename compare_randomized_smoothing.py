@@ -127,7 +127,6 @@ def update_results(
     rs_label, radius = verifier.certify(
         image, args.N0, args.N, args.alpha, args.batch
     )
-    print(f"Radius: {radius}")
     predicted_label = get_ori_model_predicition(ori_model, image)
     results[model_name].append({
         "sigma": verifier.sigma,
@@ -191,15 +190,3 @@ results = dict(results)
 file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}_supervised_{args.supervised_model}"
 with open(f"rs_results/{file_name}.json", "w") as f:
     json.dump(results, f)
-
-certified_radius_choices = [0, 0.5, 1, 1.5, 2, 2.5, 3]
-for model_name in ["mmcl", "rvcl", "regular_cl", "supervised"]:
-    values = results[model_name]
-    for radius in certified_radius_choices:
-        for sigma in sigma_values:
-            curr_values = [x for x in values if x["sigma"] == sigma and x["radius"] >= radius]
-            certified_instance_accuracy, unchanged_percentage = 0, 0
-            if len(curr_values) > 0:
-                certified_instance_accuracy = sum(1 for x in curr_values if x["true_label"] == x["rs_label"]) / len(curr_values)
-                unchanged_percentage = sum(1 for x in curr_values if x["rs_label"] == x["predicted_label"]) / len(curr_values)
-                print(f"Model: {model_name}, sigma: {sigma}, radius: {radius}, certified_instance_accuracy: {certified_instance_accuracy}, unchanged_percentage: {unchanged_percentage}")
