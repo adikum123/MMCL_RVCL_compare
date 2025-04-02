@@ -42,7 +42,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     if [ $? -eq 0 ]; then
         echo "Testing performance on linear eval"
         python -u train_models/train_linear_eval_mmcl.py \
-            --batch_size 32 \
+            --batch_size 128 \
             --dataset cifar-10 \
             --use_validation \
             --num_iters 100 \
