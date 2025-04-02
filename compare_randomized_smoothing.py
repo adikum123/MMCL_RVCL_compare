@@ -187,6 +187,10 @@ for sigma in sigma_values:
                 verifier=supervised_verifier, ori_model=supervised_model, results=results, model_name="supervised", true_label=label, image=image
             )
 results = dict(results)
-file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}_supervised_{args.supervised_model}"
+def get_name_from_ckpt(ckpt):
+    ckpt = ckpt.split("/")[-1]
+    return ckpt[0: ckpt.rindex(".")]
+
+file_name = f"mmcl_{get_name_from_ckpt(args.mmcl_checkpoint)}_rvcl_{get_name_from_ckpt(args.rvcl_checkpoint)}_regular_cl_{get_name_from_ckpt(args.regular_cl_checkpoint)}_supervised_{get_name_from_ckpt(args.supervised_checkpoint)}"
 with open(f"rs_results/{file_name}.json", "w") as f:
     json.dump(results, f)
