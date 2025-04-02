@@ -264,7 +264,7 @@ class RegularCLModel(nn.Module):
         print(f"\nLoss plot saved to {save_path}")
 
     def get_model_save_name(self):
-        return f"regular_cl_loss_{self.hparams.loss_type}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}.pkl"
+        return f"regular_cl_{self.hparams.loss_type}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}.pkl"
 
 
     def save(self):
@@ -274,11 +274,13 @@ class RegularCLModel(nn.Module):
             save_path = os.path.join(save_dir, self.get_model_save_name() + ".pkl")
             torch.save(self.model, save_path)
 
-    def save_finetune(self, model_name):
+    def save_finetune(self, model_name, prefix=""):
         if model_name.endswith(".pkl"):
             model_name = model_name[:-4]
         save_dir = f"models/regular_cl"
         os.makedirs(save_dir, exist_ok=True)
-        save_name = f"finetune_{model_name}.pkl" if not model_name.startswith("finetune_") else model_name
+        save_name = (
+            f"{prefix}finetune_{model_name}.pkl" if not model_name.startswith("finetune_") else f"{prefix}{model_name}"
+        )
         save_path = os.path.join(save_dir, f"{save_name}.pkl")
         torch.save(self.model, save_path)

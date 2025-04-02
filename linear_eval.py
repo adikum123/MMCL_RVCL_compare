@@ -259,4 +259,4 @@ class LinearEval(nn.Module):
     def save_encoder_finetune(self):
         ckpt = self.get_encoder_ckpt()
         model_name = ckpt.split("/")[-1]
-        self.encoder.save_finetune(model_name=model_name)
+        self.encoder.save_finetune(model_name=model_name, prefix="relu_" if self.hparams.relu_layer else "")
