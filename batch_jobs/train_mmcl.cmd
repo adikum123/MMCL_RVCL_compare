@@ -39,22 +39,4 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --step_size 25 \
         --C 1
 
-    if [ $? -eq 0 ]; then
-        echo "Testing performance on linear eval"
-        python -u train_models/train_linear_eval_mmcl.py \
-            --batch_size 128 \
-            --dataset cifar-10 \
-            --use_validation \
-            --num_iters 100 \
-            --step_size 25 \
-            --lr 1e-3 \
-            --model cnn_4layer_b \
-            --relu_layer \
-            --clean \
-            --mmcl_checkpoint models/mmcl/rbf/cnn_4layer_b_C_1_rbf_auto.pkl \
-            --finetune
-    else
-        echo "Training encoder failed, skipping linear evaluation."
-    fi
-
 EOF
