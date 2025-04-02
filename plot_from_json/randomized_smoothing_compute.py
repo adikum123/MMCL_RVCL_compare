@@ -8,13 +8,13 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Font
 
-file_name = "mmcl_cnn_4layer_b_rvcl_cnn_4layer_b_adv_regular_cl_cnn_4layer_b_supervised_cnn_4layer_b"
+file_name = "rs_resnet"
 with open(f"../rs_results/{file_name}.json", "r") as f:
     data = json.load(f)
 
 sigma_values = [0.25, 0.5, 1]
 certified_radius_choices = [0, 0.5, 1, 1.5, 2, 2.5, 3]
-model_names = ["mmcl", "rvcl", "regular_cl", "supervised"]
+model_names = ["supervised", "regular_cl"]
 per_model = defaultdict(list)
 per_sigma_radius = defaultdict(list)
 
@@ -164,7 +164,7 @@ def plot_one_per_sigma(data):
         plt.title(f"Certified Accuracy vs Radius (sigma = {sigma})")
         plt.legend()
         plt.grid(True)
-        output_filename = f"per_sigma_comparison_sigma_{sigma}.png"
+        output_filename = f"per_sigma_comparison_sigma_{sigma}_resnet.png"
         plt.tight_layout()
         plt.savefig(os.path.join("../rs_results", output_filename))
         plt.close()

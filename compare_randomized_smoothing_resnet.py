@@ -129,7 +129,7 @@ for sigma in sigma_values:
                 verifier=supervised_verifier, ori_model=resnet_supervised, results=results, model_name="supervised", true_label=label, image=image
             )
             update_results(
-                verifier=unsupervised_verifier, ori_model=resnet_unsupervised, results=results, model_name="regular_cl", true_label=label, image=image
+                verifier=unsupervised_verifier, ori_model=resnet_unsupervised, results=results, model_name="unsupervised", true_label=label, image=image
             )
 
 with open(f"rs_results/rs_resnet.json", "w") as f:
