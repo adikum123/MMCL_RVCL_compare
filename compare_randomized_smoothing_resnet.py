@@ -129,11 +129,5 @@ for sigma in sigma_values:
                 verifier=unsupervised_verifier, ori_model=resnet_unsupervised, results=results, model_name="regular_cl", true_label=label, image=image
             )
 
-results = dict(results)
-def get_name_from_ckpt(ckpt):
-    ckpt = ckpt.split("/")[-1]
-    return ckpt[0: ckpt.rindex(".")]
-
-file_name = f"mmcl_{get_name_from_ckpt(args.mmcl_checkpoint)}_rvcl_{get_name_from_ckpt(args.rvcl_checkpoint)}_regular_cl_{get_name_from_ckpt(args.regular_cl_checkpoint)}_supervised_{get_name_from_ckpt(args.supervised_checkpoint)}"
-with open(f"rs_results/{file_name}.json", "w") as f:
+with open(f"rs_results/rs_resnet.json", "w") as f:
     json.dump(results, f)
