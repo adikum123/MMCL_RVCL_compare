@@ -217,7 +217,7 @@ class MMCL_Encoder(nn.Module):
         print(f"\nLoss plot saved to {save_path}")
 
     def get_model_save_name(self):
-        return f"{self.hparams.model_save_name}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
+        return f"mmcl_{self.hparams.model}_C_{self.hparams.C}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
 
     def save(self):
         if not self.best_model_saved:
