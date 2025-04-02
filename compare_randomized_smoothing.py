@@ -163,7 +163,7 @@ picks = defaultdict(list)
 for class_name, values in per_class_sampler.items():
     picks[class_name] = random.sample(per_class_sampler[class_name], args.positives_per_class)
 results = defaultdict(list)
-sigma_values = [0.25, 0.5, 1]
+sigma_values = [0.12, 0.25, 0.5, 0.67, 1]
 for sigma in sigma_values:
     # create verifiers
     mmcl_verifier = Smooth(base_classifier=mmcl_model, num_classes=10, sigma=sigma)
