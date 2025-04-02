@@ -69,6 +69,9 @@ class CombinedResnetModel(nn.Module):
             output = self.classifier(features)
             return output
 
+def get_ori_model_predicition(model, x):
+    return torch.argmax(model(x.unsqueeze(0)), dim=-1).item()
+
 def update_results(
     verifier, ori_model, results, model_name, true_label, image
 ):
