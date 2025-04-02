@@ -30,7 +30,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     python -u train_models/train_supervised.py \
         --dataset cifar-10 \
         --relu_layer \
-        --batch_size 32 \
+        --batch_size 256 \
         --num_iters 200 \
         --lr 1e-3 \
         --use_validation \
