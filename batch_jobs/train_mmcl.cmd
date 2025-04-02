@@ -28,10 +28,9 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Training encoder"
     python train_models/train_mmcl.py \
-        --model_save_name cnn_4layer_b_C_1_rbf_auto \
         --model cnn_4layer_b \
         --dataset cifar-10 \
-        --batch_size 32 \
+        --batch_size 256 \
         --kernel_type rbf \
         --num_iters 200 \
         --lr 1e-4 \
