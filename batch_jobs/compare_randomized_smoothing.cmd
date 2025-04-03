@@ -41,9 +41,9 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --rvcl_model cnn_4layer_b_adv \
         --rvcl_checkpoint models/linear_evaluate/cifar10_cnn_4layer_b_adv8.pkl \
         --regular_cl_model cnn_4layer_b \
-        --regular_cl_checkpoint models/regular_cl/finetune_regular_cl_barlow_cnn_4layer_b_bs_256_lr_1e-3.pkl \
+        --regular_cl_checkpoint models/regular_cl/finetune_regular_cl_cosine_bs_256_lr_0.001.pkl \
         --supervised_model cnn_4layer_b \
-        --supervised_checkpoint models/supervised/supervised_bs_32_lr_0.0001.pkl \
+        --supervised_checkpoint models/supervised/supervised_bs_256_lr_0.001.pkl \
         --dataset cifar-10 \
         --positives_per_class 1000 \
         --finetune
