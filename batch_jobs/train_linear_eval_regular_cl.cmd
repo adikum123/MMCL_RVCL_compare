@@ -35,7 +35,6 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --step_size 30 \
         --lr 1e-3 \
         --model cnn_4layer_b \
-        --relu_layer \
         --finetune \
         --regular_cl_checkpoint models/regular_cl/regular_cl_cosine_bs_256_lr_0.001.pkl
 
