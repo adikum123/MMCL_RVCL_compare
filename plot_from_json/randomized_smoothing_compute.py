@@ -14,7 +14,7 @@ with open(f"../rs_results/{file_name}.json", "r") as f:
 
 sigma_values = [0.25, 0.5, 1]
 certified_radius_choices = [0, 0.5, 1, 1.5, 2, 2.5, 3]
-model_names = ["supervised", "regular_cl"]
+model_names = ["supervised", "unsupervised"]
 per_model = defaultdict(list)
 per_sigma_radius = defaultdict(list)
 
@@ -131,7 +131,7 @@ print(f"Excel file with per-row formatting saved to: {os.path.abspath(excel_file
 
 
 def plot_one_per_sigma(data):
-    model_names = ["mmcl", "rvcl", "regular_cl", "supervised"]
+    model_names = ["supervised", "unsupervised"]
     sigma_set = set()
     for model in model_names:
         for rec in data[model]:

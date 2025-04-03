@@ -226,7 +226,7 @@ class MMCL_Encoder(nn.Module):
             save_path = os.path.join(save_dir, self.get_model_save_name() + ".pkl")
             torch.save(self.model, save_path)
 
-    def save_finetune(self, model_name):
+    def save_finetune(self, model_name, prefix=""):
         if model_name.endswith(".pkl"):
             model_name = model_name[:-4]
         save_dir = f'models/mmcl/rbf'
