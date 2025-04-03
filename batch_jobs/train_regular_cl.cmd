@@ -31,7 +31,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --model cnn_4layer_b \
         --dataset cifar-10 \
         --use_validation \
-        --batch_size 256 \
+        --batch_size 512 \
         --num_iters 200 \
         --lr 1e-3 \
         --loss_type cosine \
