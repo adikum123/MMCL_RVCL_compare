@@ -280,7 +280,7 @@ class RegularCLModel(nn.Module):
         save_dir = f"models/regular_cl"
         os.makedirs(save_dir, exist_ok=True)
         save_name = (
-            f"{prefix}finetune_{model_name}.pkl" if not model_name.startswith("finetune_") else f"{prefix}{model_name}"
+            f"{prefix}finetune_{model_name}" if not model_name.startswith("finetune_") else f"{prefix}{model_name}"
         )
         save_path = os.path.join(save_dir, f"{save_name}.pkl")
         torch.save(self.model, save_path)
