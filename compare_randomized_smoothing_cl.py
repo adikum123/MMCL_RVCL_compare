@@ -91,7 +91,7 @@ for model in models:
     prefix = ""
     if args.relu_layer:
         prefix += "relu_"
-    eval_ckpt = f"models/linear_evaluate/{prefix}linear_finetune_{model['encoder_ckpt'].split('/')[-1]}"
+    eval_ckpt = f"models/linear_evaluate/{prefix}linear_{model['encoder_ckpt'].split('/')[-1]}"
     print(f"Loaded:\nencoder:{model['encoder_ckpt']}\nclassifier:{eval_ckpt}")
     classifier = torch.load(eval_ckpt, map_location=device, weights_only=False)
     model["base_model"] = CombinedModel(encoder=encoder, eval_=classifier)
