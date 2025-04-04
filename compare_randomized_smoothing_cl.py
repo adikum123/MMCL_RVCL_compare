@@ -93,7 +93,7 @@ for model in models:
         prefix += "relu_"
     eval_ckpt = f"models/linear_evaluate/{prefix}linear_finetune_{model['encoder_ckpt'].split('/')[-1]}"
     print(f"Loaded:\nencoder:{model['encoder_ckpt']}\nclassifier:{eval_ckpt}")
-    classifier = torch.load(evak_ckpt, map_location=device, weights_only=False)
+    classifier = torch.load(eval_ckpt, map_location=device, weights_only=False)
     model["base_model"] = CombinedModel(encoder=encoder, eval_=classifier)
 
 # creating data
