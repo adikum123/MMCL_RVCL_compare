@@ -36,6 +36,14 @@ parser.add_argument("--finetune", action="store_true", help="Finetune the model"
 parser.add_argument("--relu_layer", action="store_true", help="Use classifier with additional relu layer")
 args = parser.parse_args()
 
+# add random seed
+torch.manual_seed(args.seed)
+torch.cuda.manual_seed_all(args.seed)
+random.seed(args.seed)
+np.random.seed(args.seed)
+_, _, _, _, testloader, testdst = data_loader.get_train_val_test_dataset(args=args)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 models = [
     {
         "encoder_ckpt": "models/regular_cl/finetune_regular_cl_barlow_cnn_4layer_b_bs_256_lr_1e-3.pkl",
@@ -54,7 +62,6 @@ models = [
         "model": "nce"
     }
 ]
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class CombinedModel(nn.Module):
 
