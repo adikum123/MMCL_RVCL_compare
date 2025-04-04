@@ -69,6 +69,7 @@ class SupervisedModel(nn.Module):
             gamma=self.hparams.scheduler_gamma,
         )
         self.best_model_saved = False
+        self.min_epochs = 150
 
     def forward(self, x):
         return self.model(x)
@@ -155,7 +156,7 @@ class SupervisedModel(nn.Module):
                     print(
                         f"\nValidation loss did not improve. Patience: {patience_counter}/{max_patience}"
                     )
-                if patience_counter >= max_patience:
+                if patience_counter >= max_patience and epoch >= self.min_epochs - 1:
                     print("\nEarly stopping triggered. Training terminated.")
                     break
             # Step the learning rate scheduler at the end of each epoch

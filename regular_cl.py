@@ -149,6 +149,7 @@ class RegularCLModel(nn.Module):
         except Exception:
             self.crit = None
         self.best_model_saved = False
+        self.min_epochs = 150
 
     def forward(self, x):
         return self.model(x)
@@ -238,7 +239,7 @@ class RegularCLModel(nn.Module):
                     print(
                         f"\nValidation loss did not improve. Patience: {patience_counter}/{max_patience}"
                     )
-                if patience_counter >= max_patience:
+                if patience_counter >= max_patience and epoch >= self.min_epochs - 1:
                     print("\nEarly stopping triggered. Training terminated.")
                     break
             # Step the learning rate scheduler at the end of each epoch

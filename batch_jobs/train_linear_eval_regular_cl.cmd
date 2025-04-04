@@ -36,6 +36,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --lr 1e-3 \
         --model cnn_4layer_b \
         --finetune \
+        --scheduler_gamma 0.5 \
         --regular_cl_checkpoint models/regular_cl/regular_cl_cosine_bs_256_lr_0.001.pkl
 
 EOF

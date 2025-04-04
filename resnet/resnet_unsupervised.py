@@ -53,6 +53,7 @@ class ResnetUnsupervised(nn.Module):
             gamma=self.hparams.scheduler_gamma,
         )
         self.best_model_saved = False
+        self.min_epochs = 150
 
     def load_resnet_encoder_from_ckpt(self, ckpt):
         checkpoint = torch.load(ckpt, map_location=self.device)
@@ -152,7 +153,7 @@ class ResnetUnsupervised(nn.Module):
                     print(
                         f"\nValidation loss did not improve. Patience: {patience_counter}/{max_patience}"
                     )
-                if patience_counter >= max_patience and epoch > 50:
+                if patience_counter >= max_patience and epoch >= self.min_epochs - 1:
                     print("\nEarly stopping triggered. Training terminated.")
                     break
             # Step the learning rate scheduler at the end of each epoch

@@ -63,7 +63,7 @@ class LinearEval(nn.Module):
             gamma=self.hparams.scheduler_gamma,
         )
         self.best_model_saved = False
-        self.min_epochs = 60
+        self.min_epochs = 150
 
     def forward(self, x):
         if self.hparams.finetune:
@@ -167,11 +167,8 @@ class LinearEval(nn.Module):
                     patience_counter += 1
                     print(f"Validation loss did not improve. Patience: {patience_counter}/{max_patience}")
 
-                if patience_counter >= max_patience:
+                if patience_counter >= max_patience and epoch >= self.min_epochs - 1:
                     print("\nEarly stopping triggered. Training terminated.")
-                    if epoch + 1 >= self.min_epochs:
-                        print("Min number of epohcs not reached yet. Continue training.")
-                        continue
                     break
 
             # Scheduler step
