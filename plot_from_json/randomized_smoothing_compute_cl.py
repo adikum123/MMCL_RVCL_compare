@@ -8,13 +8,13 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Font
 
-file_name = "mmcl_finetune_mmcl_cnn_4layer_b_C_1.0_bs_256_lr_0.0001_rvcl_cifar10_cnn_4layer_b_adv8_regular_cl_finetune_regular_cl_cosine_bs_256_lr_0.001_supervised_supervised_bs_256_lr_0.001"
+file_name = "rs_results_cl"
 with open(f"../rs_results/{file_name}.json", "r") as f:
     data = json.load(f)
 
 sigma_values = [0.25, 0.5, 1]
 certified_radius_choices = [0, 0.5, 1, 1.5, 2, 2.5, 3]
-model_names = ["mmcl", "rvcl", "regular_cl", "supervised"]
+model_names = data.keys()
 per_model = defaultdict(list)
 per_sigma_radius = defaultdict(list)
 
@@ -26,11 +26,11 @@ for model in model_names:
         for curr_radius in certified_radius_choices:
             certified_count = sum(
                 1 for x in all_values
-                if x["radius"] >= curr_radius and x["true_label"] == x["rs_label"]
+                if x["radius"] > curr_radius and x["true_label"] == x["rs_label"]
             )
             unchanged_count = sum(
                 1 for x in all_values
-                if x["radius"] >= curr_radius and x["predicted_label"] == x["rs_label"]
+                if x["radius"] > curr_radius and x["predicted_label"] == x["rs_label"]
             )
             certified_accuracy = certified_count / total if total > 0 else 0
             unchanged_percentage = unchanged_count / total if total > 0 else 0
@@ -163,9 +163,9 @@ def plot_one_per_sigma(data):
         plt.title(f"Certified Accuracy vs Radius (sigma = {sigma})")
         plt.legend()
         plt.grid(True)
-        output_filename = f"per_sigma_comparison_sigma_{sigma}_{file_name}.png"
+        output_filename = f"per_sigma_comparison_sigma_{sigma}_cl.png"
         plt.tight_layout()
-        plt.savefig(os.path.join("../rs_results", output_filename))
+        plt.savefig(os.path.join("../plots/randomized_smoothing/cl", output_filename))
         plt.close()
         print(f"Plot saved as: {output_filename}")
 
