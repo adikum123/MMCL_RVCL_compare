@@ -130,7 +130,8 @@ for sigma in sigma_values:
             num_classes=10,
             sigma=sigma
         )
-    for class_name, values in tqdm(picks.items()):
+    for class_name, values in picks.items():
+        print(f"Processing class: {class_name}")
         for image, label in tqdm(values):
             for model in models:
                 image = image.to(device)
