@@ -46,19 +46,19 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 models = [
     {
-        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_barlow_cnn_4layer_b_bs_256_lr_1e-3.pkl",
+        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_barlow_bs_512_lr_0.001.pkl",
         "model": "barlow"
     },
     {
-        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_cosine_bs_256_lr_0.001.pkl",
+        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_cosine_bs_512_lr_0.001.pkl",
         "model": "cosine"
     },
     {
-        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_info_nce_cnn_4layer_b_bs_32_lr_1e-3.pkl",
+        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_info_nce_bs_512_lr_0.001.pkl",
         "model": "info_nce"
     },
     {
-        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_nce_cnn_4layer_b_bs_32_lr_1e-3.pkl",
+        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_nce_bs_512_lr_0.001.pkl",
         "model": "nce"
     }
 ]

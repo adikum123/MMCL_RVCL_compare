@@ -44,9 +44,17 @@ class ResnetUnsupervised(nn.Module):
                 data_loader.get_dataset(self.hparams)
             )
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(
-            self.classifier.parameters(), lr=self.hparams.lr
-        )
+        if self.hparams.finetune:
+            for param in self.encoder.layer4.parameters():
+                param.requires_grad = True
+            self.optimizer = optim.Adam(
+                list(self.classifier.parameters()) + list(self.encoder.layer4.parameters()),
+                lr=self.hparams.lr
+            )
+        else:
+            self.optimizer = optim.Adam(
+                self.classifier.parameters(), lr=self.hparams.lr
+            )
         self.scheduler = optim.lr_scheduler.StepLR(
             self.optimizer,
             step_size=self.hparams.step_size,
@@ -67,16 +75,21 @@ class ResnetUnsupervised(nn.Module):
     def forward(self, x):
         # Upsample the input images to 224x224 using bilinear interpolation
         x = F.interpolate(x, size=(224, 224), mode="bilinear", align_corners=False)
-        with torch.no_grad():
+        if self.hparams.finetune:
             features = self.encoder(x)
+        else
+            with torch.no_grad():
+                features = self.encoder(x)
         return self.classifier(features)
 
     def set_eval(self):
         self.classifier.eval()
 
     def get_model_save_name(self):
+        encoder_name = self.hparams.resnet_unsupervised_ckpt.split("/")[-1]
         prefix = "relu_" if self.hparams.relu_layer else ""
-        return f"{prefix}linear_eval_resnet_unsupervised_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
+        postfix = "finetune_" if self.hparams.finetune else ""
+        return f"{prefix}linear_{postfix}{encoder_name}"
 
     def train(self):
         best_val_loss = float("inf")
@@ -87,6 +100,8 @@ class ResnetUnsupervised(nn.Module):
         val_losses = []
         for epoch in range(self.hparams.num_iters):
             self.classifier.train()  # Set the model to training mode
+            if self.hparams.finetune:
+                self.encoder.train()
             total_loss, total_samples = 0.0, 0
             train_bar = tqdm(self.trainloader, desc=f"Train Epoch {epoch + 1}")
             for iii, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
@@ -215,9 +230,17 @@ class ResnetUnsupervised(nn.Module):
         print(f"Test Results: {json.dumps(metrics, indent=4)}")
         return metrics
 
+    def save_encoder_finetune(self):
+        save_dir = "models/resnet_pretrained_models"
+        os.makedirs(save_dir, exist_ok=True)
+        encoder_name = self.hparams.resnet_unsupervised_ckpt.split("/")[-1]
+        prefix = "finetune_" if self.hparams.finetune else ""
+        save_path = os.path.join(save_dir, f"{prefix}{encoder_name}")
+        torch.save(self.encoder.state_dict(), save_path)
+
     def save(self):
         if not self.best_model_saved:
             save_dir = "models/linear_evaluate"
             os.makedirs(save_dir, exist_ok=True)
-            save_path = os.path.join(save_dir, f"{self.get_model_save_name()}.pt")
+            save_path = os.path.join(save_dir, f"{self.get_model_save_name()}")
             torch.save(self.classifier.state_dict(), save_path)
