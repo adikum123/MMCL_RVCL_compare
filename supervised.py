@@ -78,7 +78,8 @@ class SupervisedModel(nn.Module):
         self.model.eval()
 
     def get_model_save_name(self):
-        return f"supervised_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
+        prefix = "relu_" if self.hparams.relu_layer else ""
+        return f"{prefix}supervised_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
 
     def train(self):
         best_val_loss = float("inf")
