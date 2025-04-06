@@ -8,13 +8,13 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Font
 
-file_name = "mmcl_finetune_mmcl_cnn_4layer_b_C_1.0_bs_256_lr_0.0001_rvcl_cifar10_cnn_4layer_b_adv8_regular_cl_finetune_regular_cl_cosine_bs_256_lr_0.001_supervised_supervised_bs_256_lr_0.001"
+file_name = "rs_results_mmcl"
 with open(f"../rs_results/{file_name}.json", "r") as f:
     data = json.load(f)
 
 sigma_values = [0.25, 0.5, 1]
 certified_radius_choices = [0, 0.5, 1, 1.5, 2, 2.5, 3]
-model_names = ["mmcl", "rvcl", "regular_cl", "supervised"]
+model_names = list(data.keys())
 per_model = defaultdict(list)
 per_sigma_radius = defaultdict(list)
 
@@ -90,46 +90,6 @@ for key, value in per_sigma_radius_updated.items():
     row["best_unchanged_model"] = ", ".join(value["best_unchanged_percentage_models"])
     rows.append(row)
 
-df = pd.DataFrame(rows)
-df = df.sort_values(by=["sigma", "radius"]).reset_index(drop=True)
-
-excel_filename = f"../rs_results/{file_name}.xlsx"
-df.to_excel(excel_filename, index=False)
-
-# Load workbook and apply per-row bold formatting
-wb = load_workbook(excel_filename)
-ws = wb.active
-
-# Get header names to identify columns for certified accuracy (_cia) and unchanged percentage (_up)
-header_names = [cell.value for cell in ws[1]]
-cia_indices = [i+1 for i, name in enumerate(header_names) if isinstance(name, str) and name.endswith("_cia")]
-up_indices = [i+1 for i, name in enumerate(header_names) if isinstance(name, str) and name.endswith("_up")]
-
-# Iterate over each data row
-for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
-    current_row = row[0].row  # get current row number
-    # Process certified accuracy columns
-    cia_values = [(ws.cell(row=current_row, column=col).value, col) for col in cia_indices]
-    # Filter numeric values and determine maximum for certified accuracy
-    cia_numeric = [value for value, _ in cia_values if isinstance(value, (int, float))]
-    if cia_numeric:
-        max_cia = max(cia_numeric)
-        for value, col in cia_values:
-            if isinstance(value, (int, float)) and value == max_cia:
-                ws.cell(row=current_row, column=col).font = Font(bold=True)
-    # Process unchanged percentage columns
-    up_values = [(ws.cell(row=current_row, column=col).value, col) for col in up_indices]
-    up_numeric = [value for value, _ in up_values if isinstance(value, (int, float))]
-    if up_numeric:
-        max_up = max(up_numeric)
-        for value, col in up_values:
-            if isinstance(value, (int, float)) and value == max_up:
-                ws.cell(row=current_row, column=col).font = Font(bold=True)
-
-wb.save(excel_filename)
-print(f"Excel file with per-row formatting saved to: {os.path.abspath(excel_filename)}")
-
-
 def plot_one_per_sigma(data):
     sigma_set = set()
     for model in model_names:
@@ -163,9 +123,9 @@ def plot_one_per_sigma(data):
         plt.title(f"Certified Accuracy vs Radius (sigma = {sigma})")
         plt.legend()
         plt.grid(True)
-        output_filename = f"per_sigma_comparison_sigma_{sigma}_{file_name}.png"
+        output_filename = f"per_sigma_comparison_sigma_{sigma}_mmcl.png"
         plt.tight_layout()
-        plt.savefig(os.path.join("../rs_results", output_filename))
+        plt.savefig(os.path.join("../plots/randomized_smoothing/mmcl", output_filename))
         plt.close()
         print(f"Plot saved as: {output_filename}")
 
