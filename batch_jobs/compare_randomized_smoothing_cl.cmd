@@ -34,8 +34,10 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     # Install other required dependencies
     pip install -r requirements.txt
 
+    export PYTHONPATH=$(pwd):$PYTHONPATH
+
     echo "Computing plots for robust radius..."
-    python -u compare_randomized_smoothing_cl.py \
+    python -u randomized_smoothing/compare_randomized_smoothing_cl.py \
         --dataset cifar-10 \
         --positives_per_class 100 \
         --finetune
