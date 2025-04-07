@@ -37,13 +37,13 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     echo "Computing plots for robust radius..."
     python -u compare_randomized_smoothing.py \
         --mmcl_model cnn_4layer_b \
-        --mmcl_checkpoint models/mmcl/rbf/finetune_mmcl_cnn_4layer_b_C_1.0_bs_256_lr_0.0001.pkl \
+        --mmcl_checkpoint models/mmcl/rbf/finetune_mmcl_cnn_4layer_b_C_1.0_bs_512_lr_0.0001.pkl \
         --rvcl_model cnn_4layer_b_adv \
         --rvcl_checkpoint models/linear_evaluate/cifar10_cnn_4layer_b_adv8.pkl \
         --regular_cl_model cnn_4layer_b \
-        --regular_cl_checkpoint models/regular_cl/finetune_regular_cl_cosine_bs_256_lr_0.001.pkl \
+        --regular_cl_checkpoint models/regular_cl/finetune_regular_cl_info_nce_bs_512_lr_0.001.pkl \
         --supervised_model cnn_4layer_b \
-        --supervised_checkpoint models/supervised/supervised_bs_256_lr_0.001.pkl \
+        --supervised_checkpoint models/supervised/supervised_bs_512_lr_0.001.pkl \
         --dataset cifar-10 \
         --positives_per_class 1000 \
         --finetune
