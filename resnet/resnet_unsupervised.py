@@ -77,7 +77,7 @@ class ResnetUnsupervised(nn.Module):
         x = F.interpolate(x, size=(224, 224), mode="bilinear", align_corners=False)
         if self.hparams.finetune:
             features = self.encoder(x)
-        else
+        else:
             with torch.no_grad():
                 features = self.encoder(x)
         return self.classifier(features)
