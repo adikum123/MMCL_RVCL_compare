@@ -35,7 +35,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     pip install -r requirements.txt
 
     echo "Computing plots for robust radius..."
-    python -u compare_randomized_smoothing.py \
+    python -u randomized_smoothing/compare_randomized_smoothing.py \
         --mmcl_model cnn_4layer_b \
         --mmcl_checkpoint models/mmcl/rbf/finetune_mmcl_cnn_4layer_b_C_1.0_bs_512_lr_0.0001.pkl \
         --rvcl_model cnn_4layer_b_adv \
