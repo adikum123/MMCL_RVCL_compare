@@ -26,6 +26,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     pip install -r requirements.txt
 
     export PYTHONPATH=$(pwd):$PYTHONPATH
+    export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
     echo "Training unsupervised model"
     python -u train_models/train_resnet_unsupervised.py \
         --resnet_unsupervised_ckpt models/resnet_pretrained_models/resnet50_imagenet_bs2k_epochs600.pth.tar \
