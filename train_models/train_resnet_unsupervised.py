@@ -44,6 +44,7 @@ parser.add_argument("--step_size", default=50, type=int, help="scheduler step si
 parser.add_argument("--scheduler_gamma", type=float, default=0.1)
 parser.add_argument("--resnet_unsupervised_ckpt", default="", type=str, help="Path to the checkpoint to reset the supervised model")
 parser.add_argument("--relu_layer", action="store_true", help="use additional relu layer")
+parser.add_argument("--finetune", action="store_true", help="Store the finetune encoder")
 
 args = parser.parse_args()
 print_args(args)
