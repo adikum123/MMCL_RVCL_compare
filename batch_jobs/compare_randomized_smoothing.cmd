@@ -47,7 +47,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --supervised_model cnn_4layer_b \
         --supervised_checkpoint models/supervised/supervised_bs_512_lr_0.001.pkl \
         --dataset cifar-10 \
-        --positives_per_class 1000 \
+        --positives_per_class 100 \
         --finetune
 
 EOF
