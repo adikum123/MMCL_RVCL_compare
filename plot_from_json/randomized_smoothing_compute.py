@@ -8,7 +8,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Font
 
-file_name = "mmcl_finetune_mmcl_cnn_4layer_b_C_1.0_bs_256_lr_0.0001_rvcl_cifar10_cnn_4layer_b_adv8_regular_cl_finetune_regular_cl_cosine_bs_256_lr_0.001_supervised_supervised_bs_256_lr_0.001"
+file_name = "mmcl_finetune_mmcl_cnn_4layer_b_C_1.0_bs_512_lr_0.0001_rvcl_cifar10_cnn_4layer_b_adv8_regular_cl_finetune_regular_cl_info_nce_bs_512_lr_0.001_supervised_supervised_bs_512_lr_0.001"
 with open(f"../rs_results/{file_name}.json", "r") as f:
     data = json.load(f)
 
@@ -165,7 +165,7 @@ def plot_one_per_sigma(data):
         plt.grid(True)
         output_filename = f"per_sigma_comparison_sigma_{sigma}_{file_name}.png"
         plt.tight_layout()
-        plt.savefig(os.path.join("../rs_results", output_filename))
+        plt.savefig(os.path.join("../rs_results/cnn_4_layer_b", output_filename))
         plt.close()
         print(f"Plot saved as: {output_filename}")
 
