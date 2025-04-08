@@ -28,7 +28,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Testing performance on linear eval"
     python -u train_models/train_linear_eval_mmcl.py \
-        --batch_size 512 \
+        --batch_size 256 \
         --dataset cifar-10 \
         --use_validation \
         --num_iters 100 \
