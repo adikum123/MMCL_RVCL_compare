@@ -63,7 +63,7 @@ class LinearEval(nn.Module):
             gamma=self.hparams.scheduler_gamma
         )
         self.best_model_saved = False
-        self.min_epochs = 150
+        self.min_epochs = 80
 
     def forward(self, x):
         if self.hparams.finetune:

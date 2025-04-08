@@ -150,7 +150,7 @@ class RegularCLModel(nn.Module):
         except Exception:
             self.crit = None
         self.best_model_saved = False
-        self.min_epochs = 150
+        self.min_epochs = 80
 
     def forward(self, x):
         return self.model(x)
