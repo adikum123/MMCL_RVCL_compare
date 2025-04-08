@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -p lrz-hgx-h100-94x4
 #SBATCH --gres=gpu:1
-#SBATCH --time=5:00:00
+#SBATCH --time=28:00:00
 #SBATCH -o outs/resnet_unsupervised.out
 #SBATCH -e outs/resnet_unsupervised.out
 
