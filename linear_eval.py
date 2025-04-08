@@ -242,7 +242,7 @@ class LinearEval(nn.Module):
     def get_model_save_name(self):
         ckpt = self.get_encoder_ckpt()
         prefix = "relu_" if self.hparams.relu_layer else ""
-        postfix = "trans_" if self.hparams.trans else ""
+        postfix = "trans_" if self.hparams.trans else "clean_"
         if self.hparams.finetune:
             return f"{prefix}linear_finetune_{postfix}{ckpt.split('/')[-1]}"
         return f"{prefix}linear_{postfix}{ckpt.split('/')[-1]}"

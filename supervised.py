@@ -79,7 +79,7 @@ class SupervisedModel(nn.Module):
 
     def get_model_save_name(self):
         prefix = "relu_" if self.hparams.relu_layer else ""
-        postfix = "trans_" if self.hparams.trans else "clean"
+        postfix = "trans_" if self.hparams.trans else "clean_"
         return f"{prefix}supervised_{postfix}bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
 
     def get_total_images_and_targets(self, ori_image, trans1, trans2, targets):
