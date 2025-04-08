@@ -130,7 +130,7 @@ class LinearEval(nn.Module):
 
                 with torch.no_grad():
                     for i, (ori_image, _, _, targets) in enumerate(val_bar):
-                        ori_image, _, _, targets = (
+                        ori_image, targets = (
                             ori_image.to(self.device),
                             targets.to(self.device)
                         )
