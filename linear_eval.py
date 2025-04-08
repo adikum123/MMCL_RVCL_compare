@@ -77,6 +77,21 @@ class LinearEval(nn.Module):
         for param_group in self.optimizer.param_groups:
             return param_group["lr"]
 
+    def get_total_images_and_targets(self, ori_image, trans1, trans2, targets):
+        if self.hparams.trans:
+            self.ori_image, trans1, trans2, targets = (
+                ori_image.to(self.device),
+                trans1.to(self.device),
+                trans2.to(self.device),
+                targets.to(self.device),
+            )
+            return torch.cat([ori_image, trans1, trans2], dim=0), torch.cat([targets, targets, targets], dim=0)
+        ori_image, targets = (
+            ori_image.to(self.device),
+            targets.to(self.device),
+        )
+        return ori_image, targets
+
     def train(self):
         best_val_loss = float("inf")
         patience_counter = 0
@@ -93,12 +108,14 @@ class LinearEval(nn.Module):
             total_loss, total_num = 0.0, 0
             train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch + 1}")
 
-            for i, (ori_image, _, _, targets) in enumerate(train_bar):
-                ori_image, targets = (
-                    ori_image.to(self.device),
-                    targets.to(self.device)
+            for i, (ori_image, trans1, trans2, targets) in enumerate(train_bar):
+                images, targets = self.get_total_images_and_targets(
+                    ori_image,
+                    trans1,
+                    trans2,
+                    targets
                 )
-                logits = self.forward(x=ori_image)
+                logits = self.forward(x=images)
                 loss = self.criterion(logits, targets)
                 # Backpropagation after full training phase
                 self.optimizer.zero_grad()
@@ -108,7 +125,6 @@ class LinearEval(nn.Module):
                 batch_size = ori_image.size(0)
                 total_num += batch_size
                 total_loss += loss.item() * batch_size
-
                 # Update progress bar description
                 train_bar.set_description(
                     "Train Epoch: [{}/{}] Running Loss: {:.4e}".format(
@@ -129,12 +145,14 @@ class LinearEval(nn.Module):
                 val_loss, val_num = 0.0, 0
 
                 with torch.no_grad():
-                    for i, (ori_image, _, _, targets) in enumerate(val_bar):
-                        ori_image, targets = (
-                            ori_image.to(self.device),
-                            targets.to(self.device)
+                    for i, (ori_image, trans1, trans2, targets) in enumerate(val_bar):
+                        images, targets = self.get_total_images_and_targets(
+                            ori_image,
+                            trans1,
+                            trans2,
+                            targets
                         )
-                        logits = self.forward(x=ori_image)
+                        logits = self.forward(x=images)
                         loss = self.criterion(logits, targets)
                         batch_size = ori_image.size(0)
                         val_num += batch_size
@@ -222,17 +240,16 @@ class LinearEval(nn.Module):
         raise ValueError("Checkpoint not found in hparams.")
 
     def get_model_save_name(self):
-        prefix = ""
         ckpt = self.get_encoder_ckpt()
         model_name = ckpt.split("/")[-1]
         model_name = (
             model_name.replace("finetune_", "") if model_name.startswith("finetune_") else model_name
         )
-        if self.hparams.relu_layer:
-            prefix = "relu_"
+        prefix = "relu_" if self.hparams.relu_layer else ""
+        postfix = "trans_" if self.hparams.trans else ""
         if self.hparams.finetune:
-            return f"{prefix}linear_finetune_{ckpt.split('/')[-1]}"
-        return f"{prefix}linear_{ckpt.split('/')[-1]}"
+            return f"{prefix}linear_finetune_{postfix}{ckpt.split('/')[-1]}"
+        return f"{prefix}linear_{postfix}{ckpt.split('/')[-1]}"
 
     def save(self):
         if not self.best_model_saved:

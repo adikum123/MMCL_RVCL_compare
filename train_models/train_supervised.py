@@ -24,6 +24,7 @@ parser.add_argument(
     action="store_true",
     help="Use validation set and stopping criteria",
 )
+parser.add_argument("--trans", action="store_true", help="use transformed sample")
 parser.add_argument(
     "--relu_layer",
     action="store_true",

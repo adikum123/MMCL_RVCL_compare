@@ -72,7 +72,6 @@ parser.add_argument("--finetune", action="store_true", help="finetune the model"
 parser.add_argument(
     "--ss", action="store_true", help="using self-supervised learning loss"
 )
-
 ##### arguments for PGD attack & Adversarial Training #####
 parser.add_argument("--attack_type", type=str, default="linf", help="adversarial l_p")
 parser.add_argument(

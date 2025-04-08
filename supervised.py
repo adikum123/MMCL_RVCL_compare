@@ -79,7 +79,23 @@ class SupervisedModel(nn.Module):
 
     def get_model_save_name(self):
         prefix = "relu_" if self.hparams.relu_layer else ""
-        return f"{prefix}supervised_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
+        postfix = "trans_" if self.hparams.trans else "clean"
+        return f"{prefix}supervised_{postfix}bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
+
+    def get_total_images_and_targets(self, ori_image, trans1, trans2, targets):
+        if self.hparams.trans:
+            self.ori_image, trans1, trans2, targets = (
+                ori_image.to(self.device),
+                trans1.to(self.device),
+                trans2.to(self.device),
+                targets.to(self.device),
+            )
+            return torch.cat([ori_image, trans1, trans2], dim=0), torch.cat([targets, targets, targets], dim=0)
+        ori_image, targets = (
+            ori_image.to(self.device),
+            targets.to(self.device),
+        )
+        return ori_image, targets
 
     def train(self):
         best_val_loss = float("inf")
@@ -93,28 +109,25 @@ class SupervisedModel(nn.Module):
             self.model.train()  # Set the model to training mode
             total_loss, total_samples = 0.0, 0
             train_bar = tqdm(self.trainloader, desc=f"Train Epoch {epoch + 1}")
-            for iii, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
-                ori_image, pos_1, pos_2, target = (
-                    ori_image.to(self.device),
-                    pos_1.to(self.device),
-                    pos_2.to(self.device),
-                    target.to(self.device),
+            for iii, (ori_image, trans1, trans2, target) in enumerate(train_bar):
+                images, targets = self.get_total_images_and_targets(
+                    ori_image,
+                    trans1,
+                    trans2,
+                    target,
                 )
-                # Combine images and corresponding targets
-                images = torch.cat([ori_image, pos_1, pos_2], dim=0)
                 logits = self.forward(x=images)
-                targets = torch.cat([target, target, target], dim=0)
                 # Backpropagation and optimizer step
                 loss = self.criterion(logits, targets)
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
                 # Logging
-                batch_size = pos_1.size(0)
+                batch_size = images.size(0)
                 total_loss += loss.item() * batch_size
                 total_samples += batch_size
                 train_bar.set_postfix(loss=f"{total_loss / total_samples:.4f}")
-            train_loss = total_loss/len(self.traindst)
+            train_loss = total_loss/ total_samples
             train_losses.append(train_loss)
             print(f"Epoch [{epoch+1}/{self.hparams.num_iters}] - Train Loss: {train_loss:.4f}")
             # validation
@@ -122,25 +135,21 @@ class SupervisedModel(nn.Module):
                 val_bar = tqdm(self.valloader, desc=f"Val Epoch {epoch + 1}")
                 # Validation Phase
                 self.model.eval()  # Set the model to evaluation mode
-                total_loss, total_num = 0.0, 0
+                total_loss, total_samples = 0.0, 0
                 with torch.no_grad():
-                    for iii, (ori_image, pos_1, pos_2, target) in enumerate(val_bar):
-                        ori_image, pos_1, pos_2, target = (
-                            ori_image.to(self.device),
-                            pos_1.to(self.device),
-                            pos_2.to(self.device),
-                            target.to(self.device),
+                    for iii, (ori_image, trans1, trans2, target) in enumerate(val_bar):
+                        images, targets = self.get_total_images_and_targets(
+                            ori_image,
+                            trans1,
+                            trans2,
+                            target,
                         )
-                        # Combine images and corresponding targets
-                        images = torch.cat([ori_image, pos_1, pos_2], dim=0)
                         logits = self.forward(x=images)
-                        targets = torch.cat([target, target, target], dim=0)
-                        # Compute InfoNCE loss
                         loss = self.criterion(logits, targets)
-                        batch_size = pos_1.size(0)
-                        total_num += batch_size
+                        batch_size = images.size(0)
+                        total_samples += batch_size
                         total_loss += loss.item() * batch_size
-                val_loss = total_loss / len(self.valdst)
+                val_loss = total_loss / total_samples
                 val_losses.append(val_loss)
                 # Early Stopping Check
                 if val_loss < best_val_loss:
