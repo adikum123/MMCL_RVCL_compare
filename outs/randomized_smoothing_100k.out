@@ -1,1817 +1,0 @@
-Creating and starting the container...
-mmcl_rvcl
-Removing existing container
-Container removed
-Creating new container
-[INFO] Extracting squashfs filesystem...
-Parallel unsquashfs: Using 20 processors
-132418 inodes (238794 blocks) to write
-
-
-created 130336 files
-created 17421 directories
-created 1971 symlinks
-created 0 devices
-created 0 fifos
-created 0 sockets
-Container created
-Starting container
-                                                                                                                                                
-================
-== TensorFlow ==
-================
-
-NVIDIA Release 20.12-tf1 (build 18410160)
-TensorFlow Version 1.15.4
-
-Container image Copyright (c) 2020, NVIDIA CORPORATION.  All rights reserved.
-Copyright 2017-2020 The TensorFlow Authors.  All rights reserved.
-
-NVIDIA Deep Learning Profiler (dlprof) Copyright (c) 2020, NVIDIA CORPORATION.  All rights reserved.
-
-Various files include modifications (c) NVIDIA CORPORATION.  All rights reserved.
-NVIDIA modifications are covered by the license terms that apply to the underlying project or file.
-
-NOTE: MOFED driver was detected, but nv_peer_mem driver was not detected.
-      Multi-node communication performance may be reduced.
-
-Setting up the environment...
-Collecting pip
-  Using cached pip-25.0.1-py3-none-any.whl (1.8 MB)
-Installing collected packages: pip
-  Attempting uninstall: pip
-    Found existing installation: pip 20.2.4
-    Uninstalling pip-20.2.4:
-      Successfully uninstalled pip-20.2.4
-Successfully installed pip-25.0.1
-Found existing installation: onnx 1.8.0
-Uninstalling onnx-1.8.0:
-  Successfully uninstalled onnx-1.8.0
-Collecting onnx==1.9.0
-  Using cached onnx-1.9.0-cp38-cp38-manylinux2010_x86_64.whl.metadata (10 kB)
-Requirement already satisfied: protobuf in /usr/local/lib/python3.8/dist-packages (from onnx==1.9.0) (3.14.0)
-Requirement already satisfied: numpy>=1.16.6 in /usr/local/lib/python3.8/dist-packages (from onnx==1.9.0) (1.17.3)
-Requirement already satisfied: six in /usr/local/lib/python3.8/dist-packages (from onnx==1.9.0) (1.13.0)
-Requirement already satisfied: typing-extensions>=3.6.2.1 in /usr/local/lib/python3.8/dist-packages (from onnx==1.9.0) (3.7.4.3)
-Using cached onnx-1.9.0-cp38-cp38-manylinux2010_x86_64.whl (12.2 MB)
-WARNING: Error parsing dependencies of pyzmq: Invalid version: 'cpython'
-Installing collected packages: onnx
-Successfully installed onnx-1.9.0
-Installing PyTorch 1.13.1 and compatible libraries...
-Looking in indexes: https://download.pytorch.org/whl/cu117
-Collecting torch==1.13.1
-  Using cached https://download.pytorch.org/whl/cu117/torch-1.13.1%2Bcu117-cp38-cp38-linux_x86_64.whl (1801.8 MB)
-Collecting torchvision==0.14.1
-  Using cached https://download.pytorch.org/whl/cu117/torchvision-0.14.1%2Bcu117-cp38-cp38-linux_x86_64.whl (24.3 MB)
-Collecting torchaudio==0.13.1
-  Using cached https://download.pytorch.org/whl/cu117/torchaudio-0.13.1%2Bcu117-cp38-cp38-linux_x86_64.whl (4.2 MB)
-Requirement already satisfied: typing-extensions in /usr/local/lib/python3.8/dist-packages (from torch==1.13.1) (3.7.4.3)
-Requirement already satisfied: numpy in /usr/local/lib/python3.8/dist-packages (from torchvision==0.14.1) (1.17.3)
-Requirement already satisfied: requests in /usr/local/lib/python3.8/dist-packages (from torchvision==0.14.1) (2.25.0)
-Requirement already satisfied: pillow!=8.3.*,>=5.3.0 in /usr/local/lib/python3.8/dist-packages (from torchvision==0.14.1) (6.2.1)
-Requirement already satisfied: chardet<4,>=3.0.2 in /usr/local/lib/python3.8/dist-packages (from requests->torchvision==0.14.1) (3.0.4)
-Requirement already satisfied: idna<3,>=2.5 in /usr/local/lib/python3.8/dist-packages (from requests->torchvision==0.14.1) (2.10)
-Requirement already satisfied: urllib3<1.27,>=1.21.1 in /usr/local/lib/python3.8/dist-packages (from requests->torchvision==0.14.1) (1.26.2)
-Requirement already satisfied: certifi>=2017.4.17 in /usr/local/lib/python3.8/dist-packages (from requests->torchvision==0.14.1) (2020.11.8)
-WARNING: Error parsing dependencies of pyzmq: Invalid version: 'cpython'
-Installing collected packages: torch, torchvision, torchaudio
-Successfully installed torch-1.13.1+cu117 torchaudio-0.13.1+cu117 torchvision-0.14.1+cu117
-Collecting numpy==1.18.5 (from -r requirements.txt (line 1))
-  Using cached numpy-1.18.5-cp38-cp38-manylinux1_x86_64.whl.metadata (2.1 kB)
-Requirement already satisfied: tqdm in /usr/local/lib/python3.8/dist-packages (from -r requirements.txt (line 2)) (4.54.0)
-Collecting scikit-learn==1.0.2 (from -r requirements.txt (line 3))
-  Using cached scikit_learn-1.0.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (10 kB)
-Collecting diffdist==0.1 (from -r requirements.txt (line 4))
-  Using cached diffdist-0.1-py3-none-any.whl
-Collecting matplotlib==3.4.2 (from -r requirements.txt (line 5))
-  Using cached matplotlib-3.4.2-cp38-cp38-manylinux1_x86_64.whl.metadata (5.7 kB)
-Collecting appdirs (from -r requirements.txt (line 6))
-  Using cached appdirs-1.4.4-py2.py3-none-any.whl.metadata (9.0 kB)
-Collecting oslo_concurrency (from -r requirements.txt (line 7))
-  Using cached oslo.concurrency-6.1.0-py3-none-any.whl.metadata (2.1 kB)
-Collecting pandas==1.2.4 (from -r requirements.txt (line 8))
-  Using cached pandas-1.2.4-cp38-cp38-manylinux1_x86_64.whl.metadata (4.7 kB)
-Collecting scipy==1.7.3 (from -r requirements.txt (line 9))
-  Using cached scipy-1.7.3-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (2.2 kB)
-Collecting statsmodels==0.13.5 (from -r requirements.txt (line 10))
-  Using cached statsmodels-0.13.5-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (9.5 kB)
-Requirement already satisfied: joblib>=0.11 in /usr/local/lib/python3.8/dist-packages (from scikit-learn==1.0.2->-r requirements.txt (line 3)) (0.17.0)
-Requirement already satisfied: threadpoolctl>=2.0.0 in /usr/local/lib/python3.8/dist-packages (from scikit-learn==1.0.2->-r requirements.txt (line 3)) (2.1.0)
-Requirement already satisfied: cycler>=0.10 in /usr/local/lib/python3.8/dist-packages (from matplotlib==3.4.2->-r requirements.txt (line 5)) (0.10.0)
-Requirement already satisfied: kiwisolver>=1.0.1 in /usr/local/lib/python3.8/dist-packages (from matplotlib==3.4.2->-r requirements.txt (line 5)) (1.3.1)
-Requirement already satisfied: pillow>=6.2.0 in /usr/local/lib/python3.8/dist-packages (from matplotlib==3.4.2->-r requirements.txt (line 5)) (6.2.1)
-Requirement already satisfied: pyparsing>=2.2.1 in /usr/local/lib/python3.8/dist-packages (from matplotlib==3.4.2->-r requirements.txt (line 5)) (2.4.7)
-Requirement already satisfied: python-dateutil>=2.7 in /usr/local/lib/python3.8/dist-packages (from matplotlib==3.4.2->-r requirements.txt (line 5)) (2.8.1)
-Requirement already satisfied: pytz>=2017.3 in /usr/local/lib/python3.8/dist-packages (from pandas==1.2.4->-r requirements.txt (line 8)) (2020.4)
-Collecting patsy>=0.5.2 (from statsmodels==0.13.5->-r requirements.txt (line 10))
-  Using cached patsy-1.0.1-py2.py3-none-any.whl.metadata (3.3 kB)
-Collecting packaging>=21.3 (from statsmodels==0.13.5->-r requirements.txt (line 10))
-  Using cached packaging-24.2-py3-none-any.whl.metadata (3.2 kB)
-Collecting fasteners>=0.7.0 (from oslo_concurrency->-r requirements.txt (line 7))
-  Using cached fasteners-0.19-py3-none-any.whl.metadata (4.9 kB)
-Collecting oslo.config>=5.2.0 (from oslo_concurrency->-r requirements.txt (line 7))
-  Using cached oslo.config-9.6.0-py3-none-any.whl.metadata (3.0 kB)
-Collecting oslo.i18n>=3.15.3 (from oslo_concurrency->-r requirements.txt (line 7))
-  Using cached oslo.i18n-6.4.0-py3-none-any.whl.metadata (2.1 kB)
-Collecting oslo.utils>=3.33.0 (from oslo_concurrency->-r requirements.txt (line 7))
-  Using cached oslo.utils-7.3.0-py3-none-any.whl.metadata (2.3 kB)
-Collecting pbr>=2.0.0 (from oslo_concurrency->-r requirements.txt (line 7))
-  Using cached pbr-6.1.1-py2.py3-none-any.whl.metadata (3.4 kB)
-Requirement already satisfied: six in /usr/local/lib/python3.8/dist-packages (from cycler>=0.10->matplotlib==3.4.2->-r requirements.txt (line 5)) (1.13.0)
-Requirement already satisfied: PyYAML>=5.1 in /usr/local/lib/python3.8/dist-packages (from oslo.config>=5.2.0->oslo_concurrency->-r requirements.txt (line 7)) (5.3.1)
-Collecting debtcollector>=1.2.0 (from oslo.config>=5.2.0->oslo_concurrency->-r requirements.txt (line 7))
-  Using cached debtcollector-3.0.0-py3-none-any.whl.metadata (2.3 kB)
-Collecting netaddr>=0.7.18 (from oslo.config>=5.2.0->oslo_concurrency->-r requirements.txt (line 7))
-  Using cached netaddr-1.3.0-py3-none-any.whl.metadata (5.0 kB)
-Requirement already satisfied: requests>=2.18.0 in /usr/local/lib/python3.8/dist-packages (from oslo.config>=5.2.0->oslo_concurrency->-r requirements.txt (line 7)) (2.25.0)
-Collecting rfc3986>=1.2.0 (from oslo.config>=5.2.0->oslo_concurrency->-r requirements.txt (line 7))
-  Using cached rfc3986-2.0.0-py2.py3-none-any.whl.metadata (6.6 kB)
-Collecting stevedore>=1.20.0 (from oslo.config>=5.2.0->oslo_concurrency->-r requirements.txt (line 7))
-  Using cached stevedore-5.3.0-py3-none-any.whl.metadata (2.3 kB)
-Collecting iso8601>=0.1.11 (from oslo.utils>=3.33.0->oslo_concurrency->-r requirements.txt (line 7))
-  Using cached iso8601-2.1.0-py3-none-any.whl.metadata (3.7 kB)
-Collecting netifaces>=0.10.4 (from oslo.utils>=3.33.0->oslo_concurrency->-r requirements.txt (line 7))
-  Using cached netifaces-0.11.0-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.whl.metadata (9.0 kB)
-Requirement already satisfied: setuptools in /usr/local/lib/python3.8/dist-packages (from pbr>=2.0.0->oslo_concurrency->-r requirements.txt (line 7)) (50.3.2)
-Requirement already satisfied: wrapt>=1.7.0 in /usr/local/lib/python3.8/dist-packages (from debtcollector>=1.2.0->oslo.config>=5.2.0->oslo_concurrency->-r requirements.txt (line 7)) (1.12.1)
-Requirement already satisfied: chardet<4,>=3.0.2 in /usr/local/lib/python3.8/dist-packages (from requests>=2.18.0->oslo.config>=5.2.0->oslo_concurrency->-r requirements.txt (line 7)) (3.0.4)
-Requirement already satisfied: idna<3,>=2.5 in /usr/local/lib/python3.8/dist-packages (from requests>=2.18.0->oslo.config>=5.2.0->oslo_concurrency->-r requirements.txt (line 7)) (2.10)
-Requirement already satisfied: urllib3<1.27,>=1.21.1 in /usr/local/lib/python3.8/dist-packages (from requests>=2.18.0->oslo.config>=5.2.0->oslo_concurrency->-r requirements.txt (line 7)) (1.26.2)
-Requirement already satisfied: certifi>=2017.4.17 in /usr/local/lib/python3.8/dist-packages (from requests>=2.18.0->oslo.config>=5.2.0->oslo_concurrency->-r requirements.txt (line 7)) (2020.11.8)
-Using cached numpy-1.18.5-cp38-cp38-manylinux1_x86_64.whl (20.6 MB)
-Using cached scikit_learn-1.0.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (26.7 MB)
-Using cached matplotlib-3.4.2-cp38-cp38-manylinux1_x86_64.whl (10.3 MB)
-Using cached pandas-1.2.4-cp38-cp38-manylinux1_x86_64.whl (9.7 MB)
-Using cached scipy-1.7.3-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (39.3 MB)
-Using cached statsmodels-0.13.5-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (9.9 MB)
-Using cached appdirs-1.4.4-py2.py3-none-any.whl (9.6 kB)
-Using cached oslo.concurrency-6.1.0-py3-none-any.whl (48 kB)
-Using cached fasteners-0.19-py3-none-any.whl (18 kB)
-Using cached oslo.config-9.6.0-py3-none-any.whl (132 kB)
-Using cached oslo.i18n-6.4.0-py3-none-any.whl (46 kB)
-Using cached oslo.utils-7.3.0-py3-none-any.whl (129 kB)
-Using cached packaging-24.2-py3-none-any.whl (65 kB)
-Using cached patsy-1.0.1-py2.py3-none-any.whl (232 kB)
-Using cached pbr-6.1.1-py2.py3-none-any.whl (108 kB)
-Using cached debtcollector-3.0.0-py3-none-any.whl (23 kB)
-Using cached iso8601-2.1.0-py3-none-any.whl (7.5 kB)
-Using cached netaddr-1.3.0-py3-none-any.whl (2.3 MB)
-Using cached netifaces-0.11.0-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.whl (33 kB)
-Using cached rfc3986-2.0.0-py2.py3-none-any.whl (31 kB)
-Using cached stevedore-5.3.0-py3-none-any.whl (49 kB)
-WARNING: Error parsing dependencies of pyzmq: Invalid version: 'cpython'
-Installing collected packages: netifaces, diffdist, appdirs, rfc3986, pbr, packaging, numpy, netaddr, iso8601, fasteners, debtcollector, stevedore, scipy, patsy, pandas, oslo.i18n, matplotlib, statsmodels, scikit-learn, oslo.utils, oslo.config, oslo_concurrency
-  Attempting uninstall: packaging
-    Found existing installation: packaging 20.4
-    Uninstalling packaging-20.4:
-      Successfully uninstalled packaging-20.4
-  Attempting uninstall: numpy
-    Found existing installation: numpy 1.17.3
-    Uninstalling numpy-1.17.3:
-      Successfully uninstalled numpy-1.17.3
-  Attempting uninstall: scipy
-    Found existing installation: scipy 1.4.1
-    Uninstalling scipy-1.4.1:
-      Successfully uninstalled scipy-1.4.1
-  Attempting uninstall: pandas
-    Found existing installation: pandas 0.25.3
-    Uninstalling pandas-0.25.3:
-      Successfully uninstalled pandas-0.25.3
-  Attempting uninstall: matplotlib
-    Found existing installation: matplotlib 3.3.2
-    Uninstalling matplotlib-3.3.2:
-      Successfully uninstalled matplotlib-3.3.2
-  Attempting uninstall: scikit-learn
-    Found existing installation: scikit-learn 0.23.2
-    Uninstalling scikit-learn-0.23.2:
-      Successfully uninstalled scikit-learn-0.23.2
-ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
-notebook 6.0.3 requires pyzmq>=17, which is not installed.
-Successfully installed appdirs-1.4.4 debtcollector-3.0.0 diffdist-0.1 fasteners-0.19 iso8601-2.1.0 matplotlib-3.4.2 netaddr-1.3.0 netifaces-0.11.0 numpy-1.18.5 oslo.config-9.6.0 oslo.i18n-6.4.0 oslo.utils-7.3.0 oslo_concurrency-6.1.0 packaging-24.2 pandas-1.2.4 patsy-1.0.1 pbr-6.1.1 rfc3986-2.0.0 scikit-learn-1.0.2 scipy-1.7.3 statsmodels-0.13.5 stevedore-5.3.0
-Computing plots for robust radius...
-Files already downloaded and verified
-Files already downloaded and verified
-Encoder: models/mmcl/rbf/cnn_4layer_b_C_1_rbf_auto.pkl, eval_ckpt: models/linear_evaluate/linear_finetune_cnn_4layer_b_C_1_rbf_auto.pkl
-Encoder: models/regular_cl/regular_cl_cnn_4layer_b_bs_32_lr_1e-3.pkl, eval_ckpt: models/linear_evaluate/linear_finetune_regular_cl_cnn_4layer_b_bs_32_lr_1e-3.pkl
-Loading model with checkpoint: models/linear_evaluate/cifar10_cnn_4layer_b_adv2.pkl
-Loading model with checkpoint: models/supervised/supervised_bs_32_lr_0.0001.pkl
-Loaded verifiers
-Iterating through the test dataset
-Processing sigma: 0.25
-  0%|          | 0/10 [00:00<?, ?it/s]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 0.9528641408474786
-Radius: 0.22118789957287613
-Radius: 0.5492548175836458
-Radius: 0.9528641408474786
-
- 10%|█         | 1/10 [00:01<00:16,  1.82s/it][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.6523058735538472
-
- 20%|██        | 2/10 [00:02<00:11,  1.45s/it][ARadius: 0.9528641408474786
-Radius: 0.510069635179583
-Radius: 0.5903939032959712
-Radius: 0.05015579095006957
-
- 30%|███       | 3/10 [00:02<00:08,  1.19s/it][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.33768851827561647
-Radius: 0.9047230124775187
-
- 40%|████      | 4/10 [00:03<00:06,  1.01s/it][ARadius: 0.9528641408474786
-Radius: 0.5370330243055591
-Radius: 0.7554438680666349
-Radius: 0.4018563844105375
-
- 50%|█████     | 5/10 [00:04<00:04,  1.13it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9347816671358392
-Radius: 0.13744962687426662
-
- 60%|██████    | 6/10 [00:04<00:03,  1.26it/s][ARadius: 0.9528641408474786
-Radius: 0.3279467775224924
-Radius: 0.4870841634852409
-Radius: 0.18328163565722166
-
- 70%|███████   | 7/10 [00:05<00:02,  1.36it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.6122211089540003
-Radius: 0.7374601032694946
-
- 80%|████████  | 8/10 [00:05<00:01,  1.45it/s][ARadius: 0.9528641408474786
-Radius: 0.168615070792327
-Radius: 0.28947945058762503
-Radius: 0.673239598344517
-
- 90%|█████████ | 9/10 [00:06<00:00,  1.52it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.07039926488518387
-Radius: 0.8686325643244922
-
-100%|██████████| 10/10 [00:07<00:00,  1.56it/s][A100%|██████████| 10/10 [00:07<00:00,  1.41it/s]
- 10%|█         | 1/10 [00:07<01:03,  7.10s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.0
-Radius: 0.26551218726704984
-
- 10%|█         | 1/10 [00:00<00:05,  1.69it/s][ARadius: 0.9528641408474786
-Radius: 0.35778417106804805
-Radius: 0.9528641408474786
-Radius: 0.0972232861330387
-
- 20%|██        | 2/10 [00:01<00:04,  1.69it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.17134699360547817
-Radius: 0.9528641408474786
-
- 30%|███       | 3/10 [00:01<00:04,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.0
-Radius: 0.417577177277881
-Radius: 0.037200420916678384
-
- 40%|████      | 4/10 [00:02<00:03,  1.70it/s][ARadius: 0.3447078420690764
-Radius: 0.3139081001090146
-Radius: 0.9528641408474786
-Radius: 0.034164508584609926
-
- 50%|█████     | 5/10 [00:02<00:02,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.7285664836235045
-Radius: 0.9528641408474786
-
- 60%|██████    | 6/10 [00:03<00:02,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.7201168226166078
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 70%|███████   | 7/10 [00:04<00:01,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9347816671358392
-Radius: 0.9528641408474786
-Radius: 0.8392945987724627
-
- 80%|████████  | 8/10 [00:04<00:01,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.4435330590339149
-Radius: 0.5980795844474786
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.5700869182146177
-Radius: 0.9528641408474786
-
-100%|██████████| 10/10 [00:05<00:00,  1.71it/s][A100%|██████████| 10/10 [00:05<00:00,  1.71it/s]
- 20%|██        | 2/10 [00:12<00:53,  6.73s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 0.5146761185712246
-Radius: 0.8615084837715695
-Radius: 0.26845666073563196
-Radius: 0.18418210447497588
-
- 10%|█         | 1/10 [00:00<00:05,  1.69it/s][ARadius: 0.3363323241881439
-Radius: 0.6787942775339618
-Radius: 0.9347816671358392
-Radius: 0.9528641408474786
-
- 20%|██        | 2/10 [00:01<00:04,  1.69it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.17501682817579917
-Radius: 0.36294867151349586
-
- 30%|███       | 3/10 [00:01<00:04,  1.69it/s][ARadius: 0.9528641408474786
-Radius: 0.8615084837715695
-Radius: 0.9347816671358392
-Radius: 0.9528641408474786
-
- 40%|████      | 4/10 [00:02<00:03,  1.69it/s][ARadius: 0.9528641408474786
-Radius: 0.25880070771944624
-Radius: 0.32036595685282476
-Radius: 0.9528641408474786
-
- 50%|█████     | 5/10 [00:02<00:02,  1.69it/s][ARadius: 0.9528641408474786
-Radius: 0.17915702398722153
-Radius: 0.5570380541893197
-Radius: 0.6371578042777193
-
- 60%|██████    | 6/10 [00:03<00:02,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 70%|███████   | 7/10 [00:04<00:01,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.09965527613525872
-Radius: 0.9528641408474786
-
- 80%|████████  | 8/10 [00:04<00:01,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.22362738949117794
-Radius: 0.9528641408474786
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.71it/s][ARadius: 0.9224112843313513
-Radius: 0.12774877784639962
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
-100%|██████████| 10/10 [00:05<00:00,  1.71it/s][A100%|██████████| 10/10 [00:05<00:00,  1.70it/s]
- 30%|███       | 3/10 [00:18<00:45,  6.47s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 0.9528641408474786
-Radius: 0.4139047102588307
-Radius: 0.2640151479284156
-Radius: 0.48721346290625955
-
- 10%|█         | 1/10 [00:00<00:05,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 20%|██        | 2/10 [00:01<00:04,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 30%|███       | 3/10 [00:01<00:04,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.3502903464423648
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 40%|████      | 4/10 [00:02<00:03,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 50%|█████     | 5/10 [00:02<00:02,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.024595233615333386
-Radius: 0.5083676889246026
-Radius: 0.1447738171664026
-
- 60%|██████    | 6/10 [00:03<00:02,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 70%|███████   | 7/10 [00:04<00:01,  1.69it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 80%|████████  | 8/10 [00:04<00:01,  1.69it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.5912559170630906
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.19618732469844452
-Radius: 0.9347816671358392
-Radius: 0.9528641408474786
-
-100%|██████████| 10/10 [00:05<00:00,  1.70it/s][A100%|██████████| 10/10 [00:05<00:00,  1.70it/s]
- 40%|████      | 4/10 [00:24<00:37,  6.30s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 0.9528641408474786
-Radius: 0.5337436136930048
-Radius: 0.0
-Radius: 0.3886652836786002
-
- 10%|█         | 1/10 [00:00<00:05,  1.69it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 20%|██        | 2/10 [00:01<00:04,  1.69it/s][ARadius: 0.9528641408474786
-Radius: 0.21749435283595187
-Radius: 0.03639494768606129
-Radius: 0.7547484551910283
-
- 30%|███       | 3/10 [00:01<00:04,  1.69it/s][ARadius: 0.9528641408474786
-Radius: 0.6539458794820787
-Radius: 0.9528641408474786
-Radius: 0.34954478981984405
-
- 40%|████      | 4/10 [00:02<00:03,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.8862691897048183
-Radius: 0.9528641408474786
-
- 50%|█████     | 5/10 [00:02<00:02,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.0
-Radius: 0.9528641408474786
-
- 60%|██████    | 6/10 [00:03<00:02,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.3460622487672903
-Radius: 0.5380188717579597
-Radius: 0.04901637689785028
-
- 70%|███████   | 7/10 [00:04<00:01,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.6892252783184565
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 80%|████████  | 8/10 [00:04<00:01,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
-100%|██████████| 10/10 [00:05<00:00,  1.71it/s][A100%|██████████| 10/10 [00:05<00:00,  1.71it/s]
- 50%|█████     | 5/10 [00:30<00:30,  6.17s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 0.9528641408474786
-Radius: 0.022025379221432658
-Radius: 0.9224112843313513
-Radius: 0.20437216553334026
-
- 10%|█         | 1/10 [00:00<00:05,  1.72it/s][ARadius: 0.9528641408474786
-Radius: 0.9224112843313513
-Radius: 0.14994334906805099
-Radius: 0.9528641408474786
-
- 20%|██        | 2/10 [00:01<00:04,  1.72it/s][ARadius: 0.9528641408474786
-Radius: 0.8083455497607216
-Radius: 0.18205460349273853
-Radius: 0.9528641408474786
-
- 30%|███       | 3/10 [00:01<00:04,  1.73it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 40%|████      | 4/10 [00:02<00:03,  1.73it/s][ARadius: 0.9528641408474786
-Radius: 0.45573391871250746
-Radius: 0.876760661715226
-Radius: 0.019804004112456332
-
- 50%|█████     | 5/10 [00:02<00:02,  1.73it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.36272957644230347
-Radius: 0.8083455497607216
-
- 60%|██████    | 6/10 [00:03<00:02,  1.73it/s][ARadius: 0.2707326672208664
-Radius: 0.8582453188632253
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 70%|███████   | 7/10 [00:04<00:01,  1.73it/s][ARadius: 0.9528641408474786
-Radius: 0.08382737169814614
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 80%|████████  | 8/10 [00:04<00:01,  1.72it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.72it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
-100%|██████████| 10/10 [00:05<00:00,  1.72it/s][A100%|██████████| 10/10 [00:05<00:00,  1.72it/s]
- 60%|██████    | 6/10 [00:36<00:24,  6.06s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 0.9528641408474786
-Radius: 0.3418025388607367
-Radius: 0.5374263366816555
-Radius: 0.14416366921780752
-
- 10%|█         | 1/10 [00:00<00:05,  1.73it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 20%|██        | 2/10 [00:01<00:04,  1.73it/s][ARadius: 0.9347816671358392
-Radius: 0.8686325643244922
-Radius: 0.8917283195552625
-Radius: 0.8144342174341748
-
- 30%|███       | 3/10 [00:01<00:04,  1.73it/s][ARadius: 0.9528641408474786
-Radius: 0.41578057062086426
-Radius: 0.15930160473390798
-Radius: 0.24637672375246605
-
- 40%|████      | 4/10 [00:02<00:03,  1.73it/s][ARadius: 0.9528641408474786
-Radius: 0.35972730308011014
-Radius: 0.23985376608379141
-Radius: 0.48558539477257534
-
- 50%|█████     | 5/10 [00:02<00:02,  1.73it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.3426139067665575
-
- 60%|██████    | 6/10 [00:03<00:02,  1.73it/s][ARadius: 0.9528641408474786
-Radius: 0.019873198595658857
-Radius: 0.2029649781177968
-Radius: 0.14285701653661478
-
- 70%|███████   | 7/10 [00:04<00:01,  1.73it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.18432276284623428
-Radius: 0.29990534955795733
-
- 80%|████████  | 8/10 [00:07<00:02,  1.45s/it][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.6920426363531063
-
- 90%|█████████ | 9/10 [00:08<00:01,  1.19s/it][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
-100%|██████████| 10/10 [00:08<00:00,  1.01s/it][A100%|██████████| 10/10 [00:08<00:00,  1.15it/s]
- 70%|███████   | 7/10 [00:45<00:20,  6.85s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 0.9528641408474786
-Radius: 0.3777615788686264
-Radius: 0.8686325643244922
-Radius: 0.8176983159521132
-
- 10%|█         | 1/10 [00:00<00:05,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.1419683867558088
-Radius: 0.9347816671358392
-Radius: 0.3029489667377886
-
- 20%|██        | 2/10 [00:01<00:04,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.36597170916662064
-Radius: 0.0
-Radius: 0.8001238946659358
-
- 30%|███       | 3/10 [00:01<00:04,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 40%|████      | 4/10 [00:02<00:03,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 50%|█████     | 5/10 [00:02<00:02,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.05984199737568282
-Radius: 0.1484984171184499
-Radius: 0.9528641408474786
-
- 60%|██████    | 6/10 [00:03<00:02,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.12912748975213142
-Radius: 0.9528641408474786
-Radius: 0.6753145380965111
-
- 70%|███████   | 7/10 [00:04<00:01,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.023517836356304278
-Radius: 0.7554438680666349
-Radius: 0.9528641408474786
-
- 80%|████████  | 8/10 [00:04<00:01,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.6346030447899975
-Radius: 0.5237622712392167
-
-100%|██████████| 10/10 [00:05<00:00,  1.72it/s][A100%|██████████| 10/10 [00:05<00:00,  1.71it/s]
- 80%|████████  | 8/10 [00:50<00:13,  6.55s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.1370251460712142
-
- 10%|█         | 1/10 [00:00<00:05,  1.72it/s][ARadius: 0.9528641408474786
-Radius: 0.005063620503702348
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 20%|██        | 2/10 [00:01<00:04,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.2554187913264151
-Radius: 0.9224112843313513
-
- 30%|███       | 3/10 [00:01<00:04,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 40%|████      | 4/10 [00:02<00:03,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.7753227316333213
-Radius: 0.9347816671358392
-Radius: 0.9528641408474786
-
- 50%|█████     | 5/10 [00:02<00:02,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9224112843313513
-Radius: 0.6737537783878477
-Radius: 0.9528641408474786
-
- 60%|██████    | 6/10 [00:03<00:02,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.5694701306034134
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 70%|███████   | 7/10 [00:04<00:01,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.18438897548759942
-Radius: 0.7300653746739731
-Radius: 0.9528641408474786
-
- 80%|████████  | 8/10 [00:04<00:01,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.2153725063054339
-Radius: 0.9347816671358392
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.08447905164175581
-Radius: 0.35138045988492017
-
-100%|██████████| 10/10 [00:05<00:00,  1.71it/s][A100%|██████████| 10/10 [00:05<00:00,  1.71it/s]
- 90%|█████████ | 9/10 [00:56<00:06,  6.34s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 0.9528641408474786
-Radius: 0.7280730336852214
-Radius: 0.9528641408474786
-Radius: 0.9347816671358392
-
- 10%|█         | 1/10 [00:00<00:05,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.044596567881547096
-Radius: 0.9528641408474786
-Radius: 0.0
-
- 20%|██        | 2/10 [00:01<00:04,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.24109875740949346
-Radius: 0.6637654254904115
-
- 30%|███       | 3/10 [00:01<00:04,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.5537215858665205
-Radius: 0.2358682053382432
-
- 40%|████      | 4/10 [00:02<00:03,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 50%|█████     | 5/10 [00:02<00:02,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.34383785698095115
-Radius: 0.264313788457913
-
- 60%|██████    | 6/10 [00:03<00:02,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.7149363099009337
-Radius: 0.06234556158634592
-
- 70%|███████   | 7/10 [00:04<00:01,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-Radius: 0.9528641408474786
-
- 80%|████████  | 8/10 [00:04<00:01,  1.71it/s][ARadius: 0.9528641408474786
-Radius: 0.6238110331596983
-Radius: 0.9127474360743156
-Radius: 0.3519280641421097
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.70it/s][ARadius: 0.9528641408474786
-Radius: 0.21792801472808565
-Radius: 0.876760661715226
-Radius: 0.15789174570593528
-
-100%|██████████| 10/10 [00:05<00:00,  1.70it/s][A100%|██████████| 10/10 [00:05<00:00,  1.70it/s]
-100%|██████████| 10/10 [01:02<00:00,  6.20s/it]100%|██████████| 10/10 [01:02<00:00,  6.27s/it]
-Processing sigma: 0.5
-  0%|          | 0/10 [00:00<?, ?it/s]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 1.9057282816949572
-Radius: 0.0
-Radius: 0.0
-Radius: 1.8254948721486313
-
- 10%|█         | 1/10 [00:00<00:05,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 0.6831196766219244
-
- 20%|██        | 2/10 [00:01<00:04,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 0.13384630324401905
-Radius: 0.0
-Radius: 0.04832087228739883
-
- 30%|███       | 3/10 [00:01<00:04,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.0545094493164993
-Radius: 0.03498012260138061
-
- 40%|████      | 4/10 [00:02<00:03,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 0.11769496717547162
-Radius: 0.058337746694138215
-Radius: 0.5613338855883869
-
- 50%|█████     | 5/10 [00:02<00:02,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 1.6785891975449254
-Radius: 1.2997990414299931
-Radius: 0.3008975340875986
-
- 60%|██████    | 6/10 [00:03<00:02,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 0.10759810074935647
-Radius: 0.7474362156512261
-Radius: 0.18714507572872038
-
- 70%|███████   | 7/10 [00:04<00:01,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 0.13293525891557323
-Radius: 0.34178578497824746
-
- 80%|████████  | 8/10 [00:04<00:01,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 0.4213771377917893
-Radius: 0.7953613016646182
-Radius: 0.059373591424325314
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.73it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 0.0
-Radius: 0.5679018996103578
-
-100%|██████████| 10/10 [00:05<00:00,  1.73it/s][A100%|██████████| 10/10 [00:05<00:00,  1.72it/s]
- 10%|█         | 1/10 [00:05<00:52,  5.81s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 1.9057282816949572
-Radius: 1.6882854352270937
-Radius: 0.10245155409689481
-Radius: 0.31275940312708
-
- 10%|█         | 1/10 [00:00<00:05,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 0.0
-Radius: 0.44306750714250986
-Radius: 0.0
-
- 20%|██        | 2/10 [00:01<00:04,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 0.2348065758343313
-Radius: 1.1725840629143447
-Radius: 1.560063390552679
-
- 30%|███       | 3/10 [00:01<00:04,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 0.6842857376092865
-Radius: 0.20046822526798966
-Radius: 0.45124618064878486
-
- 40%|████      | 4/10 [00:02<00:03,  1.72it/s][ARadius: 0.8746505225572937
-Radius: 0.2039888639728584
-Radius: 1.327530850980823
-Radius: 0.3389411095339131
-
- 50%|█████     | 5/10 [00:02<00:02,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 0.6777908992895799
-Radius: 0.9717674536230967
-Radius: 1.5053989945669763
-
- 60%|██████    | 6/10 [00:03<00:02,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 0.9020189562643046
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-
- 70%|███████   | 7/10 [00:04<00:01,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 0.0
-Radius: 1.9057282816949572
-Radius: 0.9718528066036078
-
- 80%|████████  | 8/10 [00:04<00:01,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 0.09110667278518328
-Radius: 0.4168025973582983
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 0.528428398423894
-Radius: 1.6387844916035745
-
-100%|██████████| 10/10 [00:05<00:00,  1.72it/s][A100%|██████████| 10/10 [00:05<00:00,  1.72it/s]
- 20%|██        | 2/10 [00:11<00:46,  5.81s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 0.7381757370312065
-Radius: 0.06553125442876011
-Radius: 0.4427682848760202
-Radius: 0.6871520943742929
-
- 10%|█         | 1/10 [00:00<00:05,  1.72it/s][ARadius: 1.2534121969076621
-Radius: 1.9057282816949572
-Radius: 1.7725383794096365
-Radius: 1.8695633342716784
-
- 20%|██        | 2/10 [00:01<00:04,  1.72it/s][ARadius: 0.13431501844687074
-Radius: 1.7626209861484305
-Radius: 1.4503488974450511
-Radius: 0.448897013272729
-
- 30%|███       | 3/10 [00:01<00:04,  1.72it/s][ARadius: 1.6226428294956514
-Radius: 0.6177810060944088
-Radius: 0.15007713533360179
-Radius: 1.6353966319042263
-
- 40%|████      | 4/10 [00:02<00:03,  1.72it/s][ARadius: 1.8448225686627027
-Radius: 1.4581259924246368
-Radius: 0.08409695479073284
-Radius: 0.7424856509166737
-
- 50%|█████     | 5/10 [00:02<00:02,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 0.5647733896269387
-Radius: 0.4568567170004172
-Radius: 0.4509614714182938
-
- 60%|██████    | 6/10 [00:03<00:02,  1.72it/s][ARadius: 0.9996346204737327
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-
- 70%|███████   | 7/10 [00:04<00:01,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 0.7353455854386443
-Radius: 0.5525939236723527
-Radius: 0.16853238748916324
-
- 80%|████████  | 8/10 [00:04<00:01,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 0.8149410949238131
-Radius: 0.8215774779080424
-Radius: 1.9057282816949572
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.71it/s][ARadius: 1.7956328029714772
-Radius: 0.9557293283031078
-Radius: 0.5486687661367351
-Radius: 1.9057282816949572
-
-100%|██████████| 10/10 [00:05<00:00,  1.72it/s][A100%|██████████| 10/10 [00:05<00:00,  1.72it/s]
- 30%|███       | 3/10 [00:17<00:40,  5.81s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 1.9057282816949572
-Radius: 0.2859364481277731
-Radius: 0.40374025958966014
-Radius: 0.24626290424043779
-
- 10%|█         | 1/10 [00:00<00:05,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.7451038400733117
-
- 20%|██        | 2/10 [00:01<00:04,  1.70it/s][ARadius: 1.7725383794096365
-Radius: 1.8695633342716784
-Radius: 0.7988670405797302
-Radius: 1.753521323430452
-
- 30%|███       | 3/10 [00:01<00:04,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 0.7231316196121653
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-
- 40%|████      | 4/10 [00:02<00:03,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.7626209861484305
-
- 50%|█████     | 5/10 [00:02<00:02,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 0.04473071130110802
-Radius: 0.8385305812018832
-Radius: 0.12945143156288713
-
- 60%|██████    | 6/10 [00:03<00:02,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.8448225686627027
-Radius: 1.446596998040299
-
- 70%|███████   | 7/10 [00:04<00:01,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-
- 80%|████████  | 8/10 [00:04<00:01,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 0.7664072913937044
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 0.14087694831344327
-Radius: 1.3608962711880759
-Radius: 1.5040570929033181
-
-100%|██████████| 10/10 [00:05<00:00,  1.70it/s][A100%|██████████| 10/10 [00:05<00:00,  1.70it/s]
- 40%|████      | 4/10 [00:23<00:34,  5.83s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 1.9057282816949572
-Radius: 0.5076497432611264
-Radius: 0.6112194892573057
-Radius: 0.12173965737240869
-
- 10%|█         | 1/10 [00:00<00:05,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.405059510249183
-Radius: 1.9057282816949572
-
- 20%|██        | 2/10 [00:01<00:04,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 0.7067474503204165
-Radius: 0.27636487625271705
-Radius: 0.8610044930999318
-
- 30%|███       | 3/10 [00:01<00:04,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 0.19545042074692445
-Radius: 1.9057282816949572
-Radius: 0.30951797088762545
-
- 40%|████      | 4/10 [00:02<00:03,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 1.5240154254683898
-Radius: 0.41089913632863556
-Radius: 1.5334506374130403
-
- 50%|█████     | 5/10 [00:02<00:02,  1.73it/s][ARadius: 1.9057282816949572
-Radius: 1.7626209861484305
-Radius: 0.0
-Radius: 1.6422610606242425
-
- 60%|██████    | 6/10 [00:03<00:02,  1.73it/s][ARadius: 1.9057282816949572
-Radius: 0.1464801391332425
-Radius: 1.2342817736306957
-Radius: 0.12951636852977227
-
- 70%|███████   | 7/10 [00:04<00:01,  1.73it/s][ARadius: 1.9057282816949572
-Radius: 0.803666256621373
-Radius: 1.1697168443082295
-Radius: 1.2309468132518215
-
- 80%|████████  | 8/10 [00:04<00:01,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.09345998846036
-Radius: 0.6240646402389007
-
-100%|██████████| 10/10 [00:05<00:00,  1.72it/s][A100%|██████████| 10/10 [00:05<00:00,  1.72it/s]
- 50%|█████     | 5/10 [00:29<00:29,  5.82s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 1.9057282816949572
-Radius: 0.1318556093270459
-Radius: 1.1368419983342648
-Radius: 0.0
-
- 10%|█         | 1/10 [00:00<00:05,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 0.9240133634430807
-Radius: 0.07949279732492323
-Radius: 0.8906817970229222
-
- 20%|██        | 2/10 [00:01<00:04,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 0.5828922783436122
-Radius: 0.20120425807896636
-Radius: 1.7725383794096365
-
- 30%|███       | 3/10 [00:01<00:04,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 1.8695633342716784
-Radius: 1.3677061142330267
-Radius: 1.7956328029714772
-
- 40%|████      | 4/10 [00:02<00:03,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 1.2440526528743183
-Radius: 1.6695849685849011
-Radius: 0.3433798816401369
-
- 50%|█████     | 5/10 [00:02<00:02,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 1.1417704207872856
-Radius: 0.694520052047204
-Radius: 0.6389752181625437
-
- 60%|██████    | 6/10 [00:03<00:02,  1.72it/s][ARadius: 0.6637241457579627
-Radius: 1.4447532435202073
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-
- 70%|███████   | 7/10 [00:04<00:01,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 0.20188616702223866
-Radius: 1.8448225686627027
-Radius: 1.8254948721486313
-
- 80%|████████  | 8/10 [00:04<00:01,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 1.7044156865457223
-Radius: 1.9057282816949572
-Radius: 1.266536376099136
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-
-100%|██████████| 10/10 [00:05<00:00,  1.72it/s][A100%|██████████| 10/10 [00:05<00:00,  1.72it/s]
- 60%|██████    | 6/10 [00:34<00:23,  5.82s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 1.9057282816949572
-Radius: 0.16074497292947837
-Radius: 0.7685207265948666
-Radius: 0.7014307362119049
-
- 10%|█         | 1/10 [00:00<00:05,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 1.723016967543139
-Radius: 1.8254948721486313
-Radius: 1.8695633342716784
-
- 20%|██        | 2/10 [00:01<00:04,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 0.35689728270757837
-Radius: 1.457132967247009
-Radius: 0.9631267459792003
-
- 30%|███       | 3/10 [00:01<00:04,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 0.13026980228916352
-Radius: 0.641540953936605
-Radius: 0.18725294502547038
-
- 40%|████      | 4/10 [00:02<00:03,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 0.052695707995395795
-Radius: 0.9772019910030986
-Radius: 0.11239591252882507
-
- 50%|█████     | 5/10 [00:02<00:02,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 1.7044156865457223
-Radius: 0.28878846434837746
-Radius: 0.019496174593976387
-
- 60%|██████    | 6/10 [00:03<00:02,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 0.08612156196479155
-Radius: 0.0
-Radius: 0.3830861986979089
-
- 70%|███████   | 7/10 [00:04<00:01,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 0.15832545182659227
-Radius: 0.0
-Radius: 0.4652860510784103
-
- 80%|████████  | 8/10 [00:04<00:01,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 1.3355441667217385
-Radius: 1.9057282816949572
-Radius: 0.5863326658477819
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.7103022097566103
-Radius: 1.9057282816949572
-
-100%|██████████| 10/10 [00:05<00:00,  1.70it/s][A100%|██████████| 10/10 [00:05<00:00,  1.70it/s]
- 70%|███████   | 7/10 [00:40<00:17,  5.84s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 1.9057282816949572
-Radius: 0.0
-Radius: 0.1711018979222772
-Radius: 0.26757763259114536
-
- 10%|█         | 1/10 [00:00<00:05,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 0.0
-Radius: 0.76910332771869
-Radius: 0.6175632720127118
-
- 20%|██        | 2/10 [00:01<00:04,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 1.405059510249183
-Radius: 0.39671612191280525
-Radius: 0.7160295427834259
-
- 30%|███       | 3/10 [00:01<00:04,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 0.540328756332646
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-
- 40%|████      | 4/10 [00:02<00:03,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 1.5902790999379774
-Radius: 0.6525146343354148
-Radius: 1.9057282816949572
-
- 50%|█████     | 5/10 [00:02<00:02,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 0.43705771295709384
-Radius: 0.3674053104044918
-Radius: 0.8838640950673837
-
- 60%|██████    | 6/10 [00:03<00:02,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 0.6034206403136817
-Radius: 0.6724447535340453
-Radius: 0.6635401616167662
-
- 70%|███████   | 7/10 [00:04<00:01,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 0.7046797855955377
-Radius: 0.9686294957098189
-Radius: 1.4367063713711077
-
- 80%|████████  | 8/10 [00:04<00:01,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 1.783456639110525
-Radius: 1.5488327134230655
-Radius: 1.9057282816949572
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 1.8094460249550375
-Radius: 0.010164855197109385
-Radius: 0.5134459423389914
-
-100%|██████████| 10/10 [00:05<00:00,  1.70it/s][A100%|██████████| 10/10 [00:05<00:00,  1.70it/s]
- 80%|████████  | 8/10 [00:46<00:11,  5.85s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 1.9057282816949572
-Radius: 1.5701367284049903
-Radius: 1.9057282816949572
-Radius: 0.0
-
- 10%|█         | 1/10 [00:00<00:05,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 0.4472736274773569
-Radius: 1.536733248846408
-Radius: 1.27259703797225
-
- 20%|██        | 2/10 [00:01<00:04,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 0.7943217892234025
-Radius: 0.1073796816892578
-Radius: 0.9343610524694876
-
- 30%|███       | 3/10 [00:01<00:04,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 1.51803967569309
-
- 40%|████      | 4/10 [00:02<00:03,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 1.3303183543376438
-Radius: 0.6850977255134523
-Radius: 1.8254948721486313
-
- 50%|█████     | 5/10 [00:02<00:02,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 1.4663009439685875
-Radius: 0.5842450008513912
-Radius: 1.1150178133861357
-
- 60%|██████    | 6/10 [00:03<00:02,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 0.05879247462556367
-Radius: 1.9057282816949572
-Radius: 1.9057282816949572
-
- 70%|███████   | 7/10 [00:04<00:01,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 0.5165429781328913
-Radius: 1.4000908438770208
-Radius: 1.6882854352270937
-
- 80%|████████  | 8/10 [00:04<00:01,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 0.33075516748573847
-Radius: 0.6346322644966124
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.72it/s][ARadius: 1.9057282816949572
-Radius: 1.6387844916035745
-Radius: 0.8011650092417428
-Radius: 0.3627132137321986
-
-100%|██████████| 10/10 [00:05<00:00,  1.71it/s][A100%|██████████| 10/10 [00:05<00:00,  1.71it/s]
- 90%|█████████ | 9/10 [00:52<00:05,  5.85s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 1.9057282816949572
-Radius: 0.002342497712599403
-Radius: 1.6353966319042263
-Radius: 0.4111646050170432
-
- 10%|█         | 1/10 [00:00<00:05,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 0.7056087219481438
-Radius: 1.9057282816949572
-Radius: 0.19924248788352852
-
- 20%|██        | 2/10 [00:01<00:04,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 1.5680648717701868
-Radius: 0.0
-Radius: 0.33949645365349823
-
- 30%|███       | 3/10 [00:01<00:04,  1.71it/s][ARadius: 1.9057282816949572
-Radius: 1.8448225686627027
-Radius: 1.423312217614421
-Radius: 0.17678999109710353
-
- 40%|████      | 4/10 [00:02<00:03,  1.71it/s][ARadius: 0.82000275211355
-Radius: 0.42060324694456275
-Radius: 0.0967278658696786
-Radius: 1.2467235183462944
-
- 50%|█████     | 5/10 [00:02<00:02,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 1.9057282816949572
-Radius: 0.0
-Radius: 0.012823138705318623
-
- 60%|██████    | 6/10 [00:03<00:02,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 1.661173849929035
-Radius: 0.8896796374161644
-Radius: 0.12675203361177761
-
- 70%|███████   | 7/10 [00:04<00:01,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 0.9040538462325072
-Radius: 1.9057282816949572
-Radius: 1.753521323430452
-
- 80%|████████  | 8/10 [00:04<00:01,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 0.9558896330116091
-Radius: 0.666463999953643
-Radius: 0.5758725585393432
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.70it/s][ARadius: 1.9057282816949572
-Radius: 0.20383854960102463
-Radius: 0.3113511130844108
-Radius: 0.24612085078756774
-
-100%|██████████| 10/10 [00:05<00:00,  1.71it/s][A100%|██████████| 10/10 [00:05<00:00,  1.71it/s]
-100%|██████████| 10/10 [00:58<00:00,  5.85s/it]100%|██████████| 10/10 [00:58<00:00,  5.84s/it]
-Processing sigma: 1
-  0%|          | 0/10 [00:00<?, ?it/s]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 3.8114565633899145
-Radius: 0.0
-Radius: 0.750698927049578
-Radius: 2.2705633999044643
-
- 10%|█         | 1/10 [00:00<00:05,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 2.069184349632162
-Radius: 1.6622046161852302
-Radius: 0.0
-
- 20%|██        | 2/10 [00:01<00:04,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 0.41115029313653373
-Radius: 0.7661723973958178
-Radius: 0.04042273796414778
-
- 30%|███       | 3/10 [00:01<00:04,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 2.6292676002972857
-Radius: 3.0162373434489234
-Radius: 1.7565752536112718
-
- 40%|████      | 4/10 [00:02<00:03,  1.73it/s][ARadius: 3.8114565633899145
-Radius: 1.3183031263100222
-Radius: 1.387772647652683
-Radius: 0.0
-
- 50%|█████     | 5/10 [00:02<00:02,  1.73it/s][ARadius: 3.8114565633899145
-Radius: 1.4240821820421943
-Radius: 1.0216325215808537
-Radius: 0.9010883309434973
-
- 60%|██████    | 6/10 [00:03<00:02,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 2.2043763231053934
-Radius: 0.8280783770162986
-Radius: 0.8706045308205209
-
- 70%|███████   | 7/10 [00:04<00:01,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 2.526502313031145
-Radius: 0.0
-Radius: 0.0
-
- 80%|████████  | 8/10 [00:04<00:01,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 0.0
-Radius: 1.8461848049302996
-Radius: 0.6472418259584161
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 1.611813697232212
-Radius: 0.23670691259530352
-Radius: 0.0
-
-100%|██████████| 10/10 [00:05<00:00,  1.72it/s][A100%|██████████| 10/10 [00:05<00:00,  1.72it/s]
- 10%|█         | 1/10 [00:05<00:52,  5.81s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 3.8114565633899145
-Radius: 0.5167400902529516
-Radius: 0.06066088241425397
-Radius: 0.021834311980701914
-
- 10%|█         | 1/10 [00:00<00:05,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 0.0
-Radius: 0.9059912977783199
-Radius: 0.0
-
- 20%|██        | 2/10 [00:01<00:04,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 2.381810887992521
-Radius: 2.9752013648959057
-Radius: 0.2592665214950893
-
- 30%|███       | 3/10 [00:01<00:04,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 0.8411345537207358
-Radius: 2.0518441601544297
-Radius: 0.9763409983847813
-
- 40%|████      | 4/10 [00:02<00:03,  1.71it/s][ARadius: 3.739126668543357
-Radius: 1.0497591039502705
-Radius: 1.318727420117753
-Radius: 1.0244510526463881
-
- 50%|█████     | 5/10 [00:02<00:02,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 0.0
-Radius: 0.5179775231079186
-Radius: 0.377852125045797
-
- 60%|██████    | 6/10 [00:03<00:02,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 1.6471151833283584
-Radius: 2.521969544099948
-Radius: 2.6559848830113575
-
- 70%|███████   | 7/10 [00:04<00:01,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 1.123191354044243
-Radius: 1.1521388387184555
-Radius: 0.7811832997168187
-
- 80%|████████  | 8/10 [00:04<00:01,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 2.4531732186338235
-Radius: 1.2368153064018113
-Radius: 0.9373752990963741
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 0.8059776314509621
-Radius: 0.45927128684743884
-Radius: 0.0
-
-100%|██████████| 10/10 [00:05<00:00,  1.72it/s][A100%|██████████| 10/10 [00:05<00:00,  1.71it/s]
- 20%|██        | 2/10 [00:11<00:46,  5.82s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 3.739126668543357
-Radius: 1.2277595692381595
-Radius: 0.0
-Radius: 0.0
-
- 10%|█         | 1/10 [00:00<00:05,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 2.5465651787728425
-Radius: 0.6593473048492762
-Radius: 2.1155548798532458
-
- 20%|██        | 2/10 [00:01<00:04,  1.71it/s][ARadius: 3.739126668543357
-Radius: 1.1724636362359107
-Radius: 0.8281139517360376
-Radius: 0.7497295413050119
-
- 30%|███       | 3/10 [00:01<00:04,  1.71it/s][ARadius: 2.199360265033704
-Radius: 3.5912656059429544
-Radius: 0.3116347954008531
-Radius: 0.3999283250529223
-
- 40%|████      | 4/10 [00:02<00:03,  1.71it/s][ARadius: 2.055690917596542
-Radius: 1.811942680937286
-Radius: 0.30086402600252
-Radius: 0.0
-
- 50%|█████     | 5/10 [00:02<00:02,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 1.1878296931365233
-Radius: 0.14314540270474313
-Radius: 0.0
-
- 60%|██████    | 6/10 [00:03<00:02,  1.70it/s][ARadius: 1.298921614198517
-Radius: 0.6731633119032475
-Radius: 0.41131450598931146
-Radius: 3.39760139265385
-
- 70%|███████   | 7/10 [00:04<00:01,  1.70it/s][ARadius: 3.1530771634954227
-Radius: 3.251439412658161
-Radius: 1.8521587804134716
-Radius: 1.2364881705004993
-
- 80%|████████  | 8/10 [00:04<00:01,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 0.5909913670656955
-Radius: 3.0801803556984617
-Radius: 3.618892049910075
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 1.4305696654207642
-Radius: 1.4629203797996964
-Radius: 2.442537409808062
-
-100%|██████████| 10/10 [00:05<00:00,  1.69it/s][A100%|██████████| 10/10 [00:05<00:00,  1.70it/s]
- 30%|███       | 3/10 [00:17<00:40,  5.84s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 3.8114565633899145
-Radius: 0.8395170637307344
-Radius: 0.35465055470780354
-Radius: 0.2664430759850792
-
- 10%|█         | 1/10 [00:00<00:05,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 1.026163269645194
-Radius: 2.8840527993295417
-Radius: 2.071840968433952
-
- 20%|██        | 2/10 [00:01<00:04,  1.70it/s][ARadius: 3.739126668543357
-Radius: 0.2586691013900547
-Radius: 0.0
-Radius: 0.8190764786818442
-
- 30%|███       | 3/10 [00:01<00:04,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 3.221977049276275
-Radius: 3.8114565633899145
-Radius: 3.739126668543357
-
- 40%|████      | 4/10 [00:02<00:03,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 1.5535508391408293
-Radius: 3.474530257297969
-Radius: 1.858779847610965
-
- 50%|█████     | 5/10 [00:02<00:02,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 0.24598956670884847
-Radius: 0.0
-Radius: 0.13068288162618244
-
- 60%|██████    | 6/10 [00:03<00:02,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 2.014589314445651
-Radius: 2.4596953087992603
-Radius: 2.0283766873102573
-
- 70%|███████   | 7/10 [00:04<00:01,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 3.8114565633899145
-Radius: 3.8114565633899145
-Radius: 3.6896451373254053
-
- 80%|████████  | 8/10 [00:04<00:01,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 3.618892049910075
-Radius: 3.8114565633899145
-Radius: 0.8044416994042767
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 0.0
-Radius: 1.4998006819226726
-Radius: 1.985897729097622
-
-100%|██████████| 10/10 [00:05<00:00,  1.71it/s][A100%|██████████| 10/10 [00:05<00:00,  1.71it/s]
- 40%|████      | 4/10 [00:23<00:35,  5.84s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 3.8114565633899145
-Radius: 0.6455646861427393
-Radius: 1.497371062241926
-Radius: 0.0
-
- 10%|█         | 1/10 [00:00<00:05,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 1.448295917903534
-Radius: 0.11917674715927828
-Radius: 2.5068243938153243
-
- 20%|██        | 2/10 [00:01<00:04,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 0.8606849804095589
-Radius: 0.23520920562643047
-Radius: 0.7204152371160949
-
- 30%|███       | 3/10 [00:01<00:04,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 1.1406476941265054
-Radius: 1.6288213201856812
-Radius: 0.4245713006436907
-
- 40%|████      | 4/10 [00:02<00:03,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 1.2290547199523347
-Radius: 0.0
-Radius: 0.5963091498239033
-
- 50%|█████     | 5/10 [00:02<00:02,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 0.25233706627940944
-Radius: 1.4848177641415554
-Radius: 1.544232844139501
-
- 60%|██████    | 6/10 [00:03<00:02,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 0.8893196555317551
-Radius: 0.6030334429767475
-Radius: 0.0
-
- 70%|███████   | 7/10 [00:04<00:01,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 1.1810786675456737
-Radius: 0.6085116909087167
-Radius: 1.6776883933180873
-
- 80%|████████  | 8/10 [00:04<00:01,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 3.8114565633899145
-Radius: 3.8114565633899145
-Radius: 3.0081141858066363
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.71it/s][ARadius: 3.1240451234107716
-Radius: 2.3782188913714943
-Radius: 0.0
-Radius: 0.45371473858739597
-
-100%|██████████| 10/10 [00:05<00:00,  1.70it/s][A100%|██████████| 10/10 [00:05<00:00,  1.70it/s]
- 50%|█████     | 5/10 [00:29<00:29,  5.85s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 3.8114565633899145
-Radius: 1.0389295581451878
-Radius: 0.43209792439113925
-Radius: 0.590721425502497
-
- 10%|█         | 1/10 [00:00<00:05,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 0.1543867869885763
-Radius: 0.1585280981848656
-Radius: 0.0
-
- 20%|██        | 2/10 [00:01<00:04,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 0.4937479297176717
-Radius: 1.0152571221559095
-Radius: 1.1769628294636636
-
- 30%|███       | 3/10 [00:01<00:04,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 1.3060420786361882
-Radius: 1.1999861008921822
-Radius: 1.017207795709437
-
- 40%|████      | 4/10 [00:02<00:03,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 2.276126959855452
-Radius: 2.3804601724928633
-Radius: 0.0
-
- 50%|█████     | 5/10 [00:02<00:02,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 0.5176033305059268
-Radius: 1.124907081092029
-Radius: 0.0
-
- 60%|██████    | 6/10 [00:03<00:02,  1.71it/s][ARadius: 3.175788158470041
-Radius: 2.992486433039779
-Radius: 3.245285658991303
-Radius: 3.1240451234107716
-
- 70%|███████   | 7/10 [00:04<00:01,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 1.2453683243824303
-Radius: 1.1622903018423156
-Radius: 1.736764055241178
-
- 80%|████████  | 8/10 [00:04<00:01,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 1.9703517249678995
-Radius: 3.097665426846131
-Radius: 2.073620386296183
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 2.122679574870971
-Radius: 1.572168878278928
-Radius: 2.910330424426823
-
-100%|██████████| 10/10 [00:05<00:00,  1.70it/s][A100%|██████████| 10/10 [00:05<00:00,  1.71it/s]
- 60%|██████    | 6/10 [00:35<00:23,  5.85s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 3.8114565633899145
-Radius: 0.35144007933064175
-Radius: 1.3731278667049356
-Radius: 1.5104075960269192
-
- 10%|█         | 1/10 [00:00<00:05,  1.66it/s][ARadius: 3.8114565633899145
-Radius: 0.6093304755075147
-Radius: 0.9655631959472136
-Radius: 0.8831833090114287
-
- 20%|██        | 2/10 [00:01<00:04,  1.67it/s][ARadius: 3.8114565633899145
-Radius: 0.6075721153075284
-Radius: 2.7424277319046673
-Radius: 0.7244423885878409
-
- 30%|███       | 3/10 [00:01<00:04,  1.68it/s][ARadius: 3.8114565633899145
-Radius: 1.4390526522466769
-Radius: 1.566046616560063
-Radius: 1.3641726562959569
-
- 40%|████      | 4/10 [00:02<00:03,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 0.18706498118762352
-Radius: 2.184359603578815
-Radius: 0.7261813397428316
-
- 50%|█████     | 5/10 [00:02<00:02,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 0.4466709080056451
-Radius: 1.4800755913721746
-Radius: 0.24826829388984417
-
- 60%|██████    | 6/10 [00:03<00:02,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 0.474113311200573
-Radius: 0.0
-Radius: 0.7561273336200592
-
- 70%|███████   | 7/10 [00:04<00:01,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 0.3820410135205411
-Radius: 0.48376542982553766
-Radius: 0.0
-
- 80%|████████  | 8/10 [00:04<00:01,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 1.2742813449913817
-Radius: 3.525241972296861
-Radius: 0.0
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.73it/s][ARadius: 3.8114565633899145
-Radius: 2.743610929919676
-Radius: 0.20775001548137095
-Radius: 0.2855463050873232
-
-100%|██████████| 10/10 [00:05<00:00,  1.73it/s][A100%|██████████| 10/10 [00:05<00:00,  1.72it/s]
- 70%|███████   | 7/10 [00:40<00:17,  5.84s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 3.8114565633899145
-Radius: 0.8888320016034919
-Radius: 2.610852528336973
-Radius: 0.40145429824587864
-
- 10%|█         | 1/10 [00:00<00:05,  1.74it/s][ARadius: 3.8114565633899145
-Radius: 0.0
-Radius: 0.0
-Radius: 0.7131440004481435
-
- 20%|██        | 2/10 [00:01<00:04,  1.74it/s][ARadius: 3.8114565633899145
-Radius: 2.910330424426823
-Radius: 1.417515800891484
-Radius: 0.13496118331599985
-
- 30%|███       | 3/10 [00:01<00:04,  1.74it/s][ARadius: 3.8114565633899145
-Radius: 0.726608214903259
-Radius: 1.4677665915680749
-Radius: 2.2418332314270026
-
- 40%|████      | 4/10 [00:02<00:03,  1.73it/s][ARadius: 3.8114565633899145
-Radius: 0.6252124125656207
-Radius: 0.5650942584513231
-Radius: 2.2441016536168172
-
- 50%|█████     | 5/10 [00:02<00:02,  1.73it/s][ARadius: 3.8114565633899145
-Radius: 1.2650142217757505
-Radius: 0.3720529119071277
-Radius: 0.0
-
- 60%|██████    | 6/10 [00:03<00:02,  1.73it/s][ARadius: 3.8114565633899145
-Radius: 1.9719749020545028
-Radius: 0.7882565690542491
-Radius: 0.19302090290775215
-
- 70%|███████   | 7/10 [00:04<00:01,  1.73it/s][ARadius: 3.8114565633899145
-Radius: 1.7029095061652695
-Radius: 0.7572358885714506
-Radius: 0.4858599201097952
-
- 80%|████████  | 8/10 [00:04<00:01,  1.73it/s][ARadius: 3.8114565633899145
-Radius: 1.3911798916771743
-Radius: 0.6168706969802371
-Radius: 1.7609129563924635
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.73it/s][ARadius: 3.8114565633899145
-Radius: 2.3096110951913564
-Radius: 1.0676726847775693
-Radius: 0.0
-
-100%|██████████| 10/10 [00:05<00:00,  1.73it/s][A100%|██████████| 10/10 [00:05<00:00,  1.73it/s]
- 80%|████████  | 8/10 [00:46<00:11,  5.82s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 3.8114565633899145
-Radius: 0.42975181311883626
-Radius: 2.4822551367021948
-Radius: 0.7074321541424752
-
- 10%|█         | 1/10 [00:00<00:05,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 0.6115766816709626
-Radius: 0.908355624219728
-Radius: 0.17023088505953385
-
- 20%|██        | 2/10 [00:01<00:04,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 0.4878715400327693
-Radius: 0.0
-Radius: 0.13810195150971433
-
- 30%|███       | 3/10 [00:01<00:04,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 1.4994866781164429
-Radius: 2.4646589678013817
-Radius: 0.08024767735219336
-
- 40%|████      | 4/10 [00:02<00:03,  1.72it/s][ARadius: 3.8114565633899145
-Radius: 2.353921684511754
-Radius: 0.20039261728259794
-Radius: 0.7087930770810943
-
- 50%|█████     | 5/10 [00:02<00:02,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 1.930227962708496
-Radius: 0.23693936452253628
-Radius: 0.20469799259849242
-
- 60%|██████    | 6/10 [00:03<00:02,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 1.9750554412212513
-Radius: 3.1086796985697305
-Radius: 1.8520157591192485
-
- 70%|███████   | 7/10 [00:04<00:01,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 0.6871108965244391
-Radius: 1.2144435980816692
-Radius: 0.3625589805290768
-
- 80%|████████  | 8/10 [00:04<00:01,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 1.7918796042584964
-Radius: 1.1641853976365257
-Radius: 0.5180063102091257
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 0.048379589277077695
-Radius: 0.5050956626367572
-Radius: 0.0
-
-100%|██████████| 10/10 [00:05<00:00,  1.70it/s][A100%|██████████| 10/10 [00:05<00:00,  1.71it/s]
- 90%|█████████ | 9/10 [00:52<00:05,  5.84s/it]
-  0%|          | 0/10 [00:00<?, ?it/s][ARadius: 3.8114565633899145
-Radius: 1.1922577371185001
-Radius: 0.5614936941205496
-Radius: 0.3271850484293897
-
- 10%|█         | 1/10 [00:00<00:05,  1.69it/s][ARadius: 3.8114565633899145
-Radius: 1.1900407625522553
-Radius: 2.6981228236109924
-Radius: 0.6671993622809405
-
- 20%|██        | 2/10 [00:01<00:04,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 1.3345984213658624
-Radius: 0.7032281621873029
-Radius: 0.3781761832474279
-
- 30%|███       | 3/10 [00:01<00:04,  1.69it/s][ARadius: 3.8114565633899145
-Radius: 2.6027786567573865
-Radius: 2.7694459082451095
-Radius: 0.49969875358692034
-
- 40%|████      | 4/10 [00:02<00:03,  1.69it/s][ARadius: 3.2333821990428864
-Radius: 0.30947243937992747
-Radius: 0.8584192505194084
-Radius: 1.2712559741175382
-
- 50%|█████     | 5/10 [00:02<00:02,  1.69it/s][ARadius: 3.8114565633899145
-Radius: 2.8293943745118293
-Radius: 1.4282356245808296
-Radius: 0.0
-
- 60%|██████    | 6/10 [00:03<00:02,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 1.4537706842028313
-Radius: 0.5549901033807928
-Radius: 0.2212649830447215
-
- 70%|███████   | 7/10 [00:04<00:01,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 0.0
-Radius: 2.932601887937175
-Radius: 1.175797807398947
-
- 80%|████████  | 8/10 [00:04<00:01,  1.71it/s][ARadius: 3.8114565633899145
-Radius: 0.9059151145631471
-Radius: 0.0
-Radius: 1.3207309083671497
-
- 90%|█████████ | 9/10 [00:05<00:00,  1.70it/s][ARadius: 3.8114565633899145
-Radius: 1.1144738628287854
-Radius: 0.37736611376216134
-Radius: 0.0
-
-100%|██████████| 10/10 [00:05<00:00,  1.70it/s][A100%|██████████| 10/10 [00:05<00:00,  1.70it/s]
-100%|██████████| 10/10 [00:58<00:00,  5.85s/it]100%|██████████| 10/10 [00:58<00:00,  5.85s/it]
-Model: mmcl, sigma: 0.25, radius: 0, certified_instance_accuracy: 0.15, unchanged_percentage: 1.0
-Model: mmcl, sigma: 0.5, radius: 0, certified_instance_accuracy: 0.13, unchanged_percentage: 0.96
-Model: mmcl, sigma: 1, radius: 0, certified_instance_accuracy: 0.11, unchanged_percentage: 0.92
-Model: mmcl, sigma: 0.25, radius: 0.5, certified_instance_accuracy: 0.14432989690721648, unchanged_percentage: 1.0
-Model: mmcl, sigma: 0.5, radius: 0.5, certified_instance_accuracy: 0.13131313131313133, unchanged_percentage: 0.9696969696969697
-Model: mmcl, sigma: 1, radius: 0.5, certified_instance_accuracy: 0.11, unchanged_percentage: 0.92
-Model: mmcl, sigma: 0.5, radius: 1, certified_instance_accuracy: 0.13829787234042554, unchanged_percentage: 0.9893617021276596
-Model: mmcl, sigma: 1, radius: 1, certified_instance_accuracy: 0.11, unchanged_percentage: 0.92
-Model: mmcl, sigma: 0.5, radius: 1.5, certified_instance_accuracy: 0.13978494623655913, unchanged_percentage: 1.0
-Model: mmcl, sigma: 1, radius: 1.5, certified_instance_accuracy: 0.1111111111111111, unchanged_percentage: 0.9292929292929293
-Model: mmcl, sigma: 1, radius: 2, certified_instance_accuracy: 0.1111111111111111, unchanged_percentage: 0.9292929292929293
-Model: mmcl, sigma: 1, radius: 2.5, certified_instance_accuracy: 0.1134020618556701, unchanged_percentage: 0.9484536082474226
-Model: mmcl, sigma: 1, radius: 3, certified_instance_accuracy: 0.1134020618556701, unchanged_percentage: 0.9484536082474226
-Model: rvcl, sigma: 0.25, radius: 0, certified_instance_accuracy: 0.6, unchanged_percentage: 0.84
-Model: rvcl, sigma: 0.5, radius: 0, certified_instance_accuracy: 0.46, unchanged_percentage: 0.66
-Model: rvcl, sigma: 1, radius: 0, certified_instance_accuracy: 0.33, unchanged_percentage: 0.43
-Model: rvcl, sigma: 0.25, radius: 0.5, certified_instance_accuracy: 0.6811594202898551, unchanged_percentage: 0.9710144927536232
-Model: rvcl, sigma: 0.5, radius: 0.5, certified_instance_accuracy: 0.6323529411764706, unchanged_percentage: 0.8529411764705882
-Model: rvcl, sigma: 1, radius: 0.5, certified_instance_accuracy: 0.4305555555555556, unchanged_percentage: 0.5555555555555556
-Model: rvcl, sigma: 0.5, radius: 1, certified_instance_accuracy: 0.7333333333333333, unchanged_percentage: 0.9333333333333333
-Model: rvcl, sigma: 1, radius: 1, certified_instance_accuracy: 0.5, unchanged_percentage: 0.6538461538461539
-Model: rvcl, sigma: 0.5, radius: 1.5, certified_instance_accuracy: 0.8333333333333334, unchanged_percentage: 0.9666666666666667
-Model: rvcl, sigma: 1, radius: 1.5, certified_instance_accuracy: 0.6451612903225806, unchanged_percentage: 0.7741935483870968
-Model: rvcl, sigma: 1, radius: 2, certified_instance_accuracy: 0.64, unchanged_percentage: 0.8
-Model: rvcl, sigma: 1, radius: 2.5, certified_instance_accuracy: 0.631578947368421, unchanged_percentage: 0.8421052631578947
-Model: rvcl, sigma: 1, radius: 3, certified_instance_accuracy: 0.9090909090909091, unchanged_percentage: 0.9090909090909091
-Model: regular_cl, sigma: 0.25, radius: 0, certified_instance_accuracy: 0.39, unchanged_percentage: 0.9
-Model: regular_cl, sigma: 0.5, radius: 0, certified_instance_accuracy: 0.35, unchanged_percentage: 0.7
-Model: regular_cl, sigma: 1, radius: 0, certified_instance_accuracy: 0.29, unchanged_percentage: 0.51
-Model: regular_cl, sigma: 0.25, radius: 0.5, certified_instance_accuracy: 0.47058823529411764, unchanged_percentage: 0.9852941176470589
-Model: regular_cl, sigma: 0.5, radius: 0.5, certified_instance_accuracy: 0.391304347826087, unchanged_percentage: 0.8260869565217391
-Model: regular_cl, sigma: 1, radius: 0.5, certified_instance_accuracy: 0.2948717948717949, unchanged_percentage: 0.5641025641025641
-Model: regular_cl, sigma: 0.5, radius: 1, certified_instance_accuracy: 0.48936170212765956, unchanged_percentage: 0.9361702127659575
-Model: regular_cl, sigma: 1, radius: 1, certified_instance_accuracy: 0.3333333333333333, unchanged_percentage: 0.6166666666666667
-Model: regular_cl, sigma: 0.5, radius: 1.5, certified_instance_accuracy: 0.5128205128205128, unchanged_percentage: 0.9743589743589743
-Model: regular_cl, sigma: 1, radius: 1.5, certified_instance_accuracy: 0.38235294117647056, unchanged_percentage: 0.7058823529411765
-Model: regular_cl, sigma: 1, radius: 2, certified_instance_accuracy: 0.4166666666666667, unchanged_percentage: 0.7083333333333334
-Model: regular_cl, sigma: 1, radius: 2.5, certified_instance_accuracy: 0.42857142857142855, unchanged_percentage: 0.6428571428571429
-Model: regular_cl, sigma: 1, radius: 3, certified_instance_accuracy: 0.6666666666666666, unchanged_percentage: 0.5
-Model: supervised, sigma: 0.25, radius: 0, certified_instance_accuracy: 0.68, unchanged_percentage: 0.91
-Model: supervised, sigma: 0.5, radius: 0, certified_instance_accuracy: 0.65, unchanged_percentage: 0.77
-Model: supervised, sigma: 1, radius: 0, certified_instance_accuracy: 0.52, unchanged_percentage: 0.56
-Model: supervised, sigma: 0.25, radius: 0.5, certified_instance_accuracy: 0.7941176470588235, unchanged_percentage: 1.0
-Model: supervised, sigma: 0.5, radius: 0.5, certified_instance_accuracy: 0.78125, unchanged_percentage: 0.96875
-Model: supervised, sigma: 1, radius: 0.5, certified_instance_accuracy: 0.6909090909090909, unchanged_percentage: 0.7272727272727273
-Model: supervised, sigma: 0.5, radius: 1, certified_instance_accuracy: 0.8571428571428571, unchanged_percentage: 1.0
-Model: supervised, sigma: 1, radius: 1, certified_instance_accuracy: 0.7941176470588235, unchanged_percentage: 0.8529411764705882
-Model: supervised, sigma: 0.5, radius: 1.5, certified_instance_accuracy: 0.8285714285714286, unchanged_percentage: 1.0
-Model: supervised, sigma: 1, radius: 1.5, certified_instance_accuracy: 0.8461538461538461, unchanged_percentage: 0.9230769230769231
-Model: supervised, sigma: 1, radius: 2, certified_instance_accuracy: 0.8235294117647058, unchanged_percentage: 1.0
-Model: supervised, sigma: 1, radius: 2.5, certified_instance_accuracy: 0.7777777777777778, unchanged_percentage: 1.0
-Model: supervised, sigma: 1, radius: 3, certified_instance_accuracy: 0.6666666666666666, unchanged_percentage: 1.0
