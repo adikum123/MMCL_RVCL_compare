@@ -52,7 +52,7 @@ class ResnetSupervised(nn.Module):
             gamma=self.hparams.scheduler_gamma,
         )
         self.best_model_saved = False
-        self.min_epochs = 150
+        self.min_epochs = 80
 
     def forward(self, x):
         # Upsample the input images to 224x224 using bilinear interpolation
