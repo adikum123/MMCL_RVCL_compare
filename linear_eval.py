@@ -51,16 +51,16 @@ class LinearEval(nn.Module):
             self.testdst,
         ) = data_loader.get_train_val_test_dataset(self.hparams)
         if self.hparams.finetune:
-            self.optimizer = optim.Adam(
-                list(self.encoder.parameters()) + list(self.classifier.parameters()),
-                lr=self.hparams.lr
-            )
+            self.optimizer = optim.Adam([
+                {"params": self.encoder.parameters(), "lr": self.hparams.lr_encoder},
+                {"params": self.classifier.parameters(), "lr": self.hparams.lr_classifier}
+            ])
         else:
             self.optimizer = optim.Adam(self.classifier.parameters(), lr=self.hparams.lr)
-        self.scheduler = optim.lr_scheduler.StepLR(
+        self.scheduler = torch.optim.lr_scheduler.StepLR(
             self.optimizer,
             step_size=self.hparams.step_size,
-            gamma=self.hparams.scheduler_gamma,
+            gamma=self.hparams.scheduler_gamma
         )
         self.best_model_saved = False
         self.min_epochs = 150
@@ -93,25 +93,19 @@ class LinearEval(nn.Module):
             total_loss, total_num = 0.0, 0
             train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch + 1}")
 
-            for i, (ori_image, input1, input2, targets) in enumerate(train_bar):
-                ori_image, input1, input2, targets = (
+            for i, (ori_image, _, _, targets) in enumerate(train_bar):
+                ori_image, targets = (
                     ori_image.to(self.device),
-                    input1.to(self.device),
-                    input2.to(self.device),
                     targets.to(self.device)
                 )
-                # Combine images and corresponding targets
-                images = torch.cat([ori_image, input1, input2], dim=0)
-                total_targets = torch.cat([targets, targets, targets], dim=0)
-                # Forward pass through the model
-                logits = self.forward(x=images)
-                loss = self.criterion(logits, total_targets)
+                logits = self.forward(x=ori_image)
+                loss = self.criterion(logits, targets)
                 # Backpropagation after full training phase
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
                 # Update metrics
-                batch_size = images.size(0)
+                batch_size = ori_image.size(0)
                 total_num += batch_size
                 total_loss += loss.item() * batch_size
 
@@ -135,20 +129,14 @@ class LinearEval(nn.Module):
                 val_loss, val_num = 0.0, 0
 
                 with torch.no_grad():
-                    for i, (ori_image, input1, input2, targets) in enumerate(val_bar):
-                        ori_image, input1, input2, targets = (
+                    for i, (ori_image, _, _, targets) in enumerate(val_bar):
+                        ori_image, _, _, targets = (
                             ori_image.to(self.device),
-                            input1.to(self.device),
-                            input2.to(self.device),
                             targets.to(self.device)
                         )
-                        # Combine images and corresponding targets
-                        images = torch.cat([ori_image, input1, input2], dim=0)
-                        total_targets = torch.cat([targets, targets, targets], dim=0)
-                        # Compute validation loss
-                        logits = self.forward(x=images)
-                        loss = self.criterion(logits, total_targets)
-                        batch_size = images.size(0)
+                        logits = self.forward(x=ori_image)
+                        loss = self.criterion(logits, targets)
+                        batch_size = ori_image.size(0)
                         val_num += batch_size
                         val_loss += loss.item() * batch_size
 
