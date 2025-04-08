@@ -45,7 +45,13 @@ parser.add_argument(
     help="0.5 for CIFAR, 1.0 for ImageNet",
 )
 parser.add_argument(
-    "--lr",
+    "--lr_encoder",
+    default=1e-4,
+    type=float,
+    help="learning rate for linear eval on top of MMCL encoder",
+)
+parser.add_argument(
+    "--lr_classifier",
     default=1e-3,
     type=float,
     help="learning rate for linear eval on top of MMCL encoder",

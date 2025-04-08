@@ -33,7 +33,8 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --use_validation \
         --num_iters 100 \
         --step_size 30 \
-        --lr 1e-3 \
+        --lr_encoder 1e-3 \
+        --lr_classifier 1e-4 \
         --model cnn_4layer_b \
         --finetune \
         --scheduler_gamma 0.5 \
