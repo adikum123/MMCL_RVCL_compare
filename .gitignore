@@ -1,0 +1,24 @@
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+
+# Ignore system-specific files
+*.DS_Store
+
+# Ignore VSCode configuration files
+.vscode/
+
+# Ignore tar.gz or other archive files
+*.tar.gz
+
+# Ignore other temporary files
+*.log
+*.tmp
+*.out
+
+# ignore html files
+*.html
+
+# ignore data files
+rocl/Data/
+models/resnet_pretrained_modesl/
