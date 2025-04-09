@@ -82,6 +82,29 @@ np.random.seed(args.seed)
 _, _, _, _, testloader, testdst = data_loader.get_train_val_test_dataset(args=args)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+models = [
+    {
+        "encoder_ckpt": "models/mmcl/rbf/finetune_mmcl_cnn_4layer_b_C_1.0_bs_512_lr_0.0001.pkl",
+        "load_classifier": True,
+        "model": "mmcl rbf"
+    },
+    {
+        "encoder_ckpt": "models/linear_evaluate/cifar10_cnn_4layer_b_adv8.pkl",
+        "load_classifier": False,
+        "model": "adversarial cl"
+    },
+    {
+        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_info_nce_bs_512_lr_0.001.pkl",
+        "load_classifier": True,
+        "model": "cl info_nce"
+    },
+    {
+        "encoder_ckpt": "models/supervised/supervised_clean_bs_256_lr_0.001.pkl",
+        "load_classifier": False,
+        "model": "supervised"
+    }
+]
+
 class CombinedModel(nn.Module):
     def __init__(self, encoder, eval_):
         super(CombinedModel, self).__init__()
@@ -126,6 +149,7 @@ def update_results(
         image, args.N0, args.N, args.alpha, args.batch
     )
     predicted_label = get_ori_model_predicition(ori_model, image)
+    print(f"Model: {model_name}, true_label: {true_label}, predicted_label: {predicted_label}, rs_label: {rs_label}, radius: {radius}")
     results[model_name].append({
         "sigma": verifier.sigma,
         "radius": radius,
@@ -134,16 +158,20 @@ def update_results(
         "rs_label": rs_label
     })
 
+for model in models:
+    encoder = torch.load(model["encoder_ckpt"], map_location=device, weights_only=False)
+    prefix = ""
+    if args.relu_layer:
+        prefix += "relu_"
+    if model["load_classifier"]:
+        eval_ckpt = f"models/linear_evaluate/{prefix}linear_finetune_clean_{model['encoder_ckpt'].split('/')[-1].replace('finetune_', '')}"
+        print(f"Loaded:\nencoder:{model['encoder_ckpt']}\nclassifier:{eval_ckpt}")
+        classifier = torch.load(eval_ckpt, map_location=device, weights_only=False)
+        model["base_classifier"] = CombinedModel(encoder=encoder, eval_=classifier)
+    else:
+        print(f"Loaded:\nencoder:{model['encoder_ckpt']}")
+        model["base_classifier"] = encoder
 
-# load models then create verifiers
-mmcl_model = load_combined_model(args, "mmcl")
-regular_cl_model = load_combined_model(args, "regular_cl")
-rvcl_model = load_combined_model(args, "rvcl")
-rvcl_model.to(device)
-supervised_model = load_combined_model(args, "supervised")
-supervised_model.to(device)
-print("Loaded verifiers")
-# creating data
 class_names = testdst.classes
 per_class_sampler = defaultdict(list)
 
@@ -163,33 +191,33 @@ for class_name, values in per_class_sampler.items():
 results = defaultdict(list)
 sigma_values = [0.12, 0.25, 0.5, 0.67, 1]
 for sigma in sigma_values:
-    # create verifiers
-    mmcl_verifier = Smooth(base_classifier=mmcl_model, num_classes=10, sigma=sigma)
-    regular_cl_verifier = Smooth(base_classifier=regular_cl_model, num_classes=10, sigma=sigma)
-    rvcl_verifier = Smooth(base_classifier=rvcl_model, num_classes=10, sigma=sigma)
-    supervised_verifier = Smooth(base_classifier=supervised_model, num_classes=10, sigma=sigma)
+# create verifiers
+    for model in models:
+        model["verifier"] = Smooth(
+            base_classifier=model["base_classifier"],
+            num_classes=10,
+            sigma=sigma
+        )
     print(f"Processing sigma: {sigma}")
     for class_name, values in picks.items():
         print(f"Processing class: {class_name}")
-        for image, label in tqdm(values):
-            image = image.to(device)
-            update_results(
-                verifier=mmcl_verifier, ori_model=mmcl_model, results=results, model_name="mmcl", true_label=label, image=image
-            )
-            update_results(
-                verifier=regular_cl_verifier, ori_model=regular_cl_model, results=results, model_name="regular_cl", true_label=label, image=image
-            )
-            update_results(
-                verifier=rvcl_verifier, ori_model=rvcl_model, results=results, model_name="rvcl", true_label=label, image=image
-            )
-            update_results(
-                verifier=supervised_verifier, ori_model=supervised_model, results=results, model_name="supervised", true_label=label, image=image
-            )
+        for class_name, values in tqdm(picks.items()):
+            for image, label in tqdm(values):
+                for model in models:
+                    image = image.to(device)
+                    update_results(
+                        verifier=model["verifier"],
+                        ori_model=model["base_classifier"],
+                        results=results,
+                        model_name=model["model"],
+                        true_label=label,
+                        image=image
+                    )
 results = dict(results)
 def get_name_from_ckpt(ckpt):
     ckpt = ckpt.split("/")[-1]
     return ckpt[0: ckpt.rindex(".")]
 
-file_name = f"mmcl_{get_name_from_ckpt(args.mmcl_checkpoint)}_rvcl_{get_name_from_ckpt(args.rvcl_checkpoint)}_regular_cl_{get_name_from_ckpt(args.regular_cl_checkpoint)}_supervised_{get_name_from_ckpt(args.supervised_checkpoint)}"
+file_name = "_".join([x["model"] for x in models])
 with open(f"rs_results/{file_name}.json", "w") as f:
-    json.dump(results, f)
+    json.dump(results, f, indent=4)
