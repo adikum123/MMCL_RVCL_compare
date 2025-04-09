@@ -107,7 +107,7 @@ def load_combined_model(args, model_type):
         if args.relu_layer:
             prefix += "relu_"
         if args.finetune:
-            prefix+= "linear_finetune_"
+            prefix+= "linear_finetune_clean_"
         eval_ckpt = f"models/linear_evaluate/{prefix}{encoder_ckpt.split('/')[-1].replace('finetune_', '')}"
         print(f"Encoder: {encoder_ckpt}, eval_ckpt: {eval_ckpt}")
         return CombinedModel(
