@@ -98,7 +98,7 @@ class CombinedModel(nn.Module):
 
 def load_combined_model(args, model_type):
     assert model_type in {"mmcl", "regular_cl", "rvcl", "supervised"}
-    if model_type in {"mmcl", "regular_cl"}:
+    if model_type in {"mmcl", "regular_cl", "rvcl"}:
         encoder_ckpt = (
             args.mmcl_checkpoint if model_type == "mmcl"
             else args.regular_cl_checkpoint
@@ -114,9 +114,7 @@ def load_combined_model(args, model_type):
             encoder=torch.load(encoder_ckpt, device, weights_only=False),
             eval_=torch.load(eval_ckpt, device, weights_only=False)
         )
-    ckpt = args.rvcl_checkpoint if model_type == "rvcl" else args.supervised_checkpoint
-    print(f"Loading model with checkpoint: {ckpt}")
-    return torch.load(ckpt, device)
+    return torch.load(args.supervised_checkpoint, device)
 
 def get_ori_model_predicition(model, x):
     return torch.argmax(model(x.unsqueeze(0)), dim=-1).item()
