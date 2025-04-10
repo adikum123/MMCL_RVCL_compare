@@ -119,26 +119,6 @@ class CombinedModel(nn.Module):
             output = self.eval_(features)
             return output
 
-def load_combined_model(args, model_type):
-    assert model_type in {"mmcl", "regular_cl", "rvcl", "supervised"}
-    if model_type in {"mmcl", "regular_cl", "rvcl"}:
-        encoder_ckpt = (
-            args.mmcl_checkpoint if model_type == "mmcl"
-            else args.regular_cl_checkpoint
-        )
-        prefix = ""
-        if args.relu_layer:
-            prefix += "relu_"
-        if args.finetune:
-            prefix+= "linear_finetune_clean_"
-        eval_ckpt = f"models/linear_evaluate/{prefix}{encoder_ckpt.split('/')[-1].replace('finetune_', '')}"
-        print(f"Encoder: {encoder_ckpt}, eval_ckpt: {eval_ckpt}")
-        return CombinedModel(
-            encoder=torch.load(encoder_ckpt, device, weights_only=False),
-            eval_=torch.load(eval_ckpt, device, weights_only=False)
-        )
-    return torch.load(args.supervised_checkpoint, device)
-
 def get_ori_model_predicition(model, x):
     return torch.argmax(model(x.unsqueeze(0)), dim=-1).item()
 
@@ -214,10 +194,6 @@ for sigma in sigma_values:
                         image=image
                     )
 results = dict(results)
-def get_name_from_ckpt(ckpt):
-    ckpt = ckpt.split("/")[-1]
-    return ckpt[0: ckpt.rindex(".")]
-
-file_name = "_".join([x["model"] for x in models])
+output_file_name = "_".join([x["model"] for x in models])
 with open(f"rs_results/{file_name}.json", "w") as f:
     json.dump(results, f, indent=4)
