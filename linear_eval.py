@@ -28,7 +28,14 @@ class LinearEval(nn.Module):
         self.encoder = encoder.to(self.device)
         if self.hparams.finetune:
             for param in self.encoder.parameters():
-                param.requires_grad = True  # Unfreeze encoder for fine-tuning
+                param.requires_grad = False
+            last_layer = list(self.encoder.children())[-1]
+            if isinstance(last_layer, nn.Sequential):
+                last_layer = last_layer[-1]
+            if isinstance(last_layer, nn.Linear):
+                last_layer.requires_grad = True
+            else:
+                raise ValueError(f"The last layer is not a Linear layer: {last_layer}")
         else:
             for param in self.encoder.parameters():
                 param.requires_grad = False  # Keep encoder frozen
@@ -39,20 +46,31 @@ class LinearEval(nn.Module):
                 nn.Linear(2 * feature_dim, num_classes)  # Output layer
             ).to(self.device)
         else:
-            self.classifier = nn.Linear(feature_dim, num_classes).to(self.device)
+            self.classifier = nn.Sequential(
+                nn.ReLU(),              # mimics the removed ReLU
+                nn.Linear(100, 10)      # mimics the final classifier layer
+            )
         print(f"Classifier in downstream task:\n{self.classifier}")
         self.criterion = nn.CrossEntropyLoss()
-        (
-            self.trainloader,
-            self.traindst,
-            self.valloader,
-            self.valdst,
-            self.testloader,
-            self.testdst,
-        ) = data_loader.get_train_val_test_dataset(self.hparams)
+        if self.hparams.use_validation:
+            (
+                self.trainloader,
+                self.train_dataset,
+                self.valloader,
+                self.val_dataset,
+                self.testloader,
+                self.test_dataset
+            ) = data_loader.get_cifar_10_eval_datasets(self.hparams)
+        else:
+            (
+                self.trainloader,
+                self.train_dataset,
+                self.testloader,
+                self.test_dataset
+            ) = data_loader.get_cifar_10_eval_datasets(self.hparams)
         if self.hparams.finetune:
             self.optimizer = optim.Adam([
-                {"params": self.encoder.parameters(), "lr": self.hparams.lr_encoder},
+                {"params": filter(lambda p: p.requires_grad, self.encoder.parameters()), "lr": self.hparams.lr_encoder},
                 {"params": self.classifier.parameters(), "lr": self.hparams.lr_classifier}
             ])
         else:
@@ -242,10 +260,9 @@ class LinearEval(nn.Module):
     def get_model_save_name(self):
         ckpt = self.get_encoder_ckpt()
         prefix = "relu_" if self.hparams.relu_layer else ""
-        postfix = "trans_" if self.hparams.trans else "clean_"
         if self.hparams.finetune:
-            return f"{prefix}linear_finetune_{postfix}{ckpt.split('/')[-1]}"
-        return f"{prefix}linear_{postfix}{ckpt.split('/')[-1]}"
+            return f"{prefix}linear_finetune_{ckpt.split('/')[-1]}"
+        return f"{prefix}linear_{ckpt.split('/')[-1]}"
 
     def save(self):
         if not self.best_model_saved:

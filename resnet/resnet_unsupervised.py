@@ -24,7 +24,7 @@ class ResnetUnsupervised(nn.Module):
         self.encoder.to(self.device)
         if self.hparams.relu_layer:
             self.classifier = nn.Sequential(
-                nn.Linear(2048, 4096),
+                nn.Linear(2048, 4096), # reduce size in few steps
                 nn.ReLU(),
                 nn.Linear(4096, 10),
             ).to(self.device)

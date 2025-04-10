@@ -457,3 +457,85 @@ def get_train_val_test_dataset(args):
             raise ValueError("Invalid learning type")
 
         return create_dataloader_and_split(CIFAR100, transform_train, transform_test)
+
+
+def get_cifar_10_eval_datasets(args):
+    normalize = transforms.Normalize((0.4914, 0.4822, 0.4465),
+                                     (0.2023, 0.1994, 0.2010))
+
+    transform_train = transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        normalize,
+    ])
+
+    transform_test = transforms.Compose([
+        transforms.ToTensor(),
+        normalize,
+    ])
+
+    if args.use_validation:
+        full_train_dataset = CIFAR10(
+            root="./rocl/Data",
+            train=True,
+            download=True,
+            transform=transform_train,
+            contrastive_learning="linear_eval",  # mimic default
+        )
+
+        # Split train into train + validation
+        train_size = int(0.9 * len(full_train_dataset))  # 45k train / 5k val
+        val_size = len(full_train_dataset) - train_size
+        train_subset, val_subset = torch.utils.data.random_split(
+            full_train_dataset, [train_size, val_size]
+        )
+
+        train_loader = torch.utils.data.DataLoader(
+            train_subset, batch_size=args.batch_size, shuffle=True, num_workers=2
+        )
+
+        val_loader = torch.utils.data.DataLoader(
+            val_subset, batch_size=args.batch_size, shuffle=False, num_workers=2
+        )
+
+        test_dataset = CIFAR10(
+            root="./rocl/Data",
+            train=False,
+            download=True,
+            transform=transform_test,
+            contrastive_learning="linear_eval",
+        )
+
+        test_loader = torch.utils.data.DataLoader(
+            test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=2
+        )
+
+        return train_loader, train_subset, val_loader, val_subset, test_loader, test_dataset
+
+    else:
+        train_dataset = CIFAR10(
+            root="./rocl/Data",
+            train=True,
+            download=True,
+            transform=transform_train,
+            contrastive_learning="linear_eval",
+        )
+
+        train_loader = torch.utils.data.DataLoader(
+            train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=2
+        )
+
+        test_dataset = CIFAR10(
+            root="./rocl/Data",
+            train=False,
+            download=True,
+            transform=transform_test,
+            contrastive_learning="linear_eval",
+        )
+
+        test_loader = torch.utils.data.DataLoader(
+            test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=2
+        )
+
+        return train_loader, train_dataset, test_loader, test_dataset
