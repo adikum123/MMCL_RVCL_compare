@@ -32,9 +32,9 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --dataset cifar-10 \
         --use_validation \
         --num_iters 100 \
-        --step_size 30 \
+        --step_size 25 \
         --lr_encoder 1e-3 \
-        --lr_classifier 1e-4 \
+        --lr_classifier 1e-3 \
         --model cnn_4layer_b \
         --finetune \
         --scheduler_gamma 0.5 \
