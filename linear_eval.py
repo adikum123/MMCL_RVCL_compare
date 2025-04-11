@@ -4,6 +4,9 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torchvision
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import rocl.data_loader as data_loader
@@ -26,9 +29,11 @@ class LinearEval(nn.Module):
         self.hparams = hparams
         self.device = device
         self.encoder = encoder.to(self.device)
-        if self.hparams.finetune:
-            for param in self.encoder.parameters():
-                param.requires_grad = False
+
+        # Freeze encoder if not finetuning
+        for param in self.encoder.parameters():
+            param.requires_grad = hparams.finetune
+        if hparams.finetune:
             last_layer = list(self.encoder.children())[-1]
             if isinstance(last_layer, nn.Sequential):
                 last_layer = last_layer[-1]
@@ -36,38 +41,59 @@ class LinearEval(nn.Module):
                 last_layer.requires_grad = True
             else:
                 raise ValueError(f"The last layer is not a Linear layer: {last_layer}")
-        else:
-            for param in self.encoder.parameters():
-                param.requires_grad = False  # Keep encoder frozen
+
+        # Define classifier
         if self.hparams.relu_layer:
             self.classifier = nn.Sequential(
-                nn.Linear(feature_dim, 2 * feature_dim),  # Hidden layer (2x feature_dim)
-                nn.ReLU(),  # Activation function
-                nn.Linear(2 * feature_dim, num_classes)  # Output layer
+                nn.Linear(feature_dim, 2 * feature_dim),
+                nn.ReLU(),
+                nn.Linear(2 * feature_dim, num_classes)
             ).to(self.device)
         else:
             self.classifier = nn.Sequential(
-                nn.ReLU(),              # mimics the removed ReLU
-                nn.Linear(100, 10)      # mimics the final classifier layer
-            )
+                nn.ReLU(),
+                nn.Linear(100, 10)
+            ).to(self.device)
+
         print(f"Classifier in downstream task:\n{self.classifier}")
         self.criterion = nn.CrossEntropyLoss()
+
+        # === Dataset & Dataloader Setup (standardized like the GitHub repo) ===
+        transform_train = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        ])
+        transform_test = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        ])
+
+        train_set = torchvision.datasets.CIFAR10(
+            root='./data', train=True, download=True, transform=transform_train
+        )
+        self.trainloader = DataLoader(
+            train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
+        )
+
         if self.hparams.use_validation:
-            (
-                self.trainloader,
-                self.train_dataset,
-                self.valloader,
-                self.val_dataset,
-                self.testloader,
-                self.test_dataset
-            ) = data_loader.get_cifar_10_eval_datasets(self.hparams)
+            val_set = torchvision.datasets.CIFAR10(
+                root='./data', train=False, download=True, transform=transform_test)
+            # Simulate validation split from test set if needed (e.g., 5k val, 5k test)
+            self.valloader = DataLoader(
+                torch.utils.data.Subset(val_set, range(5000)),
+                batch_size=self.hparams.batch_size, shuffle=False, num_workers=2)
+            self.testloader = DataLoader(
+                torch.utils.data.Subset(val_set, range(5000, 10000)),
+                batch_size=self.hparams.batch_size, shuffle=False, num_workers=2)
         else:
-            (
-                self.trainloader,
-                self.train_dataset,
-                self.testloader,
-                self.test_dataset
-            ) = data_loader.get_cifar_10_eval_datasets(self.hparams)
+            test_set = torchvision.datasets.CIFAR10(
+                root='./data', train=False, download=True, transform=transform_test)
+            self.testloader = DataLoader(
+                test_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2)
+
+        # === Optimizer Setup ===
         if self.hparams.finetune:
             self.optimizer = optim.Adam([
                 {"params": filter(lambda p: p.requires_grad, self.encoder.parameters()), "lr": self.hparams.lr_encoder},
@@ -75,6 +101,7 @@ class LinearEval(nn.Module):
             ])
         else:
             self.optimizer = optim.Adam(self.classifier.parameters(), lr=self.hparams.lr)
+
         self.scheduler = torch.optim.lr_scheduler.StepLR(
             self.optimizer,
             step_size=self.hparams.step_size,
@@ -82,6 +109,7 @@ class LinearEval(nn.Module):
         )
         self.best_model_saved = False
         self.min_epochs = 80
+
 
     def forward(self, x):
         if self.hparams.finetune:
@@ -94,21 +122,6 @@ class LinearEval(nn.Module):
     def get_lr(self):
         for param_group in self.optimizer.param_groups:
             return param_group["lr"]
-
-    def get_total_images_and_targets(self, ori_image, trans1, trans2, targets):
-        if self.hparams.trans:
-            self.ori_image, trans1, trans2, targets = (
-                ori_image.to(self.device),
-                trans1.to(self.device),
-                trans2.to(self.device),
-                targets.to(self.device),
-            )
-            return torch.cat([ori_image, trans1, trans2], dim=0), torch.cat([targets, targets, targets], dim=0)
-        ori_image, targets = (
-            ori_image.to(self.device),
-            targets.to(self.device),
-        )
-        return ori_image, targets
 
     def train(self):
         best_val_loss = float("inf")
@@ -126,13 +139,8 @@ class LinearEval(nn.Module):
             total_loss, total_num = 0.0, 0
             train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch + 1}")
 
-            for i, (ori_image, trans1, trans2, targets) in enumerate(train_bar):
-                images, targets = self.get_total_images_and_targets(
-                    ori_image,
-                    trans1,
-                    trans2,
-                    targets
-                )
+            for i, (images, targets) in enumerate(train_bar):
+                images, targets = images.to(self.device), targets.to(self.device)
                 logits = self.forward(x=images)
                 loss = self.criterion(logits, targets)
                 # Backpropagation after full training phase
@@ -140,7 +148,7 @@ class LinearEval(nn.Module):
                 loss.backward()
                 self.optimizer.step()
                 # Update metrics
-                batch_size = ori_image.size(0)
+                batch_size = images.size(0)
                 total_num += batch_size
                 total_loss += loss.item() * batch_size
                 # Update progress bar description
@@ -163,13 +171,8 @@ class LinearEval(nn.Module):
                 val_loss, val_num = 0.0, 0
 
                 with torch.no_grad():
-                    for i, (ori_image, trans1, trans2, targets) in enumerate(val_bar):
-                        images, targets = self.get_total_images_and_targets(
-                            ori_image,
-                            trans1,
-                            trans2,
-                            targets
-                        )
+                    for i, (images, targets) in enumerate(val_bar):
+                        images, targets = images.to(self.device), targets.to(self.device)
                         logits = self.forward(x=images)
                         loss = self.criterion(logits, targets)
                         batch_size = ori_image.size(0)
