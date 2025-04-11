@@ -175,7 +175,7 @@ class LinearEval(nn.Module):
                         images, targets = images.to(self.device), targets.to(self.device)
                         logits = self.forward(x=images)
                         loss = self.criterion(logits, targets)
-                        batch_size = ori_image.size(0)
+                        batch_size = images.size(0)
                         val_num += batch_size
                         val_loss += loss.item() * batch_size
 
