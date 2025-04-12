@@ -123,28 +123,29 @@ class SupervisedModel(nn.Module):
             transforms.ToTensor(),
             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
         ])
-
-        train_set = torchvision.datasets.CIFAR10(
+        full_train_set = torchvision.datasets.CIFAR10(
             root='./data', train=True, download=True, transform=transform_train
         )
-        self.trainloader = DataLoader(
-            train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
+        test_set = torchvision.datasets.CIFAR10(
+                root='./data', train=False, download=True, transform=transform_test
+        )
+        self.testloader = DataLoader(
+            test_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2
         )
         if self.hparams.use_validation:
-            val_set = torchvision.datasets.CIFAR10(
-                root='./data', train=False, download=True, transform=transform_test)
-            # Simulate validation split from test set if needed (e.g., 5k val, 5k test)
+            train_size = 55000
+            val_size = 5000
+            train_set, val_set = random_split(full_train_set, [train_size, val_size])
+            self.trainloader = DataLoader(
+                train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
+            )
             self.valloader = DataLoader(
-                torch.utils.data.Subset(val_set, range(5000)),
-                batch_size=self.hparams.batch_size, shuffle=False, num_workers=2)
-            self.testloader = DataLoader(
-                torch.utils.data.Subset(val_set, range(5000, 10000)),
-                batch_size=self.hparams.batch_size, shuffle=False, num_workers=2)
+                val_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2
+            )
         else:
-            test_set = torchvision.datasets.CIFAR10(
-                root='./data', train=False, download=True, transform=transform_test)
-            self.testloader = DataLoader(
-                test_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2)
+            self.trainloader = DataLoader(
+                full_train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
+            )
 
     def forward(self, x):
         return self.model(x)

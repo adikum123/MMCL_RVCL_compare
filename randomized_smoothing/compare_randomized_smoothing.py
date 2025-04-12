@@ -22,59 +22,18 @@ from tqdm import tqdm
 import rocl.data_loader as data_loader
 from randomized_smoothing.core import Smooth
 
-parser = argparse.ArgumentParser(description='unsupervised binary search')
+parser = argparse.ArgumentParser(description="unsupervised binary search")
 
-##### arguments for CROWN #####
-parser.add_argument("--norm", type=float, default='inf', help='p norm for epsilon perturbation')
-parser.add_argument("--model", type=str, default="cnn_4layer_b", help='model name (cifar_model, cifar_model_deep, cifar_model_wide, cnn_4layer, cnn_4layer_b, mnist_cnn_4layer)')
-parser.add_argument("--batch_size", type=int, default=256, help='batch size')
-##### mmcl and rvcl args #####
-parser.add_argument(
-    "--mmcl_model",
-    type=str,
-    default="",
-    help="model name (cifar_model, cifar_model_deep, cifar_model_wide, cnn_4layer, cnn_4layer_b, mnist_cnn_4layer)",
-)
-parser.add_argument(
-    "--mmcl_checkpoint", type=str, default="", help="Model checkpoint for mmcl"
-)
-parser.add_argument(
-    "--rvcl_model",
-    type=str,
-    default="",
-    help="model name (cifar_model, cifar_model_deep, cifar_model_wide, cnn_4layer, cnn_4layer_b, mnist_cnn_4layer)",
-)
-parser.add_argument(
-    "--rvcl_checkpoint", type=str, default="", help="Model checkpoint for rvcl"
-)
-parser.add_argument(
-    "--regular_cl_model",
-    type=str,
-    default="",
-    help="model name (cifar_model, cifar_model_deep, cifar_model_wide, cnn_4layer, cnn_4layer_b, mnist_cnn_4layer)",
-)
-parser.add_argument(
-    "--regular_cl_checkpoint", type=str, default="", help="Model checkpoint for rvcl"
-)
-parser.add_argument(
-    "--supervised_model", type=str, default="", help="model name (cifar_model, cifar_model_deep, cifar_model_wide, cnn_4layer, cnn_4layer_b, mnist_cnn_4layer)"
-)
-parser.add_argument(
-    "--supervised_checkpoint", type=str, default="", help="Model checkpoint for rvcl"
-)
-parser.add_argument('--train_type', default='contrastive', type=str, help='contrastive/linear eval/test/supervised')
-parser.add_argument('--dataset', default='cifar-10', type=str, help='cifar-10/mnist')
-parser.add_argument('--name', default='', type=str, help='name of run')
-parser.add_argument('--seed', default=1, type=int, help='random seed')
-parser.add_argument('--color_jitter_strength', default=0.5, type=float, help='0.5 for CIFAR, 1.0 for ImageNet')
-parser.add_argument("--picks_per_class", type=int, default=5, help='number of negative items chosen per class')
+parser.add_argument("--batch_size", type=int, default=256, help="Batch size for dataloaders")
+parser.add_argument("--seed", type=int, default=1, help="Random seed")
 parser.add_argument("--N0", type=int, default=100)
 parser.add_argument("--N", type=int, default=1000000, help="number of samples to use")
 parser.add_argument("--alpha", type=float, default=0.001, help="failure probability")
-parser.add_argument("--positives_per_class", type=int, default=5, help='number of negative items chosen per class')
+parser.add_argument("--positives_per_class", type=int, default=5, help="number of negative items chosen per class")
 parser.add_argument("--batch", type=int, default=1000, help="batch size")
 parser.add_argument("--finetune", action="store_true", help="Finetune the model")
 parser.add_argument("--relu_layer", action="store_true", help="Use classifier with additional relu layer")
+parser.add_argument("--num_images", type=int, default=1000, help="number of images to use")
 args = parser.parse_args()
 
 # add random seed
@@ -82,7 +41,6 @@ torch.manual_seed(args.seed)
 torch.cuda.manual_seed_all(args.seed)
 random.seed(args.seed)
 np.random.seed(args.seed)
-_, _, _, _, testloader, testdst = data_loader.get_train_val_test_dataset(args=args)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 models = [
@@ -112,7 +70,7 @@ transform_test = transforms.Compose([
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 ])
 val_set = torchvision.datasets.CIFAR10(
-    root='./data', train=False, download=True, transform=transform_test
+    root="./data", train=False, download=True, transform=transform_test
 )
 testloader = DataLoader(
     torch.utils.data.Subset(val_set, range(5000, 10000)),
@@ -120,8 +78,15 @@ testloader = DataLoader(
     shuffle=False,
     num_workers=2
 )
+all_test_images = []
+# randomly sample images from the test set
+for images, labels in testloader:
+    for i in range(images.size(0)):
+        all_test_images.append((images[i], labels[i].item()))
+picks = random.sample(all_test_images, args.num_images)
 
 class CombinedModel(nn.Module):
+
     def __init__(self, encoder, eval_):
         super(CombinedModel, self).__init__()
         self.encoder = encoder
@@ -145,7 +110,7 @@ def update_results(
         image, args.N0, args.N, args.alpha, args.batch
     )
     predicted_label = get_ori_model_predicition(ori_model, image)
-    print(f"Model: {model_name}, true_label: {true_label}, predicted_label: {predicted_label}, rs_label: {rs_label}, radius: {radius}")
+    print(f"\nModel: {model_name}, true_label: {true_label}, predicted_label: {predicted_label}, rs_label: {rs_label}, radius: {radius}")
     results[model_name].append({
         "sigma": verifier.sigma,
         "radius": radius,
@@ -181,22 +146,6 @@ for model in models:
     model["test_accuracy"] = get_test_set_accuracy(model["base_classifier"])
     print(f"Test accuracy for model {model['model']}: {model['test_accuracy']}")
 
-class_names = testdst.classes
-per_class_sampler = defaultdict(list)
-
-print("Iterating through the test dataset")
-stop = False  # Flag to stop early if all classes are sampled
-
-# get class sampler
-for idx, sample in enumerate(testdst):
-    image, _, _, label = sample
-    class_name = class_names[label]
-    per_class_sampler[class_name].append((image, label))
-
-# construct postives
-picks = defaultdict(list)
-for class_name, values in per_class_sampler.items():
-    picks[class_name] = random.sample(per_class_sampler[class_name], args.positives_per_class)
 results = defaultdict(list)
 sigma_values = [0.12, 0.25, 0.5, 0.67, 1]
 for sigma in sigma_values:
@@ -207,23 +156,20 @@ for sigma in sigma_values:
             num_classes=10,
             sigma=sigma
         )
-    print(f"Processing sigma: {sigma}")
-    for class_name, values in picks.items():
-        print(f"Processing class: {class_name}")
-        for class_name, values in tqdm(picks.items()):
-            for image, label in tqdm(values):
-                for model in models:
-                    image = image.to(device)
-                    update_results(
-                        verifier=model["verifier"],
-                        ori_model=model["base_classifier"],
-                        results=results,
-                        model_name=model["model"],
-                        true_label=label,
-                        image=image
-                    )
+    print(f"\nProcessing sigma: {sigma}")
+    for model in models:
+        for image, label in tqdm(picks):
+            image = image.to(device)
+            update_results(
+                verifier=model["verifier"],
+                ori_model=model["base_classifier"],
+                results=results,
+                model_name=model["model"],
+                true_label=label,
+                image=image
+            )
 results = dict(results)
 results["models_info"] = [{"model": x["model"], "test_accuracy": x["test_accuracy"]} for x in models]
-output_file_name = "_".join([x["model"] for x in models])
-with open(f"rs_results/{file_name}.json", "w") as f:
+output_file_name = "-".join([x["model"].replace(" ", "_") for x in models])
+with open(f"rs_results/{output_file_name}.json", "w") as f:
     json.dump(results, f, indent=4)

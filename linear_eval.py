@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 
 import rocl.data_loader as data_loader
@@ -18,18 +18,12 @@ from rocl.loss import NT_xent, pairwise_similarity
 class LinearEval(nn.Module):
 
     def __init__(
-        self,
-        hparams,
-        encoder,
-        device,
-        feature_dim=100,
-        num_classes=10,
+        self, hparams, encoder, device
     ):
         super(LinearEval, self).__init__()
         self.hparams = hparams
         self.device = device
         self.encoder = encoder.to(self.device)
-
         # Freeze encoder if not finetuning
         for param in self.encoder.parameters():
             param.requires_grad = hparams.finetune
@@ -41,13 +35,25 @@ class LinearEval(nn.Module):
                 last_layer.requires_grad = True
             else:
                 raise ValueError(f"The last layer is not a Linear layer: {last_layer}")
+        self.set_classifier()
+        print(f"Classifier in downstream task:\n{self.classifier}")
+        self.criterion = nn.CrossEntropyLoss()
+        self.set_data_loader()
+        self.set_optimizer()
+        self.scheduler = torch.optim.lr_scheduler.StepLR(
+            self.optimizer,
+            step_size=self.hparams.step_size,
+            gamma=self.hparams.scheduler_gamma
+        )
+        self.best_model_saved = False
+        self.min_epochs = 80
 
-        # Define classifier
+    def set_classifier(self):
         if self.hparams.relu_layer:
             self.classifier = nn.Sequential(
-                nn.Linear(feature_dim, 2 * feature_dim),
+                nn.Linear(100, 50),
                 nn.ReLU(),
-                nn.Linear(2 * feature_dim, num_classes)
+                nn.Linear(50, 10)
             ).to(self.device)
         else:
             self.classifier = nn.Sequential(
@@ -55,10 +61,7 @@ class LinearEval(nn.Module):
                 nn.Linear(100, 10)
             ).to(self.device)
 
-        print(f"Classifier in downstream task:\n{self.classifier}")
-        self.criterion = nn.CrossEntropyLoss()
-
-        # === Dataset & Dataloader Setup (standardized like the GitHub repo) ===
+    def set_data_loader(self):
         transform_train = transforms.Compose([
             transforms.RandomCrop(32, padding=4),
             transforms.RandomHorizontalFlip(),
@@ -69,31 +72,31 @@ class LinearEval(nn.Module):
             transforms.ToTensor(),
             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
         ])
-
-        train_set = torchvision.datasets.CIFAR10(
+        full_train_set = torchvision.datasets.CIFAR10(
             root='./data', train=True, download=True, transform=transform_train
         )
-        self.trainloader = DataLoader(
-            train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
+        test_set = torchvision.datasets.CIFAR10(
+                root='./data', train=False, download=True, transform=transform_test
         )
-
+        self.testloader = DataLoader(
+            test_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2
+        )
         if self.hparams.use_validation:
-            val_set = torchvision.datasets.CIFAR10(
-                root='./data', train=False, download=True, transform=transform_test)
-            # Simulate validation split from test set if needed (e.g., 5k val, 5k test)
+            train_size = 55000
+            val_size = 5000
+            train_set, val_set = random_split(full_train_set, [train_size, val_size])
+            self.trainloader = DataLoader(
+                train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
+            )
             self.valloader = DataLoader(
-                torch.utils.data.Subset(val_set, range(5000)),
-                batch_size=self.hparams.batch_size, shuffle=False, num_workers=2)
-            self.testloader = DataLoader(
-                torch.utils.data.Subset(val_set, range(5000, 10000)),
-                batch_size=self.hparams.batch_size, shuffle=False, num_workers=2)
+                val_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2
+            )
         else:
-            test_set = torchvision.datasets.CIFAR10(
-                root='./data', train=False, download=True, transform=transform_test)
-            self.testloader = DataLoader(
-                test_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2)
+            self.trainloader = DataLoader(
+                full_train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
+            )
 
-        # === Optimizer Setup ===
+    def set_optimizer(self):
         if self.hparams.finetune:
             self.optimizer = optim.Adam([
                 {"params": filter(lambda p: p.requires_grad, self.encoder.parameters()), "lr": self.hparams.lr_encoder},
@@ -101,15 +104,6 @@ class LinearEval(nn.Module):
             ])
         else:
             self.optimizer = optim.Adam(self.classifier.parameters(), lr=self.hparams.lr)
-
-        self.scheduler = torch.optim.lr_scheduler.StepLR(
-            self.optimizer,
-            step_size=self.hparams.step_size,
-            gamma=self.hparams.scheduler_gamma
-        )
-        self.best_model_saved = False
-        self.min_epochs = 80
-
 
     def forward(self, x):
         if self.hparams.finetune:

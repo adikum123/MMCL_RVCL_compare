@@ -38,8 +38,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
 
     echo "Computing plots for robust radius..."
     python -u randomized_smoothing/compare_randomized_smoothing.py \
-        --dataset cifar-10 \
-        --positives_per_class 15 \
+        --num_images 200 \
         --finetune
 
 EOF
