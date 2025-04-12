@@ -14,6 +14,9 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import rocl.data_loader as data_loader
@@ -99,11 +102,24 @@ models = [
         "model": "cl info_nce"
     },
     {
-        "encoder_ckpt": "models/supervised/supervised_clean_bs_256_lr_0.001.pkl",
+        "encoder_ckpt": "models/supervised/supervised_cross_entropy_bs_256_lr_0.001.pkl",
         "load_classifier": False,
         "model": "supervised"
     }
 ]
+transform_test = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
+val_set = torchvision.datasets.CIFAR10(
+    root='./data', train=False, download=True, transform=transform_test
+)
+testloader = DataLoader(
+    torch.utils.data.Subset(val_set, range(5000, 10000)),
+    batch_size=args.batch_size,
+    shuffle=False,
+    num_workers=2
+)
 
 class CombinedModel(nn.Module):
     def __init__(self, encoder, eval_):
@@ -138,19 +154,32 @@ def update_results(
         "rs_label": rs_label
     })
 
+def get_test_set_accuracy(model):
+    total_correct, total_samples = 0, 0
+    for images, targets in testloader:
+        images, targets = images.to(device), targets.to(device)
+        logits = model(images)
+        predictions = torch.argmax(logits, dim=1)
+        correct = (predictions == targets).sum().item()
+        total_correct += correct
+        total_samples += targets.size(0)
+    return total_correct / total_samples
+
 for model in models:
     encoder = torch.load(model["encoder_ckpt"], map_location=device, weights_only=False)
     prefix = ""
     if args.relu_layer:
         prefix += "relu_"
     if model["load_classifier"]:
-        eval_ckpt = f"models/linear_evaluate/{prefix}linear_finetune_clean_{model['encoder_ckpt'].split('/')[-1].replace('finetune_', '')}"
+        eval_ckpt = f"models/linear_evaluate/{prefix}linear_{model['encoder_ckpt'].split('/')[-1]}"
         print(f"Loaded:\nencoder:{model['encoder_ckpt']}\nclassifier:{eval_ckpt}")
         classifier = torch.load(eval_ckpt, map_location=device, weights_only=False)
         model["base_classifier"] = CombinedModel(encoder=encoder, eval_=classifier)
     else:
         print(f"Loaded:\nencoder:{model['encoder_ckpt']}")
         model["base_classifier"] = encoder
+    model["test_accuracy"] = get_test_set_accuracy(model["base_classifier"])
+    print(f"Test accuracy for model {model['model']}: {model['test_accuracy']}")
 
 class_names = testdst.classes
 per_class_sampler = defaultdict(list)
@@ -194,6 +223,7 @@ for sigma in sigma_values:
                         image=image
                     )
 results = dict(results)
+results["models_info"] = [{"model": x["model"], "test_accuracy": x["test_accuracy"]} for x in models]
 output_file_name = "_".join([x["model"] for x in models])
 with open(f"rs_results/{file_name}.json", "w") as f:
     json.dump(results, f, indent=4)

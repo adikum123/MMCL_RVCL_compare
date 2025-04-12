@@ -48,6 +48,8 @@ parser.add_argument(
 )
 parser.add_argument("--step_size", default=30, type=int, help="scheduler step size")
 parser.add_argument("--scheduler_gamma", type=float, default=0.1)
+parser.add_argument("--loss_type", default="", help=["Select cross_entropy, nll, kl, hinge"])
+
 
 args = parser.parse_args()
 print_args(args)

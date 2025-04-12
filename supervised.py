@@ -16,6 +16,57 @@ import mmcl.utils as utils
 import rocl.data_loader as data_loader
 
 
+class MultiClassLoss(nn.Module):
+
+    def __init__(self, loss_type='cross_entropy', margin=1.0):
+        super(MultiClassLoss, self).__init__()
+        self.loss_type = loss_type.lower()
+        self.margin = margin
+
+        if self.loss_type == 'cross_entropy':
+            self.loss_fn = nn.CrossEntropyLoss()
+        elif self.loss_type == 'nll':
+            self.loss_fn = nn.NLLLoss()
+        elif self.loss_type == 'kl':
+            self.loss_fn = nn.KLDivLoss(reduction='batchmean')
+        elif self.loss_type == 'hinge':
+            self.loss_fn = None  # we'll implement hinge manually
+        else:
+            raise ValueError(f"Unsupported loss type: {loss_type}")
+
+    def forward(self, logits, targets):
+        """
+        logits: raw model outputs (before softmax), shape (batch_size, num_classes)
+        targets:
+            - For CE/NLL: LongTensor of shape (batch_size,)
+            - For KL: one-hot or soft targets of shape (batch_size, num_classes)
+        """
+        if self.loss_type == 'cross_entropy':
+            return self.loss_fn(logits, targets)
+
+        elif self.loss_type == 'nll':
+            log_probs = F.log_softmax(logits, dim=1)
+            return self.loss_fn(log_probs, targets)
+
+        elif self.loss_type == 'kl':
+            log_probs = F.log_softmax(logits, dim=1)
+            # targets must be soft or one-hot (float)
+            if targets.dtype != torch.float:
+                targets = F.one_hot(targets, num_classes=logits.shape[1]).float()
+            return self.loss_fn(log_probs, targets)
+
+        elif self.loss_type == 'hinge':
+            # Convert targets to one-hot encoding
+            target_one_hot = F.one_hot(targets, num_classes=logits.shape[1]).float()
+            correct_scores = torch.sum(logits * target_one_hot, dim=1, keepdim=True)
+            margins = self.margin + logits - correct_scores
+            margins = torch.clamp(margins, min=0)
+            margins = margins * (1 - target_one_hot)  # zero out the correct class
+            loss = torch.sum(margins) / logits.size(0)
+            return loss
+
+
+
 class SupervisedModel(nn.Module):
 
     def __init__(self, hparams, device):
@@ -24,7 +75,7 @@ class SupervisedModel(nn.Module):
         self.device = device
         self.set_classifier()
         self.set_data_loader()
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = MultiClassLoss(loss_type=self.hparams.loss_type)
         self.optimizer = optim.Adam(
             self.model.parameters(), lr=self.hparams.lr
         )
@@ -106,7 +157,7 @@ class SupervisedModel(nn.Module):
 
     def get_model_save_name(self):
         prefix = "relu_" if self.hparams.relu_layer else ""
-        return f"{prefix}supervised_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
+        return f"{prefix}supervised_{self.hparams.loss_type}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
 
     def get_total_images_and_targets(self, ori_image, trans1, trans2, targets):
         if self.hparams.trans:
