@@ -43,19 +43,16 @@ class MultiClassLoss(nn.Module):
         """
         if self.loss_type == 'cross_entropy':
             return self.loss_fn(logits, targets)
-
-        elif self.loss_type == 'nll':
+        if self.loss_type == 'nll':
             log_probs = F.log_softmax(logits, dim=1)
             return self.loss_fn(log_probs, targets)
-
-        elif self.loss_type == 'kl':
+        if self.loss_type == 'kl':
             log_probs = F.log_softmax(logits, dim=1)
             # targets must be soft or one-hot (float)
             if targets.dtype != torch.float:
                 targets = F.one_hot(targets, num_classes=logits.shape[1]).float()
             return self.loss_fn(log_probs, targets)
-
-        elif self.loss_type == 'hinge':
+        if self.loss_type == 'hinge':
             # Convert targets to one-hot encoding
             target_one_hot = F.one_hot(targets, num_classes=logits.shape[1]).float()
             correct_scores = torch.sum(logits * target_one_hot, dim=1, keepdim=True)
