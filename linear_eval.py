@@ -207,7 +207,24 @@ class LinearEval(nn.Module):
                 "epoch": epoch + 1,
                 "lr": self.get_lr(),
             }
-
+        # Plot and save the training and validation loss
+        save_dir = "plots/linear_evaluate"
+        os.makedirs(save_dir, exist_ok=True)
+        save_path = os.path.join(
+            save_dir, f"{self.get_model_save_name()}.png"
+        )
+        plt.figure(figsize=(10, 6))
+        plt.plot(range(1, len(train_losses) + 1), train_losses, label="Training Loss")
+        if self.hparams.use_validation:
+            plt.plot(range(1, len(val_losses) + 1), val_losses, label="Validation Loss")
+        plt.title("Training and Validation Loss")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(save_path)
+        plt.close()
+        print(f"\nLoss plot saved to {save_path}")
         # Load best saved model as the classifier
         if self.hparams.use_validation:
             self.classifier = torch.load(os.path.join("models/linear_evaluate", self.get_model_save_name()), map_location=self.device)

@@ -7,6 +7,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import torchvision
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import mmcl.utils as utils
@@ -19,6 +22,21 @@ class SupervisedModel(nn.Module):
         super(SupervisedModel, self).__init__()
         self.hparams = hparams
         self.device = device
+        self.set_classifier()
+        self.set_data_loader()
+        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = optim.Adam(
+            self.model.parameters(), lr=self.hparams.lr
+        )
+        self.scheduler = optim.lr_scheduler.StepLR(
+            self.optimizer,
+            step_size=self.hparams.step_size,
+            gamma=self.hparams.scheduler_gamma,
+        )
+        self.best_model_saved = False
+        self.min_epochs = 80
+
+    def set_classifier(self):
         if self.hparams.relu_layer:
             self.model = nn.Sequential(
                 nn.ZeroPad2d((1, 2, 1, 2)),
@@ -45,31 +63,40 @@ class SupervisedModel(nn.Module):
                 nn.ReLU(),
                 nn.Linear(100, 10)
             ).to(self.device)
+
+    def set_data_loader(self):
+        transform_train = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        ])
+        transform_test = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        ])
+
+        train_set = torchvision.datasets.CIFAR10(
+            root='./data', train=True, download=True, transform=transform_train
+        )
+        self.trainloader = DataLoader(
+            train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
+        )
         if self.hparams.use_validation:
-            (
-                self.trainloader,
-                self.traindst,
-                self.valloader,
-                self.valdst,
-                self.testloader,
-                self.testdst,
-            ) = data_loader.get_train_val_test_dataset(self.hparams)
+            val_set = torchvision.datasets.CIFAR10(
+                root='./data', train=False, download=True, transform=transform_test)
+            # Simulate validation split from test set if needed (e.g., 5k val, 5k test)
+            self.valloader = DataLoader(
+                torch.utils.data.Subset(val_set, range(5000)),
+                batch_size=self.hparams.batch_size, shuffle=False, num_workers=2)
+            self.testloader = DataLoader(
+                torch.utils.data.Subset(val_set, range(5000, 10000)),
+                batch_size=self.hparams.batch_size, shuffle=False, num_workers=2)
         else:
-            self.trainloader, self.traindst, self.testloader, self.testdst = (
-                data_loader.get_dataset(self.hparams)
-            )
-        print('Dataset loaded')
-        self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(
-            self.model.parameters(), lr=self.hparams.lr
-        )
-        self.scheduler = optim.lr_scheduler.StepLR(
-            self.optimizer,
-            step_size=self.hparams.step_size,
-            gamma=self.hparams.scheduler_gamma,
-        )
-        self.best_model_saved = False
-        self.min_epochs = 80
+            test_set = torchvision.datasets.CIFAR10(
+                root='./data', train=False, download=True, transform=transform_test)
+            self.testloader = DataLoader(
+                test_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2)
 
     def forward(self, x):
         return self.model(x)
@@ -79,8 +106,7 @@ class SupervisedModel(nn.Module):
 
     def get_model_save_name(self):
         prefix = "relu_" if self.hparams.relu_layer else ""
-        postfix = "trans_" if self.hparams.trans else "clean_"
-        return f"{prefix}supervised_{postfix}bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
+        return f"{prefix}supervised_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
 
     def get_total_images_and_targets(self, ori_image, trans1, trans2, targets):
         if self.hparams.trans:
@@ -109,13 +135,8 @@ class SupervisedModel(nn.Module):
             self.model.train()  # Set the model to training mode
             total_loss, total_samples = 0.0, 0
             train_bar = tqdm(self.trainloader, desc=f"Train Epoch {epoch + 1}")
-            for iii, (ori_image, trans1, trans2, target) in enumerate(train_bar):
-                images, targets = self.get_total_images_and_targets(
-                    ori_image,
-                    trans1,
-                    trans2,
-                    target,
-                )
+            for iii, (images, targets) in enumerate(train_bar):
+                images, targets = images.to(self.device), targets.to(self.device)
                 logits = self.forward(x=images)
                 # Backpropagation and optimizer step
                 loss = self.criterion(logits, targets)
@@ -137,13 +158,8 @@ class SupervisedModel(nn.Module):
                 self.model.eval()  # Set the model to evaluation mode
                 total_loss, total_samples = 0.0, 0
                 with torch.no_grad():
-                    for iii, (ori_image, trans1, trans2, target) in enumerate(val_bar):
-                        images, targets = self.get_total_images_and_targets(
-                            ori_image,
-                            trans1,
-                            trans2,
-                            target,
-                        )
+                    for iii, (images, targets) in enumerate(val_bar):
+                        images, targets = images.to(self.device), targets.to(self.device)
                         logits = self.forward(x=images)
                         loss = self.criterion(logits, targets)
                         batch_size = images.size(0)
