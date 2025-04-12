@@ -82,8 +82,10 @@ class LinearEval(nn.Module):
             test_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2
         )
         if self.hparams.use_validation:
-            train_size = 55000
-            val_size = 5000
+            total_size = len(full_train_set)
+            val_size = 2000
+            train_size = total_size - val_size
+            train_set, val_set = random_split(full_train_set, [train_size, val_size])
             train_set, val_set = random_split(full_train_set, [train_size, val_size])
             self.trainloader = DataLoader(
                 train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
