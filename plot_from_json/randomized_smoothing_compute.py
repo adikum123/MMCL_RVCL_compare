@@ -27,7 +27,7 @@ for model in model_names:
         for curr_radius in certified_radius_choices:
             certified_count = sum(
                 1 for x in all_values
-                if x["radius"] >= curr_radius and x["true_label"] == x["rs_label"]
+                if x["radius"] >= curr_radius and x["true_label"] == x["rs_label"] == x["predicted_label"]
             )
             unchanged_count = sum(
                 1 for x in all_values
@@ -121,7 +121,9 @@ def plot_one_per_sigma(data):
             total = len(records)
             y_vals = []
             for r in x_vals:
-                count = sum(1 for rec in records if rec["radius"] >= r and rec["true_label"] == rec["rs_label"])
+                count = sum(
+                    1 for rec in records if rec["radius"] >= r and rec["true_label"] == rec["rs_label"] == rec["predicted_label"]
+                )
                 y_vals.append(count / total if total > 0 else 0)
             # Construct legend label with test accuracy
             test_acc = model_to_accuracy.get(model, "N/A")

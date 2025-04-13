@@ -31,12 +31,11 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     python -u train_models/train_resnet_unsupervised.py \
         --resnet_unsupervised_ckpt models/resnet_pretrained_models/resnet50_imagenet_bs2k_epochs600.pth.tar \
         --dataset cifar-10 \
-        --batch_size 512 \
+        --batch_size 256 \
         --num_iters 200 \
         --lr 1e-3 \
         --use_validation \
         --scheduler_gamma 0.5 \
-        --finetune \
         --step_size 25
 
 EOF

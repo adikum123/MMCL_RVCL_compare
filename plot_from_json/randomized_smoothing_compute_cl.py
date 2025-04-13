@@ -26,7 +26,7 @@ for model in model_names:
         for curr_radius in certified_radius_choices:
             certified_count = sum(
                 1 for x in all_values
-                if x["radius"] > curr_radius and x["true_label"] == x["rs_label"]
+                if x["radius"] > curr_radius and x["true_label"] == x["rs_label"] == rs["predicted_label"]
             )
             unchanged_count = sum(
                 1 for x in all_values
@@ -90,46 +90,6 @@ for key, value in per_sigma_radius_updated.items():
     row["best_unchanged_model"] = ", ".join(value["best_unchanged_percentage_models"])
     rows.append(row)
 
-df = pd.DataFrame(rows)
-df = df.sort_values(by=["sigma", "radius"]).reset_index(drop=True)
-
-excel_filename = f"../rs_results/{file_name}.xlsx"
-df.to_excel(excel_filename, index=False)
-
-# Load workbook and apply per-row bold formatting
-wb = load_workbook(excel_filename)
-ws = wb.active
-
-# Get header names to identify columns for certified accuracy (_cia) and unchanged percentage (_up)
-header_names = [cell.value for cell in ws[1]]
-cia_indices = [i+1 for i, name in enumerate(header_names) if isinstance(name, str) and name.endswith("_cia")]
-up_indices = [i+1 for i, name in enumerate(header_names) if isinstance(name, str) and name.endswith("_up")]
-
-# Iterate over each data row
-for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
-    current_row = row[0].row  # get current row number
-    # Process certified accuracy columns
-    cia_values = [(ws.cell(row=current_row, column=col).value, col) for col in cia_indices]
-    # Filter numeric values and determine maximum for certified accuracy
-    cia_numeric = [value for value, _ in cia_values if isinstance(value, (int, float))]
-    if cia_numeric:
-        max_cia = max(cia_numeric)
-        for value, col in cia_values:
-            if isinstance(value, (int, float)) and value == max_cia:
-                ws.cell(row=current_row, column=col).font = Font(bold=True)
-    # Process unchanged percentage columns
-    up_values = [(ws.cell(row=current_row, column=col).value, col) for col in up_indices]
-    up_numeric = [value for value, _ in up_values if isinstance(value, (int, float))]
-    if up_numeric:
-        max_up = max(up_numeric)
-        for value, col in up_values:
-            if isinstance(value, (int, float)) and value == max_up:
-                ws.cell(row=current_row, column=col).font = Font(bold=True)
-
-wb.save(excel_filename)
-print(f"Excel file with per-row formatting saved to: {os.path.abspath(excel_filename)}")
-
-
 def plot_one_per_sigma(data):
     sigma_set = set()
     for model in model_names:
@@ -155,7 +115,9 @@ def plot_one_per_sigma(data):
             total = len(records)
             y_vals = []
             for r in x_vals:
-                count = sum(1 for rec in records if rec["radius"] >= r and rec["true_label"] == rec["rs_label"])
+                count = sum(
+                    1 for rec in records if rec["radius"] >= r and rec["true_label"] == rec["rs_label"] == rec["predicted_label"]
+                )
                 y_vals.append(count / total if total > 0 else 0)
             plt.plot(x_vals, y_vals, label=model)
         plt.xlabel("Radius Threshold")
