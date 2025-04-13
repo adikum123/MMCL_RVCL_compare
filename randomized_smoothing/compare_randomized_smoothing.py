@@ -173,5 +173,5 @@ results["models_info"] = [{"model": x["model"], "test_accuracy": x["test_accurac
 output_file_name = "-".join([x["model"].replace(" ", "_") for x in models])
 output_dir = os.path.join("..", "rs_results")
 os.makedirs(output_dir, exist_ok=True)
-with open(os.path.join(output_dir, f"{output_file_name}.json")., "w") as f:
+with open(os.path.join(output_dir, f"{output_file_name}.json"), "w") as f:
     json.dump(results, f, indent=4)
