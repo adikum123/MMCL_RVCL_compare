@@ -46,21 +46,14 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 models = [
     {
-        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_barlow_bs_512_lr_0.001.pkl",
-        "model": "barlow"
+        "encoder_ckpt": "models/supervised/supervised_cross_entropy_bs_256_lr_0.001.pkl",
+        "model": "supervised cross entropy"
     },
     {
-        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_cosine_bs_512_lr_0.001.pkl",
-        "model": "cosine"
+        "encoder_ckpt": "models/supervised/supervised_nll_bs_256_lr_0.001.pkl",
+        "model": "supervised negative log likelihood"
     },
-    {
-        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_info_nce_bs_512_lr_0.001.pkl",
-        "model": "info_nce"
-    },
-    {
-        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_nce_bs_512_lr_0.001.pkl",
-        "model": "nce"
-    }
+
 ]
 
 class CombinedModel(nn.Module):

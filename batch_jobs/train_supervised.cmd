@@ -34,7 +34,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --lr 1e-3 \
         --use_validation \
         --scheduler_gamma 0.5 \
-        --loss_type kl \
+        --loss_type hinge \
         --step_size 25
 
 EOF
