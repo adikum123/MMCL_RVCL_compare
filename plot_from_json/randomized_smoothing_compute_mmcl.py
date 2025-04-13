@@ -8,13 +8,14 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Font
 
-file_name = "rs_results_mmcl"
+file_name = "mmcl_rbf_bs_32-mmcl_rbf_bs_256-mmcl_rbf_bs_512-mmcl_rbf_bs_1024"
 with open(f"../rs_results/{file_name}.json", "r") as f:
     data = json.load(f)
 
 sigma_values = [0.25, 0.5, 1]
 certified_radius_choices = [0, 0.5, 1, 1.5, 2, 2.5, 3]
-model_names = list(data.keys())
+models_info = data["models_info"]
+model_names = [x["model"] for x in models_info]
 per_model = defaultdict(list)
 per_sigma_radius = defaultdict(list)
 
@@ -91,13 +92,17 @@ for key, value in per_sigma_radius_updated.items():
     rows.append(row)
 
 def plot_one_per_sigma(data):
+    # Create a mapping from model name to test accuracy
+    model_to_accuracy = {m["model"]: m["test_accuracy"] for m in models_info}
+
     sigma_set = set()
     for model in model_names:
         for rec in data[model]:
             sigma_set.add(rec["sigma"])
     sigma_values = sorted(list(sigma_set))
+
     for sigma in sigma_values:
-        plt.figure(figsize=(8,6))
+        plt.figure(figsize=(8, 6))
         max_threshold = 0
         model_records = {}
         for model in model_names:
@@ -109,6 +114,7 @@ def plot_one_per_sigma(data):
                     max_threshold = max_val
         if max_threshold == 0:
             max_threshold = 3.5
+
         x_vals = np.linspace(0, max_threshold, 200)
         for model in model_names:
             records = model_records[model]
@@ -117,15 +123,21 @@ def plot_one_per_sigma(data):
             for r in x_vals:
                 count = sum(1 for rec in records if rec["radius"] >= r and rec["true_label"] == rec["rs_label"])
                 y_vals.append(count / total if total > 0 else 0)
-            plt.plot(x_vals, y_vals, label=model)
+            # Construct legend label with test accuracy
+            test_acc = model_to_accuracy.get(model, "N/A")
+            label = f"{model} (acc: {100*test_acc:.2f}%)" if isinstance(test_acc, float) else f"{model} (acc: N/A)"
+            plt.plot(x_vals, y_vals, label=label)
+
         plt.xlabel("Radius Threshold")
         plt.ylabel("Certified Accuracy")
         plt.title(f"Certified Accuracy vs Radius (sigma = {sigma})")
         plt.legend()
         plt.grid(True)
+        output_dir = os.path.join("..", "plots", "randomized_smoothing", "mmcl")
+        os.makedirs(output_dir, exist_ok=True)
         output_filename = f"per_sigma_comparison_sigma_{sigma}_mmcl.png"
         plt.tight_layout()
-        plt.savefig(os.path.join("../plots/randomized_smoothing/mmcl", output_filename))
+        plt.savefig(os.path.join(output_dir, output_filename))
         plt.close()
         print(f"Plot saved as: {output_filename}")
 

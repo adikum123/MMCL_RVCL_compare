@@ -21005,7 +21005,7 @@
             "rs_label": 6
         }
     ],
-    "supervised": [
+    "supervised cross entropy": [
         {
             "sigma": 0.12,
             "radius": 0.5216128438439318,
@@ -28021,7 +28021,7 @@
             "test_accuracy": 0.812
         },
         {
-            "model": "supervised",
+            "model": "supervised cross entropy",
             "test_accuracy": 0.8084
         }
     ]
