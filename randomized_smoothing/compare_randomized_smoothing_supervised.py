@@ -46,14 +46,17 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 models = [
     {
-        "encoder_ckpt": "models/supervised/supervised_cross_entropy_bs_256_lr_0.001.pkl",
+        "model_ckpt": "models/supervised/supervised_cross_entropy_bs_256_lr_0.001.pkl",
         "model": "supervised cross entropy"
     },
     {
-        "encoder_ckpt": "models/supervised/supervised_nll_bs_256_lr_0.001.pkl",
+        "model_ckpt": "models/supervised/supervised_nll_bs_256_lr_0.001.pkl",
         "model": "supervised negative log likelihood"
     },
-
+    {
+        "model_ckpt": "models/supervised/supervised_kl_bs_256_lr_0.001.pkl",
+        "model": "supervised kl divergence"
+    }
 ]
 
 class CombinedModel(nn.Module):
@@ -91,12 +94,12 @@ def update_results(
     })
 
 for model in models:
-    encoder = torch.load(model["encoder_ckpt"], map_location=device, weights_only=False)
+    encoder = torch.load(model["model_ckpt"], map_location=device, weights_only=False)
     prefix = ""
     if args.relu_layer:
         prefix += "relu_"
-    eval_ckpt = f"models/linear_evaluate/{prefix}linear_{model['encoder_ckpt'].split('/')[-1]}"
-    print(f"Loaded:\nencoder:{model['encoder_ckpt']}\nclassifier:{eval_ckpt}")
+    eval_ckpt = f"models/linear_evaluate/{prefix}linear_{model['model_ckpt'].split('/')[-1]}"
+    print(f"Loaded:\nencoder:{model['model_ckpt']}\nclassifier:{eval_ckpt}")
     classifier = torch.load(eval_ckpt, map_location=device, weights_only=False)
     model["base_classifier"] = CombinedModel(encoder=encoder, eval_=classifier)
 
