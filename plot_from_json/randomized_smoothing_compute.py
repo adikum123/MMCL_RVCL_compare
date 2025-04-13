@@ -8,13 +8,14 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Font
 
-file_name = "mmcl_finetune_mmcl_cnn_4layer_b_C_1.0_bs_512_lr_0.0001_rvcl_cifar10_cnn_4layer_b_adv8_regular_cl_finetune_regular_cl_info_nce_bs_512_lr_0.001_supervised_supervised_clean_bs_256_lr_0.001"
+file_name = "mmcl_rbf-adversarial_cl-cl_info_nce-supervised_cross_entropy"
 with open(f"../rs_results/{file_name}.json", "r") as f:
     data = json.load(f)
 
 sigma_values = [0.25, 0.5, 1]
 certified_radius_choices = [0, 0.5, 1, 1.5, 2, 2.5, 3]
-model_names = ["mmcl", "rvcl", "regular_cl", "supervised"]
+models_info = data["models_info"]
+model_names = [x["model"] for x in models_info]
 per_model = defaultdict(list)
 per_sigma_radius = defaultdict(list)
 
@@ -90,54 +91,18 @@ for key, value in per_sigma_radius_updated.items():
     row["best_unchanged_model"] = ", ".join(value["best_unchanged_percentage_models"])
     rows.append(row)
 
-df = pd.DataFrame(rows)
-df = df.sort_values(by=["sigma", "radius"]).reset_index(drop=True)
-
-excel_filename = f"../rs_results/{file_name}.xlsx"
-df.to_excel(excel_filename, index=False)
-
-# Load workbook and apply per-row bold formatting
-wb = load_workbook(excel_filename)
-ws = wb.active
-
-# Get header names to identify columns for certified accuracy (_cia) and unchanged percentage (_up)
-header_names = [cell.value for cell in ws[1]]
-cia_indices = [i+1 for i, name in enumerate(header_names) if isinstance(name, str) and name.endswith("_cia")]
-up_indices = [i+1 for i, name in enumerate(header_names) if isinstance(name, str) and name.endswith("_up")]
-
-# Iterate over each data row
-for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
-    current_row = row[0].row  # get current row number
-    # Process certified accuracy columns
-    cia_values = [(ws.cell(row=current_row, column=col).value, col) for col in cia_indices]
-    # Filter numeric values and determine maximum for certified accuracy
-    cia_numeric = [value for value, _ in cia_values if isinstance(value, (int, float))]
-    if cia_numeric:
-        max_cia = max(cia_numeric)
-        for value, col in cia_values:
-            if isinstance(value, (int, float)) and value == max_cia:
-                ws.cell(row=current_row, column=col).font = Font(bold=True)
-    # Process unchanged percentage columns
-    up_values = [(ws.cell(row=current_row, column=col).value, col) for col in up_indices]
-    up_numeric = [value for value, _ in up_values if isinstance(value, (int, float))]
-    if up_numeric:
-        max_up = max(up_numeric)
-        for value, col in up_values:
-            if isinstance(value, (int, float)) and value == max_up:
-                ws.cell(row=current_row, column=col).font = Font(bold=True)
-
-wb.save(excel_filename)
-print(f"Excel file with per-row formatting saved to: {os.path.abspath(excel_filename)}")
-
-
 def plot_one_per_sigma(data):
+    # Create a mapping from model name to test accuracy
+    model_to_accuracy = {m["model"]: m["test_accuracy"] for m in models_info}
+
     sigma_set = set()
     for model in model_names:
         for rec in data[model]:
             sigma_set.add(rec["sigma"])
     sigma_values = sorted(list(sigma_set))
+
     for sigma in sigma_values:
-        plt.figure(figsize=(8,6))
+        plt.figure(figsize=(8, 6))
         max_threshold = 0
         model_records = {}
         for model in model_names:
@@ -149,6 +114,7 @@ def plot_one_per_sigma(data):
                     max_threshold = max_val
         if max_threshold == 0:
             max_threshold = 3.5
+
         x_vals = np.linspace(0, max_threshold, 200)
         for model in model_names:
             records = model_records[model]
@@ -157,13 +123,17 @@ def plot_one_per_sigma(data):
             for r in x_vals:
                 count = sum(1 for rec in records if rec["radius"] >= r and rec["true_label"] == rec["rs_label"])
                 y_vals.append(count / total if total > 0 else 0)
-            plt.plot(x_vals, y_vals, label=model)
+            # Construct legend label with test accuracy
+            test_acc = model_to_accuracy.get(model, "N/A")
+            label = f"{model} (acc: {100*test_acc:.2f}%)" if isinstance(test_acc, float) else f"{model} (acc: N/A)"
+            plt.plot(x_vals, y_vals, label=label)
+
         plt.xlabel("Radius Threshold")
         plt.ylabel("Certified Accuracy")
         plt.title(f"Certified Accuracy vs Radius (sigma = {sigma})")
         plt.legend()
         plt.grid(True)
-        output_dir = output_dir = os.path.join("..", "plots", "randomized_smoothing", "cnn_4_layer_b")
+        output_dir = os.path.join("..", "plots", "randomized_smoothing", "cnn_4_layer_b")
         os.makedirs(output_dir, exist_ok=True)
         output_filename = f"per_sigma_comparison_sigma_{sigma}_cnn_4_layer_b.png"
         plt.tight_layout()

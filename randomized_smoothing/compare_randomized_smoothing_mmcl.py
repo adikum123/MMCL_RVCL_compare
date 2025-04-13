@@ -11,6 +11,9 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from randomized_smoothing.core import Smooth
@@ -39,7 +42,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 models = [
     {
-        "encoder_ckpt": "models/mmcl/rbf/finetune_cnn_4layer_b_C_1_rbf_auto_bs_32_lr_0.0001.pkl",
+        "encoder_ckpt": "models/mmcl/rbf/finetune_mmcl_cnn_4layer_b_C_1.0_bs_32_lr_0.0001.pkl",
         "model": "mmcl rbf bs 32"
     },
     {
@@ -59,14 +62,11 @@ transform_test = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 ])
-val_set = torchvision.datasets.CIFAR10(
-    root="./data", train=False, download=True, transform=transform_test
+test_set = torchvision.datasets.CIFAR10(
+        root='./data', train=False, download=True, transform=transform_test
 )
 testloader = DataLoader(
-    torch.utils.data.Subset(val_set, range(5000, 10000)),
-    batch_size=args.batch_size,
-    shuffle=False,
-    num_workers=2
+    test_set, batch_size=args.batch_size, shuffle=False, num_workers=2
 )
 all_test_images = []
 # randomly sample images from the test set
