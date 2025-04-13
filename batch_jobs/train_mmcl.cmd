@@ -30,8 +30,8 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     python train_models/train_mmcl.py \
         --model cnn_4layer_b \
         --dataset cifar-10 \
-        --batch_size 2048 \
-        --kernel_type rbf \
+        --batch_size 512 \
+        --kernel_type linear \
         --num_iters 200 \
         --lr 1e-4 \
         --use_validation \
