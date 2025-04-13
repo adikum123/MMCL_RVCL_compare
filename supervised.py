@@ -158,21 +158,6 @@ class SupervisedModel(nn.Module):
         prefix = "relu_" if self.hparams.relu_layer else ""
         return f"{prefix}supervised_{self.hparams.loss_type}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
 
-    def get_total_images_and_targets(self, ori_image, trans1, trans2, targets):
-        if self.hparams.trans:
-            self.ori_image, trans1, trans2, targets = (
-                ori_image.to(self.device),
-                trans1.to(self.device),
-                trans2.to(self.device),
-                targets.to(self.device),
-            )
-            return torch.cat([ori_image, trans1, trans2], dim=0), torch.cat([targets, targets, targets], dim=0)
-        ori_image, targets = (
-            ori_image.to(self.device),
-            targets.to(self.device),
-        )
-        return ori_image, targets
-
     def train(self):
         best_val_loss = float("inf")
         patience_counter = 0
