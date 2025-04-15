@@ -167,28 +167,29 @@ class ResnetUnsupervised(nn.Module):
             )
 
     def set_optimizer(self):
-        if "finetune" in vars(self.hparams):
-            assert "finetune_num_layers" in vars(self.hparams) and self.hparams.finetune_num_layers in [1, 2], "Number of finetune layers not provided"
         lr = self.hparams.lr
         params_to_optimize = []
         if self.hparams.finetune:
             finetune_num_layers = self.hparams.finetune_num_layers
-            if finetune_num_layers >= 1:
-                params_to_optimize += list(self.encoder.projection.parameters())
-            if finetune_num_layers >= 2:
-                params_to_optimize += list(self.encoder.convnet.layer4[-1].parameters())
             for param in self.encoder.parameters():
                 param.requires_grad = False
-            for param in params_to_optimize:
-                param.requires_grad = True
+            if finetune_num_layers == 1:
+                params_to_optimize += list(self.encoder.projection.parameters())
+                for param in self.encoder.projection.parameters():
+                    param.requires_grad = True
+            else:
+                layer4 = list(self.encoder.convnet.layer4)
+                num_layers_to_finetune = finetune_num_layers - 1
+                for i in range(1, num_layers_to_finetune + 1):
+                    params = list(layer4[-i].parameters())
+                    for param in params:
+                        param.requires_grad = True
+                    params_to_optimize += params
         else:
             for param in self.encoder.parameters():
                 param.requires_grad = False
         params_to_optimize += list(self.classifier.parameters())
-        self.optimizer = torch.optim.Adam(
-            params_to_optimize,
-            lr=lr
-        )
+        self.optimizer = torch.optim.Adam(params_to_optimize, lr=lr)
 
     def set_classifier(self):
         if self.hparams.relu_layer:
