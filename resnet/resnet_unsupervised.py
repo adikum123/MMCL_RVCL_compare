@@ -116,7 +116,7 @@ class ResnetUnsupervised(nn.Module):
         super(ResnetUnsupervised, self).__init__()
         self.hparams = hparams
         self.device = device
-        self.encoder = SimCLRModel()
+        self.encoder = SimCLRModel().to(device)
         self.set_classifier()
         self.set_data_loader()
         self.criterion = nn.CrossEntropyLoss()
