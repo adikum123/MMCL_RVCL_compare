@@ -168,7 +168,7 @@ class ResnetUnsupervised(nn.Module):
 
     def set_optimizer(self):
         if "finetune" in vars(self.hparams):
-            assert "finetune_num_layers" in vars(self.hparams), "Number of finetune layers not provided"
+            assert "finetune_num_layers" in vars(self.hparams) and self.hparams.finetune_num_layers in [1, 2], "Number of finetune layers not provided"
         lr = self.hparams.lr
         params_to_optimize = []
         if self.hparams.finetune:
@@ -176,23 +176,16 @@ class ResnetUnsupervised(nn.Module):
             if finetune_num_layers >= 1:
                 params_to_optimize += list(self.encoder.projection.parameters())
             if finetune_num_layers >= 2:
-                if hasattr(self.encoder.convnet, 'layer4'):
-                    params_to_optimize += list(self.encoder.convnet.layer4.parameters())
-                else:
-                    print("[Warning] ConvNet does not have a 'layer4'. Skipping this layer.")
-            if finetune_num_layers >= 3:
-                if hasattr(self.encoder.convnet, 'layer3'):
-                    params_to_optimize += list(self.encoder.convnet.layer3.parameters())
-                else:
-                    print("[Warning] ConvNet does not have a 'layer3'. Skipping this layer.")
-            for name, param in self.encoder.named_parameters():
-                if param not in params_to_optimize:
-                    param.requires_grad = False
+                params_to_optimize += list(self.encoder.convnet.layer4[-1].parameters())
+            for param in self.encoder.parameters():
+                param.requires_grad = False
+            for param in params_to_optimize:
+                param.requires_grad = True
         else:
             for param in self.encoder.parameters():
                 param.requires_grad = False
         params_to_optimize += list(self.classifier.parameters())
-        self.optimizer = optim.Adam(
+        self.optimizer = torch.optim.Adam(
             params_to_optimize,
             lr=lr
         )
