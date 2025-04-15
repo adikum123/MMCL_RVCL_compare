@@ -21,9 +21,9 @@ class SimCLRModel(nn.Module):
 
     def __init__(
         self,
-        checkpoint_path,
         base_model='resnet50',
         projection_dim=128,
+        checkpoint_path="models/resnet_pretrained_models/resnet50_cifar10_bs1024_epochs1000.pth.tar"
     ):
         super().__init__()
         self.checkpoint_path = checkpoint_path
@@ -53,6 +53,37 @@ class SimCLRModel(nn.Module):
         projections = self.projection(features)
         return projections
 
+    def load_checkpoint(self):
+        print(f"[Info] Loading checkpoint from {self.checkpoint_path}")
+        checkpoint = torch.load(self.checkpoint_path, map_location='cpu')
+        state_dict = checkpoint.get('state_dict', checkpoint)
+        new_state_dict = {}
+        for k, v in state_dict.items():
+            if k.startswith("module."):
+                k = k[7:]
+            if k.startswith("projection."):
+                parts = k.split('.')
+                if parts[1] == 'fc1':
+                    parts[1] = '0'
+                elif parts[1] == 'bn1':
+                    parts[1] = '1'
+                elif parts[1] == 'fc2':
+                    parts[1] = '3'
+                elif parts[1] == 'bn2':
+                    parts[1] = '4'
+                k = '.'.join(parts)
+            new_state_dict[k] = v
+        self.load_state_dict(new_state_dict, strict=False)
+        print("[Info] Checkpoint loaded successfully.")
+
+    def set_eval(self):
+        self.convnet.eval()
+        self.projection.eval()
+
+    def set_train(self):
+        self.convnet.train()
+        self.projection.train()
+
     def save_finetune(self, num_layers):
         state_dict = self.state_dict()
         new_state_dict = {}
@@ -70,12 +101,9 @@ class SimCLRModel(nn.Module):
                     parts[1] = "bn2"
                 new_key = ".".join(parts)
             new_state_dict[new_key] = state_dict[key]
-
         save_dir = os.path.join("models", "resnet_pretrained_models")
         os.makedirs(save_dir, exist_ok=True)
-        encoder_name = os.path.basename(self.checkpoint_path)
-        encoder_name = encoder_name[0: encoder_name.rindex(".")]
-        save_name = f"finetune_{num_layers}_{encoder_name}.pt"
+        save_name = f"finetune_{num_layers}_{os.path.basename(self.checkpoint_path)}"
         save_path = os.path.join(save_dir, save_name)
         torch.save({"state_dict": new_state_dict}, save_path)
         print(f"[Info] Finetuned model saved to: {save_path}")
@@ -88,7 +116,7 @@ class ResnetUnsupervised(nn.Module):
         super(ResnetUnsupervised, self).__init__()
         self.hparams = hparams
         self.device = device
-        self.encoder = SimCLRModel(checkpoint_path=self.hparams.resnet_unsupervised_ckpt).to(device)
+        self.encoder = SimCLRModel().to(device)
         self.set_classifier()
         self.set_data_loader()
         self.criterion = nn.CrossEntropyLoss()
@@ -99,7 +127,8 @@ class ResnetUnsupervised(nn.Module):
             gamma=self.hparams.scheduler_gamma,
         )
         self.best_model_saved = False
-        self.min_epochs = 50
+        self.min_epochs = 80
+
 
     def set_data_loader(self):
         transform_train = transforms.Compose([
@@ -138,29 +167,28 @@ class ResnetUnsupervised(nn.Module):
             )
 
     def set_optimizer(self):
+        if "finetune" in vars(self.hparams):
+            assert "finetune_num_layers" in vars(self.hparams) and self.hparams.finetune_num_layers in [1, 2], "Number of finetune layers not provided"
         lr = self.hparams.lr
         params_to_optimize = []
         if self.hparams.finetune:
             finetune_num_layers = self.hparams.finetune_num_layers
+            if finetune_num_layers >= 1:
+                params_to_optimize += list(self.encoder.projection.parameters())
+            if finetune_num_layers >= 2:
+                params_to_optimize += list(self.encoder.convnet.layer4[-1].parameters())
             for param in self.encoder.parameters():
                 param.requires_grad = False
-            if finetune_num_layers == 1:
-                params_to_optimize += list(self.encoder.projection.parameters())
-                for param in self.encoder.projection.parameters():
-                    param.requires_grad = True
-            else:
-                layer4 = list(self.encoder.convnet.layer4)
-                num_layers_to_finetune = finetune_num_layers - 1
-                for i in range(1, num_layers_to_finetune + 1):
-                    params = list(layer4[-i].parameters())
-                    for param in params:
-                        param.requires_grad = True
-                    params_to_optimize += params
+            for param in params_to_optimize:
+                param.requires_grad = True
         else:
             for param in self.encoder.parameters():
                 param.requires_grad = False
         params_to_optimize += list(self.classifier.parameters())
-        self.optimizer = torch.optim.Adam(params_to_optimize, lr=lr)
+        self.optimizer = torch.optim.Adam(
+            params_to_optimize,
+            lr=lr
+        )
 
     def set_classifier(self):
         if self.hparams.relu_layer:
@@ -186,6 +214,7 @@ class ResnetUnsupervised(nn.Module):
         best_val_loss = float("inf")
         patience_counter = 0
         max_patience = 5  # Number of epochs to wait before stopping
+
         train_losses = []
         val_losses = []
         for epoch in range(self.hparams.num_iters):
@@ -275,19 +304,25 @@ class ResnetUnsupervised(nn.Module):
 
         with torch.no_grad():  # No gradients required during evaluation
             for images, targets in test_bar:
+                # Move data to device
                 images, targets = images.to(self.device), targets.to(self.device)
+                # Forward pass
                 logits = self.forward(images)
                 loss = self.criterion(logits, targets)
+                # Predictions
                 predictions = torch.argmax(logits, dim=1)
                 correct = (predictions == targets).sum().item()
+                # Update metrics
                 total_correct += correct
                 total_num += targets.size(0)
                 total_loss += loss.item() * targets.size(0)
+                # Update progress bar
                 test_bar.set_description(
                     "Test: Loss: {:.4e}, Acc: {:.2f}%".format(
                         total_loss / total_num, 100 * total_correct / total_num
                     )
                 )
+        # Final metrics
         metrics = {
             "accuracy": total_correct / total_num,
             "loss": total_loss / total_num,
@@ -299,17 +334,13 @@ class ResnetUnsupervised(nn.Module):
 
     def get_model_save_name(self):
         encoder_name = self.hparams.resnet_unsupervised_ckpt.split("/")[-1]
-        encoder_name = encoder_name[0: encoder_name.rindex(".")]
         prefix = "relu_" if self.hparams.relu_layer else ""
         postfix = f"finetune_{self.hparams.finetune_num_layers}_" if self.hparams.finetune else ""
-        return f"{prefix}linear_{postfix}{encoder_name}.pt"
+        return f"{prefix}linear_{postfix}{encoder_name}"
 
     def save(self):
         if not self.best_model_saved:
             save_dir = "models/linear_evaluate"
             os.makedirs(save_dir, exist_ok=True)
             save_path = os.path.join(save_dir, f"{self.get_model_save_name()}")
-            if not save_path.endswith(".pt"):
-                save_path += ".pt"
             torch.save(self.classifier.state_dict(), save_path)
-            print(f"[Info] Classifier saved to: {save_path}")
