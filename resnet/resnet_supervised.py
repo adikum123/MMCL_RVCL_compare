@@ -37,16 +37,8 @@ class ResnetSupervised(nn.Module):
         self.min_epochs = 80
 
     def set_model(self):
-        if self.hparams.resnet_supervised_ckpt == "":
-            self.model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1).to(self.device)
-            self.model.fc = torch.nn.Linear(2048, 10).to(self.device)
-        else:
-            # Load checkpoint (ensure it's moved to the correct device)
-            self.model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
-            self.model.fc = torch.nn.Linear(2048, 10)
-            checkpoint = torch.load(self.hparams.resnet_supervised_ckpt, map_location=self.device)
-            self.model.load_state_dict(checkpoint)
-            self.model.to(self.device)  # Move model to device after loading
+        self.model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1).to(self.device)
+        self.model.fc = torch.nn.Linear(2048, 10).to(self.device)
 
     def set_data_loader(self):
         transform_train = transforms.Compose([
