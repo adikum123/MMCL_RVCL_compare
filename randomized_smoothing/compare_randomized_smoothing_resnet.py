@@ -14,28 +14,27 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision.models as models
+import torchvision
+import torchvision.models as vision_models
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-import rocl.data_loader as data_loader
 from randomized_smoothing.core import Smooth
+from resnet.resnet import ResNet50
+from resnet.resnet_unsupervised import ResnetUnsupervised, SimCLRModel
 
-parser = argparse.ArgumentParser(description="unsupervised binary search")
+parser = argparse.ArgumentParser(description="Randomized smoothing ResNet")
 parser.add_argument("--batch_size", type=int, default=256, help='batch size')
-parser.add_argument("--train_type", default="contrastive", type=str, help="contrastive/linear eval/test/supervised")
-parser.add_argument("--dataset", default="cifar-10", type=str, help="cifar-10/mnist")
-parser.add_argument("--name", default="", type=str, help="name of run")
 parser.add_argument("--seed", default=1, type=int, help="random seed")
 parser.add_argument("--color_jitter_strength", default=0.5, type=float, help="0.5 for CIFAR, 1.0 for ImageNet")
 parser.add_argument("--picks_per_class", type=int, default=5, help="number of negative items chosen per class")
 parser.add_argument("--N0", type=int, default=100)
 parser.add_argument("--N", type=int, default=1000000, help="number of samples to use")
 parser.add_argument("--alpha", type=float, default=0.001, help="failure probability")
-parser.add_argument("--positives_per_class", type=int, default=5, help="number of negative items chosen per class")
 parser.add_argument("--batch", type=int, default=1000, help="batch size")
-parser.add_argument("--resnet_supervised_ckpt", type=str, help="Checkpoint for supervised resnet model")
-parser.add_argument("--resnet_unsupervised_encoder_ckpt", type=str, help="Checkpoint for supervised resnet model")
-parser.add_argument("--resnet_unsupervised_eval_ckpt", type=str, help="Checkpoint for supervised resnet model")
+parser.add_argument("--num_images", type=int, default=1000, help="number of images to use")
+
 args = parser.parse_args()
 
 # add random seed
@@ -43,31 +42,97 @@ torch.manual_seed(args.seed)
 torch.cuda.manual_seed_all(args.seed)
 random.seed(args.seed)
 np.random.seed(args.seed)
-_, _, _, _, testloader, testdst = data_loader.get_train_val_test_dataset(args=args)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-class CombinedResnetModel(nn.Module):
-    def __init__(self, encoder_ckpt, eval_ckpt):
-        super(CombinedResnetModel, self).__init__()
-        # load encoder
-        encoder_checkpoint = torch.load(encoder_ckpt, map_location=device)
-        state_dict = encoder_checkpoint["state_dict"]
-        new_state_dict = {k.replace("convnet.", ""): v for k, v in state_dict.items() if not k.startswith("projection.")}
-        self.encoder = models.resnet50(pretrained=False)
-        self.encoder.load_state_dict(new_state_dict, strict=True)
-        self.encoder.fc = torch.nn.Identity()
+models = [
+    {
+        "encoder_ckpt": "models/resnet/resnet_supervised_bs_256_lr_0.001.pt",
+        "load_classifier": False,
+        "model": "resnet supervised"
+    },
+    {
+        "encoder_ckpt": "models/resnet_pretrained_models/resnet50_imagenet_bs2k_epochs600.pth.tar",
+        "load_classifier": True,
+        "model": "resnet ssl no finetune"
+    },
+    {
+        "encoder_ckpt": "models/resnet_pretrained_models/finetune_1_resnet50_cifar10_bs1024_epochs1000.pth.tar",
+        "load_classifier": True,
+        "model": "resnet ssl 1 layer finetune"
+    },
+    {
+        "encoder_ckpt": "models/resnet_pretrained_models/finetune_2_resnet50_cifar10_bs1024_epochs1000.pth.tar",
+        "load_classifier": True,
+        "model": "resnet ssl 2 layer finetune"
+    }
+]
+transform_test = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
+test_set = torchvision.datasets.CIFAR10(
+        root='./data', train=False, download=True, transform=transform_test
+)
+testloader = DataLoader(
+    test_set, batch_size=args.batch_size, shuffle=False, num_workers=2
+)
+all_test_images = []
+# randomly sample images from the test set
+for images, labels in testloader:
+    for i in range(images.size(0)):
+        all_test_images.append((images[i], labels[i].item()))
+picks = random.sample(all_test_images, args.num_images)
+
+class CombinedModel(nn.Module):
+
+    def __init__(self, encoder, eval_):
+        super(CombinedModel, self).__init__()
+        self.encoder = encoder
+        self.eval_ = eval_
         self.encoder.to(device)
-        # load classifier
-        eval_checkpoint = torch.load(eval_ckpt, map_location=device)
-        self.classifier = torch.nn.Linear(2048, 10)
-        self.classifier.load_state_dict(eval_checkpoint)
-        self.classifier.to(device)
+        self.eval_.to(device)
 
     def forward(self, x):
         with torch.no_grad():
             features = self.encoder(x)
-            output = self.classifier(features)
+            output = self.eval_(features)
             return output
+
+
+
+
+for config in models:
+    encoder_ckpt = config["encoder_ckpt"]
+    load_classifier = config["load_classifier"]
+    model_name = config["model"]
+    if not load_classifier:
+        print(f"Loading supervised model: {model_name}")
+        # Create supervised model architecture
+        model = vision_models.resnet50(weights=vision_models.ResNet50_Weights.IMAGENET1K_V1)
+        model.fc = nn.Linear(2048, 10)
+        model.load_state_dict(torch.load(encoder_ckpt, map_location=device))
+        model = model.to(device)
+        model.eval()
+        encoder = model
+        config["base_verifier"] = encoder
+        continue
+    print(f"Loading SimCLR encoder: {model_name}")
+    encoder = SimCLRModel(checkpoint_path=encoder_ckpt).to(device)
+    encoder.set_eval()
+    classifier_ckpt = os.path.join(
+        "models", "linear_evaluate", f"linear_{os.path.basename(encoder_ckpt)}"
+    )
+    print(f"Loading classifier from: {classifier_ckpt}")
+    classifier = torch.nn.Sequential(
+        torch.nn.Linear(128, 10)
+    ).to(device)
+    classifier.load_state_dict(torch.load(classifier_ckpt, map_location=device))
+    classifier.eval()
+    config["base_verifier"] = CombinedModel(encoder=encoder, eval_=classifier)
+
+
+
+
 
 def get_ori_model_predicition(model, x):
     return torch.argmax(model(x.unsqueeze(0)), dim=-1).item()

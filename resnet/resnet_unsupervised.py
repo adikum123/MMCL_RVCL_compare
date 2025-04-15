@@ -116,7 +116,7 @@ class ResnetUnsupervised(nn.Module):
         super(ResnetUnsupervised, self).__init__()
         self.hparams = hparams
         self.device = device
-        self.encoder = SimCLRModel().to(device)
+        self.encoder = SimCLRModel(checkpoint_path=self.hparams.resnet_unsupervised_ckpt).to(device)
         self.set_classifier()
         self.set_data_loader()
         self.criterion = nn.CrossEntropyLoss()
@@ -127,8 +127,7 @@ class ResnetUnsupervised(nn.Module):
             gamma=self.hparams.scheduler_gamma,
         )
         self.best_model_saved = False
-        self.min_epochs = 80
-
+        self.min_epochs = 50
 
     def set_data_loader(self):
         transform_train = transforms.Compose([
@@ -214,7 +213,6 @@ class ResnetUnsupervised(nn.Module):
         best_val_loss = float("inf")
         patience_counter = 0
         max_patience = 5  # Number of epochs to wait before stopping
-
         train_losses = []
         val_losses = []
         for epoch in range(self.hparams.num_iters):
@@ -304,25 +302,19 @@ class ResnetUnsupervised(nn.Module):
 
         with torch.no_grad():  # No gradients required during evaluation
             for images, targets in test_bar:
-                # Move data to device
                 images, targets = images.to(self.device), targets.to(self.device)
-                # Forward pass
                 logits = self.forward(images)
                 loss = self.criterion(logits, targets)
-                # Predictions
                 predictions = torch.argmax(logits, dim=1)
                 correct = (predictions == targets).sum().item()
-                # Update metrics
                 total_correct += correct
                 total_num += targets.size(0)
                 total_loss += loss.item() * targets.size(0)
-                # Update progress bar
                 test_bar.set_description(
                     "Test: Loss: {:.4e}, Acc: {:.2f}%".format(
                         total_loss / total_num, 100 * total_correct / total_num
                     )
                 )
-        # Final metrics
         metrics = {
             "accuracy": total_correct / total_num,
             "loss": total_loss / total_num,
@@ -334,9 +326,10 @@ class ResnetUnsupervised(nn.Module):
 
     def get_model_save_name(self):
         encoder_name = self.hparams.resnet_unsupervised_ckpt.split("/")[-1]
+        encoder_name = encoder_name[0: encoder_name.rindex(".")]
         prefix = "relu_" if self.hparams.relu_layer else ""
         postfix = f"finetune_{self.hparams.finetune_num_layers}_" if self.hparams.finetune else ""
-        return f"{prefix}linear_{postfix}{encoder_name}"
+        return f"{prefix}linear_{postfix}{encoder_name}.pt"
 
     def save(self):
         if not self.best_model_saved:
