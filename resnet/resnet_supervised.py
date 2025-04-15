@@ -35,7 +35,7 @@ class ResnetSupervised(nn.Module):
             gamma=self.hparams.scheduler_gamma,
         )
         self.best_model_saved = False
-        self.min_epochs = 50
+        self.min_epochs = 80
 
     def set_model(self):
         self.model = ResNet50(cifar_head=True)
