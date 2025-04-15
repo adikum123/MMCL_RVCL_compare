@@ -37,7 +37,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --use_validation \
         --scheduler_gamma 0.5 \
         --finetune \
-        --finetune_num_layers 1 \
+        --finetune_num_layers 2 \
         --step_size 25
 
 EOF

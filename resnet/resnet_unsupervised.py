@@ -335,7 +335,7 @@ class ResnetUnsupervised(nn.Module):
     def get_model_save_name(self):
         encoder_name = self.hparams.resnet_unsupervised_ckpt.split("/")[-1]
         prefix = "relu_" if self.hparams.relu_layer else ""
-        postfix = "finetune_" if self.hparams.finetune else ""
+        postfix = f"finetune_{self.hparams.finetune_num_layers}_" if self.hparams.finetune else ""
         return f"{prefix}linear_{postfix}{encoder_name}"
 
     def save(self):
