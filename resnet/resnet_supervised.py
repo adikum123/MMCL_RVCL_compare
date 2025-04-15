@@ -40,6 +40,7 @@ class ResnetSupervised(nn.Module):
     def set_model(self):
         self.model = ResNet50(cifar_head=True)
         self.model.fc = nn.Linear(2048, 10)
+        self.model.to(self.device)
 
     def set_data_loader(self):
         transform_train = transforms.Compose([
