@@ -101,7 +101,7 @@ class SimCLRModel(nn.Module):
                     parts[1] = "bn2"
                 new_key = ".".join(parts)
             new_state_dict[new_key] = state_dict[key]
-        save_dir = os.path.join("models", "resnet_pretrained_models")
+        save_dir = os.path.join("models", "resnet")
         os.makedirs(save_dir, exist_ok=True)
         save_name = f"finetune_{num_layers}_{os.path.basename(self.checkpoint_path)}"
         save_path = os.path.join(save_dir, save_name)
