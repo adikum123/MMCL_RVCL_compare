@@ -28,16 +28,15 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     export PYTHONPATH=$(pwd):$PYTHONPATH
     export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
     echo "Training unsupervised model"
-    python -u train_models/train_resnet_unsupervised.py \
-        --resnet_unsupervised_ckpt models/resnet_pretrained_models/resnet50_cifar10_bs1024_epochs1000.pth.tar \
+    python -u train_models/train_resnet_unsupervised_encoder.py \
         --dataset cifar-10 \
-        --batch_size 256 \
+        --batch_size 512 \
         --num_iters 200 \
         --lr 1e-3 \
         --use_validation \
         --scheduler_gamma 0.5 \
-        --finetune \
-        --finetune_num_layers 1 \
+        --kernel_type rbf \
+        --C 1 \
         --step_size 25
 
 EOF

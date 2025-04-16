@@ -12,102 +12,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 
-import mmcl.utils as utils
-import rocl.data_loader as data_loader
-from resnet.resnet import ResNet50
-
-
-class SimCLRModel(nn.Module):
-
-    def __init__(
-        self,
-        base_model='resnet50',
-        projection_dim=128,
-        checkpoint_path="models/resnet_pretrained_models/resnet50_cifar10_bs1024_epochs1000.pth.tar"
-    ):
-        super().__init__()
-        self.checkpoint_path = checkpoint_path
-        resnet = ResNet50(cifar_head=True)
-        feat_dim = resnet.fc.in_features if hasattr(resnet, 'fc') else 2048
-        resnet.fc = nn.Identity()
-        self.convnet = resnet
-        self.projection = nn.Sequential(
-            nn.Linear(feat_dim, feat_dim, bias=False),
-            nn.BatchNorm1d(feat_dim),
-            nn.ReLU(),
-            nn.Linear(feat_dim, projection_dim, bias=False),
-            nn.BatchNorm1d(projection_dim, affine=False)
-        )
-        self.checkpoint_path = checkpoint_path
-        self.projection[0].name = 'fc1'
-        self.projection[1].name = 'bn1'
-        self.projection[3].name = 'fc2'
-        self.projection[4].name = 'bn2'
-        if self.checkpoint_path is not None and os.path.isfile(self.checkpoint_path):
-            self.load_checkpoint()
-        else:
-            print(f"[Warning] No checkpoint found at: {self.checkpoint_path}")
-
-    def forward(self, x):
-        features = self.convnet(x)
-        projections = self.projection(features)
-        return projections
-
-    def load_checkpoint(self):
-        print(f"[Info] Loading checkpoint from {self.checkpoint_path}")
-        checkpoint = torch.load(self.checkpoint_path, map_location='cpu')
-        state_dict = checkpoint.get('state_dict', checkpoint)
-        new_state_dict = {}
-        for k, v in state_dict.items():
-            if k.startswith("module."):
-                k = k[7:]
-            if k.startswith("projection."):
-                parts = k.split('.')
-                if parts[1] == 'fc1':
-                    parts[1] = '0'
-                elif parts[1] == 'bn1':
-                    parts[1] = '1'
-                elif parts[1] == 'fc2':
-                    parts[1] = '3'
-                elif parts[1] == 'bn2':
-                    parts[1] = '4'
-                k = '.'.join(parts)
-            new_state_dict[k] = v
-        self.load_state_dict(new_state_dict, strict=False)
-        print("[Info] Checkpoint loaded successfully.")
-
-    def set_eval(self):
-        self.convnet.eval()
-        self.projection.eval()
-
-    def set_train(self):
-        self.convnet.train()
-        self.projection.train()
-
-    def save_finetune(self, num_layers):
-        state_dict = self.state_dict()
-        new_state_dict = {}
-        for key in state_dict:
-            new_key = key
-            if key.startswith("projection."):
-                parts = key.split(".")
-                if parts[1] == "0":
-                    parts[1] = "fc1"
-                elif parts[1] == "1":
-                    parts[1] = "bn1"
-                elif parts[1] == "3":
-                    parts[1] = "fc2"
-                elif parts[1] == "4":
-                    parts[1] = "bn2"
-                new_key = ".".join(parts)
-            new_state_dict[new_key] = state_dict[key]
-        save_dir = os.path.join("models", "resnet")
-        os.makedirs(save_dir, exist_ok=True)
-        save_name = f"finetune_{num_layers}_{os.path.basename(self.checkpoint_path)}"
-        save_path = os.path.join(save_dir, save_name)
-        torch.save({"state_dict": new_state_dict}, save_path)
-        print(f"[Info] Finetuned model saved to: {save_path}")
-
+from resnet.resnet_unsupervised_encoder import SimCLRModel
 
 
 class ResnetUnsupervised(nn.Module):
@@ -192,14 +97,11 @@ class ResnetUnsupervised(nn.Module):
         self.optimizer = torch.optim.Adam(params_to_optimize, lr=lr)
 
     def set_classifier(self):
-        if self.hparams.relu_layer:
-            self.classifier = nn.Sequential(
-                nn.Linear(128, 128),
-                nn.ReLU(),
-                nn.Linear(128, 10)
-            ).to(self.device)
-        else:
-            self.classifier = nn.Linear(128, 10).to(self.device)
+        self.classifier = nn.Sequential(
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Linear(64, 10)
+        ).to(self.device)
 
 
     def forward(self, x):
@@ -344,4 +246,5 @@ class ResnetUnsupervised(nn.Module):
             save_dir = "models/linear_evaluate"
             os.makedirs(save_dir, exist_ok=True)
             save_path = os.path.join(save_dir, f"{self.get_model_save_name()}")
+            torch.save(self.classifier.state_dict(), save_path)
             torch.save(self.classifier.state_dict(), save_path)
