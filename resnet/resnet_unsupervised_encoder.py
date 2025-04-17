@@ -286,7 +286,7 @@ class ResnetEncoder(nn.Module):
         with open(save_path.replace('.pt', '_hparams.json'), 'w') as f:
             json.dump(vars(self.hparams), f, indent=4)
 
-    def save_finetune(self, num_layers=0):
+    def save_finetune(self):
         save_dir = os.path.join("models", "resnet")
         os.makedirs(save_dir, exist_ok=True)
         save_name = f"finetune_{self.get_model_save_name()}.pt"

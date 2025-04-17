@@ -182,7 +182,7 @@ class ResnetUnsupervisedClassifier(nn.Module):
         plt.close()
         print(f"\nLoss plot saved to {save_path}")
         if self.hparams.finetune:
-            self.encoder.save_finetune(num_layers=self.hparams.finetune_num_layers)
+            self.encoder.save_finetune()
 
     def test(self):
         """Evaluate the model on the test dataset."""
