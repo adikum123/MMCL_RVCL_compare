@@ -32,6 +32,12 @@ class ResnetEncoder(nn.Module):
             list(self.convnet.parameters()) + list(self.projection.parameters()),
             lr=self.hparams.lr
         )
+        self.scheduler = optim.lr_scheduler.StepLR(
+            self.optimizer,
+            step_size=self.hparams.step_size,
+            gamma=self.hparams.scheduler_gamma,
+        )
+        self.min_epochs = 80
 
     def set_covnet_and_projection(self):
         if "resnet_encoder_ckpt" not in vars(self.hparams):
