@@ -269,7 +269,7 @@ class ResnetEncoder(nn.Module):
 
     def get_model_save_name(self):
         if self.hparams.loss_type == "mmcl":
-            return f"resnet_{self.hparams.loss_type}_{self.hparams.kernel_type}_{self.hparams.C}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
+            return f"resnet_{self.hparams.loss_type}_{self.hparams.kernel_type}_C_{self.hparams.C}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
         return f"resnet_{self.hparams.loss_type}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
 
     def save(self):
