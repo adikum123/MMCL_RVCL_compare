@@ -211,7 +211,7 @@ class ResnetEncoder(nn.Module):
                 total_loss, total_num = 0.0, 0
                 with torch.no_grad():
                     for iii, (ori_image, pos_1, pos_2, target) in enumerate(val_bar):
-                        loss = self.compute_loss()
+                        loss = self.compute_loss(pos_1, pos_2)
                         batch_size = pos_1.size(0)
                         total_num += batch_size
                         total_loss += loss.item() * batch_size
