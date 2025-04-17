@@ -237,9 +237,7 @@ class ResnetEncoder(nn.Module):
                     print(
                         f"\nValidation loss improved to {val_loss:.4e}. Saving model..."
                     )
-                    self.best_model_saved = False
                     self.save()
-                    self.best_model_saved = True
                 else:
                     patience_counter += 1
                     print(
