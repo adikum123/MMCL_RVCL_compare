@@ -223,7 +223,7 @@ class ResnetUnsupervisedClassifier(nn.Module):
         return metrics
 
     def get_model_save_name(self):
-        encoder_name = self.hparams.resnet_unsupervised_ckpt.split("/")[-1]
+        encoder_name = self.hparams.resnet_encoder_ckpt.split("/")[-1]
         prefix = "relu_" if self.hparams.relu_layer else ""
         postfix = f"finetune_{self.hparams.finetune_num_layers}_" if self.hparams.finetune else ""
         return f"{prefix}linear_{postfix}{encoder_name}"
