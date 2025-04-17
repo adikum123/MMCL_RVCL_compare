@@ -62,7 +62,7 @@ models = [
     {
         "encoder_ckpt": "models/supervised/supervised_cross_entropy_bs_256_lr_0.001.pkl",
         "load_classifier": False,
-        "model": "supervised"
+        "model": "supervised cross entropy"
     }
 ]
 transform_test = transforms.Compose([
@@ -80,7 +80,10 @@ all_test_images = []
 for images, labels in testloader:
     for i in range(images.size(0)):
         all_test_images.append((images[i], labels[i].item()))
-picks = random.sample(all_test_images, args.num_images)
+if args.num_images == -1:
+    picks = all_test_images
+else:
+    picks = random.sample(all_test_images, args.num_images)
 
 class CombinedModel(nn.Module):
 
@@ -144,7 +147,7 @@ for model in models:
     print(f"Test accuracy for model {model['model']}: {model['test_accuracy']}")
 
 results = defaultdict(list)
-sigma_values = [0.05, 0.1, 0.15, 0.2]
+sigma_values = [0.1, 0.25, 0.5]
 for sigma in sigma_values:
 # create verifiers
     for model in models:
