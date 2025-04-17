@@ -252,7 +252,7 @@ class ResnetEncoder(nn.Module):
         save_dir = "plots/encoder"
         os.makedirs(save_dir, exist_ok=True)
         save_path = os.path.join(
-            save_dir, f"{self.get_model_save_name()}_{time.time()}.png"
+            save_dir, f"{self.get_model_save_name()}.png"
         )
         plt.figure(figsize=(10, 6))
         plt.plot(range(1, len(train_losses) + 1), train_losses, label="Training Loss")

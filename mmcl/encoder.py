@@ -5,7 +5,6 @@ import time
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 from tqdm import tqdm
 
@@ -229,7 +228,7 @@ class MMCL_Encoder(nn.Module):
     def save_finetune(self, model_name, prefix=""):
         if model_name.endswith(".pkl"):
             model_name = model_name[:-4]
-        save_dir = f'models/mmcl/rbf'
+        save_dir = f'models/mmcl/{self.hparams.kernel_type}'
         os.makedirs(save_dir, exist_ok=True)
         save_name = f"finetune_{model_name}" if not model_name.startswith("finetune_") else model_name
         save_path = os.path.join(save_dir, f"{save_name}.pkl")
