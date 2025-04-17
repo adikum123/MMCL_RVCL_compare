@@ -225,7 +225,7 @@ class ResnetUnsupervisedClassifier(nn.Module):
     def get_model_save_name(self):
         encoder_name = self.hparams.resnet_encoder_ckpt.split("/")[-1]
         postfix = f"finetune_" if self.hparams.finetune else ""
-        return f"{prefix}linear_{postfix}{encoder_name}"
+        return f"linear_{postfix}{encoder_name}"
 
     def save(self):
         if not self.best_model_saved:
