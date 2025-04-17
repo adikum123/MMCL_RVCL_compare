@@ -85,7 +85,7 @@ class ResnetEncoder(nn.Module):
             self.hparams.loss_type can be in [mmcl, info_nce, nce, cosine, barlow]
         """
         try:
-            if self.loss_type == "mmcl":
+            if self.hparams.loss_type == "mmcl":
                 self.crit = MMCL_pgd(
                     sigma=self.hparams.kernel_gamma,
                     batch_size=self.hparams.batch_size,
@@ -164,7 +164,7 @@ class ResnetEncoder(nn.Module):
         pos_1, pos_2 = pos_1.to(self.device), pos_2.to(self.device)
         feature_1 = self.forward(pos_1)
         feature_2 = self.forward(pos_2)
-        if self.loss_type == "mmcl":
+        if self.hparams.loss_type == "mmcl":
             features = torch.cat(
                 [feature_1.unsqueeze(1), feature_2.unsqueeze(1)], dim=1
             )
@@ -272,6 +272,8 @@ class ResnetEncoder(nn.Module):
         print(f"\nLoss plot saved to {save_path}")
 
     def get_model_save_name(self):
+        if self.hparams.loss_type == "mmcl":
+            return f"resnet_{self.hparams.loss_type}_{self.hparams.kernel_type}_{self.hparams.C}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
         return f"resnet_{self.hparams.loss_type}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
 
     def save(self):
