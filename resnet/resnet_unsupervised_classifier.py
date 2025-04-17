@@ -12,13 +12,11 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 
-from resnet.resnet_unsupervised_encoder import SimCLRModel
 
-
-class ResnetUnsupervised(nn.Module):
+class ResnetUnsupervisedClassifier(nn.Module):
 
     def __init__(self, hparams, encoder, device):
-        super(ResnetUnsupervised, self).__init__()
+        super(ResnetUnsupervisedClassifier, self).__init__()
         self.hparams = hparams
         self.device = device
         self.encoder = encoder

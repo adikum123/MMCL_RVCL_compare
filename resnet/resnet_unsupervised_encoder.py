@@ -112,8 +112,30 @@ class ResnetEncoder(nn.Module):
         return self.projection(self.convnet(x))
 
     def load_checkpoint(self):
-        print(f"[Info] Loading checkpoint from {self.resnet_encoder_ckpt}")
-        checkpoint = torch.load(self.resnet_encoder_ckpt, map_location=self.device)
+        print(f"[Info] Loading checkpoint from {self.hparams.resnet_encoder_ckpt}")
+
+        # === Initialize convnet and projection ===
+        resnet = ResNet50(cifar_head=True)
+        feat_dim = resnet.fc.in_features if hasattr(resnet, "fc") else 2048
+        projection_dim = 128
+        resnet.fc = nn.Identity()
+        self.convnet = resnet
+        self.projection = nn.Sequential(
+            nn.Linear(feat_dim, feat_dim, bias=False),
+            nn.BatchNorm1d(feat_dim),
+            nn.ReLU(),
+            nn.Linear(feat_dim, projection_dim, bias=False),
+            nn.BatchNorm1d(projection_dim, affine=False)
+        )
+        self.projection[0].name = "fc1"
+        self.projection[1].name = "bn1"
+        self.projection[3].name = "fc2"
+        self.projection[4].name = "bn2"
+        # Move models to device
+        self.convnet.to(self.device)
+        self.projection.to(self.device)
+        # === Load weights ===
+        checkpoint = torch.load(self.hparams.resnet_encoder_ckpt, map_location=self.device)
         state_dict = checkpoint.get("state_dict", checkpoint)
         new_state_dict = {}
         for k, v in state_dict.items():
@@ -131,6 +153,7 @@ class ResnetEncoder(nn.Module):
                     parts[1] = "4"
                 k = ".".join(parts)
             new_state_dict[k] = v
+
         self.load_state_dict(new_state_dict, strict=False)
         print("[Info] Checkpoint loaded successfully.")
 
