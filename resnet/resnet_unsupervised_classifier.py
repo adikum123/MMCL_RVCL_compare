@@ -17,12 +17,16 @@ from resnet.resnet_unsupervised_encoder import SimCLRModel
 
 class ResnetUnsupervised(nn.Module):
 
-    def __init__(self, hparams, device):
+    def __init__(self, hparams, encoder, device):
         super(ResnetUnsupervised, self).__init__()
         self.hparams = hparams
         self.device = device
-        self.encoder = SimCLRModel().to(device)
-        self.set_classifier()
+        self.encoder = encoder
+        self.classifier = nn.Sequential(
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Linear(64, 10)
+        ).to(self.device)
         self.set_data_loader()
         self.criterion = nn.CrossEntropyLoss()
         self.set_optimizer()
@@ -75,33 +79,15 @@ class ResnetUnsupervised(nn.Module):
         lr = self.hparams.lr
         params_to_optimize = []
         if self.hparams.finetune:
-            finetune_num_layers = self.hparams.finetune_num_layers
-            for param in self.encoder.parameters():
-                param.requires_grad = False
-            if finetune_num_layers == 1:
-                params_to_optimize += list(self.encoder.projection.parameters())
-                for param in self.encoder.projection.parameters():
-                    param.requires_grad = True
-            else:
-                layer4 = list(self.encoder.convnet.layer4)
-                num_layers_to_finetune = finetune_num_layers - 1
-                for i in range(1, num_layers_to_finetune + 1):
-                    params = list(layer4[-i].parameters())
-                    for param in params:
-                        param.requires_grad = True
-                    params_to_optimize += params
+            encoder_params = self.encoder.get_finetune_params()
+            for param in encoder_params:
+                param.requires_grad = True
+            params_to_optimize = self.encoder.get_finetune_params()
         else:
             for param in self.encoder.parameters():
                 param.requires_grad = False
         params_to_optimize += list(self.classifier.parameters())
         self.optimizer = torch.optim.Adam(params_to_optimize, lr=lr)
-
-    def set_classifier(self):
-        self.classifier = nn.Sequential(
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, 10)
-        ).to(self.device)
 
 
     def forward(self, x):
@@ -122,7 +108,10 @@ class ResnetUnsupervised(nn.Module):
         val_losses = []
         for epoch in range(self.hparams.num_iters):
             self.classifier.train()  # Set the model to training mode
-            self.encoder.set_train()
+            if self.hparams.finetune:
+                self.encoder.set_train()
+            else:
+                self.encoder.set_eval()
             total_loss, total_num = 0.0, 0
             train_bar = tqdm(self.trainloader, desc=f"Train Epoch {epoch + 1}")
             for iii, (images, targets) in enumerate(train_bar):

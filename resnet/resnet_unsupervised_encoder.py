@@ -142,29 +142,8 @@ class ResnetEncoder(nn.Module):
         self.convnet.train()
         self.projection.train()
 
-    def save_finetune(self, num_layers):
-        state_dict = self.state_dict()
-        new_state_dict = {}
-        for key in state_dict:
-            new_key = key
-            if key.startswith("projection."):
-                parts = key.split(".")
-                if parts[1] == "0":
-                    parts[1] = "fc1"
-                elif parts[1] == "1":
-                    parts[1] = "bn1"
-                elif parts[1] == "3":
-                    parts[1] = "fc2"
-                elif parts[1] == "4":
-                    parts[1] = "bn2"
-                new_key = ".".join(parts)
-            new_state_dict[new_key] = state_dict[key]
-        save_dir = os.path.join("models", "resnet")
-        os.makedirs(save_dir, exist_ok=True)
-        save_name = f"finetune_{num_layers}_{os.path.basename(self.checkpoint_path)}"
-        save_path = os.path.join(save_dir, save_name)
-        torch.save({"state_dict": new_state_dict}, save_path)
-        print(f"[Info] Finetuned model saved to: {save_path}")
+    def get_finetune_params(self):
+        return list(self.projection.parameters()) + list(self.convnet.layer4.parameters())
 
     def compute_loss(self, pos_1, pos_2):
         pos_1, pos_2 = pos_1.to(self.device), pos_2.to(self.device)

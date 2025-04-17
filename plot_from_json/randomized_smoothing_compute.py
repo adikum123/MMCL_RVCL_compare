@@ -8,7 +8,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Font
 
-file_name = "mmcl_rbf-adversarial_cl-cl_info_nce-supervised_cross_entropy"
+file_name = "mmcl_rbf-adversarial_cl-cl_info_nce-supervised"
 with open(f"../rs_results/{file_name}.json", "r") as f:
     data = json.load(f)
 
@@ -70,26 +70,6 @@ for key, values in per_sigma_radius.items():
 
 print(json.dumps(per_sigma_radius_updated, indent=4))
 
-# Prepare table rows for Excel
-rows = []
-for key, value in per_sigma_radius_updated.items():
-    sigma_str, radius_str = key.split("|")
-    sigma = float(sigma_str.split(":")[1])
-    radius = float(radius_str.split(":")[1])
-    per_model_values = value["per_model_values"]
-    # Create a mapping from model name to its metrics
-    model_metrics = {x["model"]: x for x in per_model_values}
-    row = {
-        "sigma": sigma,
-        "radius": radius,
-    }
-    for model in model_names:
-        metrics = model_metrics[model]
-        row[f"{model}_cia"] = round(metrics["certified_accuracy"], 2)
-        row[f"{model}_up"] = round(metrics["unchanged_percentage"], 2)
-    row["best_certified_model"] = ", ".join(value["best_certified_accuracy_models"])
-    row["best_unchanged_model"] = ", ".join(value["best_unchanged_percentage_models"])
-    rows.append(row)
 
 def plot_one_per_sigma(data):
     # Create a mapping from model name to test accuracy
