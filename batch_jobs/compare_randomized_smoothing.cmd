@@ -38,7 +38,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
 
     echo "Computing plots for robust radius..."
     python -u randomized_smoothing/compare_randomized_smoothing.py \
-        --num_images -1 \
+        --num_images 2000 \
         --finetune
 
 EOF
