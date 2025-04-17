@@ -248,14 +248,6 @@ class ResnetEncoder(nn.Module):
                     break
             # Scheduler step
             self.scheduler.step()
-            # Logging metrics
-            metrics = {
-                "train_loss": train_loss,
-                "val_loss": val_loss,
-                "epoch": epoch + 1,
-                "lr": self.get_lr(),
-            }
-            print(f"\nEpoch: {epoch+1}, Metrics: {json.dumps(metrics, indent=4)}\n")
         # Plot and save the training and validation loss
         save_dir = "plots/encoder"
         os.makedirs(save_dir, exist_ok=True)
