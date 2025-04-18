@@ -161,11 +161,43 @@ class RegularCLModel(nn.Module):
     def set_eval(self):
         self.model.eval()
 
+    def generate_adversarial_example(self, x, epsilon=4/255, alpha=1/255, num_iter=10):
+        """
+        Generates adversarial examples using PGD.
+        """
+        x_adv = x.clone().detach().to(self.device)
+        x_adv.requires_grad = True
+        for _ in range(num_iter):
+            outputs = self.model(x_adv)
+            loss = self.crit(outputs, self.model(x).detach())
+            self.model.zero_grad()
+            loss.backward()
+            grad = x_adv.grad.data
+            x_adv = x_adv.detach() + alpha * torch.sign(grad)
+            eta = torch.clamp(x_adv - x, min=-epsilon, max=epsilon)
+            x_adv = torch.clamp(x + eta, 0, 1).detach_()
+            x_adv.requires_grad = True
+        return x_adv
+
+    def compute_loss(self, pos_1, pos_2):
+        """
+        Compute contrastive loss using clean or adversarial views.
+        """
+        if self.hparams.adversarial:
+            # Generate adversarial versions of both views
+            pos_1_adv = self.generate_adversarial_example(pos_1)
+            pos_2_adv = self.generate_adversarial_example(pos_2)
+            f1 = self.model(pos_1_adv)
+            f2 = self.model(pos_2_adv)
+        else:
+            f1 = self.model(pos_1)
+            f2 = self.model(pos_2)
+        return self.crit(f1, f2)
+
     def train(self):
         best_val_loss = float("inf")
         patience_counter = 0
         max_patience = 5  # Number of epochs to wait before stopping
-
         train_losses = []
         val_losses = []
         temperature = getattr(self.hparams, 'temperature', 0.5)
@@ -173,22 +205,16 @@ class RegularCLModel(nn.Module):
             self.model.train()  # Set the model to training mode
             total_loss, total_samples = 0.0, 0
             train_bar = tqdm(self.trainloader, desc=f"Epoch {epoch + 1}")
-
             for iii, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
                 # Move augmented images to device
                 pos_1 = pos_1.to(self.device)
                 pos_2 = pos_2.to(self.device)
                 # Forward pass for both augmented views
-                f1 = self.model(pos_1)
-                f2 = self.model(pos_2)
-                # Compute InfoNCE loss
-                loss = self.crit(f1, f2)
-
+                loss = self.compute_loss(pos_1, pos_2)
                 # Backpropagation and optimizer step
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-
                 # Logging
                 batch_size = pos_1.size(0)
                 total_loss += loss.item() * batch_size
@@ -209,10 +235,7 @@ class RegularCLModel(nn.Module):
                         pos_1 = pos_1.to(self.device)
                         pos_2 = pos_2.to(self.device)
                         # Forward pass for both augmented views
-                        f1 = self.model(pos_1)
-                        f2 = self.model(pos_2)
-                        # Compute InfoNCE loss
-                        loss = self.crit(f1, f2)
+                        loss = self.compute_loss(pos1, pos2)
                         batch_size = pos_1.size(0)
                         total_num += batch_size
                         total_loss += loss.item() * batch_size
@@ -266,6 +289,8 @@ class RegularCLModel(nn.Module):
         print(f"\nLoss plot saved to {save_path}")
 
     def get_model_save_name(self):
+        if self.hparams.adversarial:
+            return f"adv_regular_cl_{self.hparams.loss_type}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}.pkl"
         return f"regular_cl_{self.hparams.loss_type}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}.pkl"
 
     def save(self):

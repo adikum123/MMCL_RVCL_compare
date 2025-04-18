@@ -34,8 +34,9 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --batch_size 512 \
         --num_iters 200 \
         --lr 1e-3 \
-        --loss_type barlow \
+        --loss_type info_nce \
         --scheduler_gamma 0.5 \
+        --adversarial \
         --step_size 25
 
 EOF
