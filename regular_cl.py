@@ -182,7 +182,7 @@ class RegularCLModel(nn.Module):
         """
         Compute contrastive loss using clean or adversarial views.
         """
-        if self.hparams.adversarial:
+        if self.hparams.adversarial and self.model.training:
             # Generate adversarial versions of both views
             pos_1_adv = self.generate_adversarial_example(pos_1)
             pos_2_adv = self.generate_adversarial_example(pos_2)
