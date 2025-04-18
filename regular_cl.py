@@ -235,7 +235,7 @@ class RegularCLModel(nn.Module):
                         pos_1 = pos_1.to(self.device)
                         pos_2 = pos_2.to(self.device)
                         # Forward pass for both augmented views
-                        loss = self.compute_loss(pos1, pos2)
+                        loss = self.compute_loss(pos_1, pos_2)
                         batch_size = pos_1.size(0)
                         total_num += batch_size
                         total_loss += loss.item() * batch_size
