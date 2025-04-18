@@ -162,14 +162,13 @@ class RegularCLModel(nn.Module):
         self.model.eval()
 
     def generate_adversarial_example(self, x, epsilon=4/255, alpha=1/255, num_iter=10):
-        """
-        Generates adversarial examples using PGD.
-        """
         x_adv = x.clone().detach().to(self.device)
         x_adv.requires_grad = True
+        with torch.no_grad():
+            target_features = self.model(x)  # No grad tracking here
         for _ in range(num_iter):
             outputs = self.model(x_adv)
-            loss = self.crit(outputs, self.model(x).detach())
+            loss = self.crit(outputs, target_features)  # Now valid
             self.model.zero_grad()
             loss.backward()
             grad = x_adv.grad.data
