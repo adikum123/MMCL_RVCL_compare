@@ -187,11 +187,10 @@ class ResnetUnsupervisedClassifier(nn.Module):
     def test(self):
         """Evaluate the model on the test dataset."""
         self.classifier.eval()
-        self.encoder.eval()
+        self.encoder.set_eval()
         total_correct, total_num = 0, 0
         total_loss = 0.0
         test_bar = tqdm(self.testloader, desc="Testing")
-
         with torch.no_grad():  # No gradients required during evaluation
             for images, targets in test_bar:
                 # Move data to device
