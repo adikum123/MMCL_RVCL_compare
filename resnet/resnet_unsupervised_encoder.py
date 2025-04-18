@@ -287,7 +287,7 @@ class ResnetEncoder(nn.Module):
         # get save dir
         save_dir = os.path.join("models", "resnet")
         os.makedirs(save_dir, exist_ok=True)
-        save_name = f"finetune_{os.path.basename(self.resnet_encoder_ckpt)}"
+        save_name = f"finetune_{os.path.basename(self.hparams.resnet_encoder_ckpt)}"
         save_path = os.path.join(save_dir, save_name)
         # Save model weights only
         torch.save(self.state_dict(), save_path)

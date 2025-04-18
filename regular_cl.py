@@ -268,7 +268,6 @@ class RegularCLModel(nn.Module):
     def get_model_save_name(self):
         return f"regular_cl_{self.hparams.loss_type}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}.pkl"
 
-
     def save(self):
         if not self.best_model_saved:
             save_dir = f'models/regular_cl'
