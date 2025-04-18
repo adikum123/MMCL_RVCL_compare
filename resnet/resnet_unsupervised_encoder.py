@@ -166,7 +166,12 @@ class ResnetEncoder(nn.Module):
         self.projection.train()
 
     def get_finetune_params(self):
-        return list(self.projection.parameters()) + list(self.convnet.layer4.parameters())
+        return (
+            list(self.projection.parameters())
+            + list(self.convnet.layer4.parameters())
+            + list(self.convnet.layer2.parameters())
+            + list(self.convnet.layer3.parameters())
+        )
 
     def compute_loss(self, pos_1, pos_2):
         pos_1, pos_2 = pos_1.to(self.device), pos_2.to(self.device)
