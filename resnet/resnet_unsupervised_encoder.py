@@ -282,18 +282,13 @@ class ResnetEncoder(nn.Module):
         # Save model weights only
         torch.save(self.state_dict(), save_path)
         print(f"[Info] Model weights saved to: {save_path}")
-        # Optionally save hyperparams to match model
-        with open(save_path.replace('.pt', '_hparams.json'), 'w') as f:
-            json.dump(vars(self.hparams), f, indent=4)
 
     def save_finetune(self):
+        # get save dir
         save_dir = os.path.join("models", "resnet")
         os.makedirs(save_dir, exist_ok=True)
-        save_name = f"finetune_{self.get_model_save_name()}.pt"
+        save_name = f"finetune_{os.path.basename(self.resnet_encoder_ckpt)}"
         save_path = os.path.join(save_dir, save_name)
         # Save model weights only
         torch.save(self.state_dict(), save_path)
         print(f"[Info] Finetuned model weights saved to: {save_path}")
-        # Optionally save hyperparams
-        with open(save_path.replace('.pt', '_hparams.json'), 'w') as f:
-            json.dump(vars(self.hparams), f, indent=4)
