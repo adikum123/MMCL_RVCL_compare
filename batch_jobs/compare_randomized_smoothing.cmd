@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -p lrz-hgx-a100-80x4
 #SBATCH --gres=gpu:1
-#SBATCH --time=28:00:00
+#SBATCH --time=40:00:00
 #SBATCH -o outs/randomized_smoothing.out
 #SBATCH -e outs/randomized_smoothing.out
 
@@ -38,7 +38,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
 
     echo "Computing plots for robust radius..."
     python -u randomized_smoothing/compare_randomized_smoothing.py \
-        --num_images 2000 \
+        --num_images 5000 \
         --finetune
 
 EOF

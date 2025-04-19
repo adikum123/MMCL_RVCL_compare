@@ -50,8 +50,8 @@ models = [
         "model": "mmcl rbf"
     },
     {
-        "encoder_ckpt": "models/linear_evaluate/cifar10_cnn_4layer_b_adv8.pkl",
-        "load_classifier": False,
+        "encoder_ckpt": "models/regular_cl/finetune_adv_regular_cl_info_nce_bs_512_lr_0.001.pkl",
+        "load_classifier": True,
         "model": "adversarial cl"
     },
     {
