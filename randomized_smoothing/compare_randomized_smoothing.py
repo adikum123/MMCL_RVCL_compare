@@ -147,7 +147,7 @@ for model in models:
     print(f"Test accuracy for model {model['model']}: {model['test_accuracy']}")
 
 results = defaultdict(list)
-sigma_values = [0.1, 0.25, 0.5]
+sigma_values = [0.12, 0.25, 0.5]
 for sigma in sigma_values:
 # create verifiers
     for model in models:
