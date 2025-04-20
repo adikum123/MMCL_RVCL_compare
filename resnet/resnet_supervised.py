@@ -4,16 +4,13 @@ import os
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-import torch.nn.functional as F  # Add this line
 import torch.optim as optim
 import torchvision
-import torchvision.models as models
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 
-import mmcl.utils as utils
-import rocl.data_loader as data_loader
+from resnet.resnet import ResNet50
 
 
 class ResnetSupervised(nn.Module):
@@ -33,12 +30,14 @@ class ResnetSupervised(nn.Module):
             step_size=self.hparams.step_size,
             gamma=self.hparams.scheduler_gamma,
         )
-        self.best_model_saved = False
         self.min_epochs = 80
 
     def set_model(self):
-        self.model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1).to(self.device)
-        self.model.fc = torch.nn.Linear(2048, 10).to(self.device)
+        self.model = ResNet50(cifar_head=True)
+        self.model.fc = nn.Linear(2048, 10)
+        self.model.to(self.device)
+        for param in self.model.parameters():
+            param.requires_grad = True
 
     def set_data_loader(self):
         transform_train = transforms.Compose([
@@ -77,22 +76,12 @@ class ResnetSupervised(nn.Module):
             )
 
     def forward(self, x):
-        # Upsample the input images to 224x224 using bilinear interpolation
-        x = F.interpolate(x, size=(224, 224), mode='bilinear', align_corners=False)
-        # Pass the upsampled images through the model
         return self.model(x)
-
-    def set_eval(self):
-        self.model.eval()
-
-    def get_model_save_name(self):
-        return f"resnet_supervised_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
 
     def train(self):
         best_val_loss = float("inf")
         patience_counter = 0
         max_patience = 5  # Number of epochs to wait before stopping
-
         train_losses = []
         val_losses = []
         for epoch in range(self.hparams.num_iters):
@@ -134,9 +123,7 @@ class ResnetSupervised(nn.Module):
                     print(
                         f"\nValidation loss improved to {val_loss:.4e}. Saving model..."
                     )
-                    self.best_model_saved = False
                     self.save()
-                    self.best_model_saved = True
                 else:
                     patience_counter += 1
                     print(
@@ -163,6 +150,9 @@ class ResnetSupervised(nn.Module):
         plt.savefig(save_path)
         plt.close()
         print(f"\nLoss plot saved to {save_path}")
+
+    def get_model_save_name(self):
+        return f"resnet_supervised_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
 
     def test(self):
         """Evaluate the model on the test dataset."""
@@ -196,8 +186,7 @@ class ResnetSupervised(nn.Module):
         return metrics
 
     def save(self):
-        if not self.best_model_saved:
-            save_dir = f"models/resnet"
-            os.makedirs(save_dir, exist_ok=True)
-            save_path = os.path.join(save_dir, self.get_model_save_name() + ".pt")
-            torch.save(self.model.state_dict(), save_path)  # Save state_dict instead
+        save_dir = f"models/resnet"
+        os.makedirs(save_dir, exist_ok=True)
+        save_path = os.path.join(save_dir, self.get_model_save_name() + ".pt")
+        torch.save(self.model.state_dict(), save_path)  # Save state_dict instead

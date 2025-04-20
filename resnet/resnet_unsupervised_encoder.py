@@ -113,7 +113,6 @@ class ResnetEncoder(nn.Module):
 
     def load_checkpoint(self):
         print(f"[Info] Loading checkpoint from {self.hparams.resnet_encoder_ckpt}")
-
         # === Initialize convnet and projection ===
         resnet = ResNet50(cifar_head=True)
         feat_dim = resnet.fc.in_features if hasattr(resnet, "fc") else 2048
