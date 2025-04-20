@@ -188,6 +188,7 @@ class ResnetEncoder(nn.Module):
         return self.crit(feature_1, feature_2)
 
     def generate_adversarial_example(self, x, epsilon=4/255, alpha=1/255, num_iter=10):
+        x = x.to(self.device)
         x_adv = x.clone().detach().to(self.device)
         x_adv.requires_grad = True
         with torch.no_grad():
