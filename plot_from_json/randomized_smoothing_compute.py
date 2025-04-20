@@ -4,9 +4,6 @@ from collections import defaultdict
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-from openpyxl import load_workbook
-from openpyxl.styles import Font
 
 file_name = "mmcl_rbf-adversarial_cl-cl_info_nce-supervised_cross_entropy"
 with open(f"../rs_results/{file_name}.json", "r") as f:
@@ -62,7 +59,7 @@ def plot_one_certified_accuracy_per_sigma(data):
         plt.grid(True)
         output_dir = os.path.join("..", "plots", "randomized_smoothing", "cnn_4_layer_b")
         os.makedirs(output_dir, exist_ok=True)
-        output_filename = f"per_sigma_comparison_ca_sigma_{sigma}_cnn_4_layer_b.png"
+        output_filename = f"ca_sigma_{sigma}.png"
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, output_filename))
         plt.close()
@@ -115,7 +112,7 @@ def plot_one_unchanged_percentage_per_sigma(data):
         plt.grid(True)
         output_dir = os.path.join("..", "plots", "randomized_smoothing", "cnn_4_layer_b")
         os.makedirs(output_dir, exist_ok=True)
-        output_filename = f"per_sigma_comparison_up_sigma_{sigma}_cnn_4_layer_b.png"
+        output_filename = f"up_sigma_{sigma}.png"
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, output_filename))
         plt.close()
