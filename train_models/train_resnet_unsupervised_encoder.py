@@ -24,6 +24,11 @@ parser.add_argument(
     help="Use validation set and stopping criteria",
 )
 parser.add_argument(
+    "--adversarial",
+    action="store_true",
+    help="Use adversarial contrastive training",
+)
+parser.add_argument(
     "--num_iters", default=100, type=int, help="Num iters - PGD Solver"
 )
 parser.add_argument(

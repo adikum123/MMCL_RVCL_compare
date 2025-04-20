@@ -164,6 +164,9 @@ class ResnetEncoder(nn.Module):
         self.convnet.train()
         self.projection.train()
 
+    def is_in_train_mode(self):
+        return self.convnet.training and self.projection.training
+
     def get_finetune_params(self):
         return (
             list(self.projection.parameters())
@@ -172,7 +175,7 @@ class ResnetEncoder(nn.Module):
             + list(self.convnet.layer3.parameters())
         )
 
-    def compute_loss(self, pos_1, pos_2):
+    def compute_loss_submethod(self, pos_1, pos_2):
         pos_1, pos_2 = pos_1.to(self.device), pos_2.to(self.device)
         feature_1 = self.forward(pos_1)
         feature_2 = self.forward(pos_2)
@@ -183,6 +186,35 @@ class ResnetEncoder(nn.Module):
             loss, _, _, _, _, _ = self.crit(features)
             return loss
         return self.crit(feature_1, feature_2)
+
+    def generate_adversarial_example(self, x, epsilon=4/255, alpha=1/255, num_iter=10):
+        x_adv = x.clone().detach().to(self.device)
+        x_adv.requires_grad = True
+        with torch.no_grad():
+            target_features = self.forward(x)  # No grad tracking here
+        for _ in range(num_iter):
+            outputs = self.forward(x_adv)
+            loss = self.crit(outputs, target_features)  # Now valid
+            self.convnet.zero_grad()
+            self.projection.zero_grad()
+            loss.backward()
+            grad = x_adv.grad.data
+            x_adv = x_adv.detach() + alpha * torch.sign(grad)
+            eta = torch.clamp(x_adv - x, min=-epsilon, max=epsilon)
+            x_adv = torch.clamp(x + eta, 0, 1).detach_()
+            x_adv.requires_grad = True
+        return x_adv
+
+    def compute_loss(self, pos_1, pos_2):
+        """
+        Compute contrastive loss using clean or adversarial views.
+        """
+        if self.hparams.adversarial and self.is_in_train_mode():
+            # Generate adversarial versions of both views
+            pos_1_adv = self.generate_adversarial_example(pos_1)
+            pos_2_adv = self.generate_adversarial_example(pos_2)
+            return self.compute_loss_submethod(pos_1_adv, pos_2_adv)
+        return self.compute_loss_submethod(pos_1, pos_2)
 
     def train(self):
         best_val_loss = float("inf")
@@ -274,6 +306,8 @@ class ResnetEncoder(nn.Module):
         print(f"\nLoss plot saved to {save_path}")
 
     def get_model_save_name(self):
+        if self.hparams.adversarial:
+            return f"adv_resnet_{self.hparams.loss_type}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
         if self.hparams.loss_type == "mmcl":
             return f"resnet_{self.hparams.loss_type}_{self.hparams.kernel_type}_C_{self.hparams.C}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
         return f"resnet_{self.hparams.loss_type}_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"

@@ -36,44 +36,56 @@ class ResnetSupervised(nn.Module):
         self.model = ResNet50(cifar_head=True)
         self.model.fc = nn.Linear(2048, 10)
         self.model.to(self.device)
+        if "resnet_supervised_ckpt" in vars(self.hparams):
+            ckpt_path = self.hparams.resnet_supervised_ckpt
+            if os.path.isfile(ckpt_path):
+                state_dict = torch.load(ckpt_path, map_location=self.device)
+                self.model.load_state_dict(state_dict)
+                print(f"Loaded pretrained model from {ckpt_path}")
+            else:
+                raise FileNotFoundError(f"Checkpoint file not found at: {ckpt_path}")
         for param in self.model.parameters():
             param.requires_grad = True
 
     def set_data_loader(self):
-        transform_train = transforms.Compose([
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-        ])
-        transform_test = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-        ])
-        full_train_set = torchvision.datasets.CIFAR10(
-            root='./data', train=True, download=True, transform=transform_train
-        )
-        test_set = torchvision.datasets.CIFAR10(
-                root='./data', train=False, download=True, transform=transform_test
-        )
-        self.testloader = DataLoader(
-            test_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2
-        )
-        if self.hparams.use_validation:
-            total_size = len(full_train_set)
-            val_size = 2000
-            train_size = total_size - val_size
-            train_set, val_set = random_split(full_train_set, [train_size, val_size])
-            self.trainloader = DataLoader(
-                train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
+        try:
+            transform_train = transforms.Compose([
+                transforms.RandomCrop(32, padding=4),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            ])
+            transform_test = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            ])
+            full_train_set = torchvision.datasets.CIFAR10(
+                root='./data', train=True, download=True, transform=transform_train
             )
-            self.valloader = DataLoader(
-                val_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2
+            test_set = torchvision.datasets.CIFAR10(
+                    root='./data', train=False, download=True, transform=transform_test
             )
-        else:
-            self.trainloader = DataLoader(
-                full_train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
+            self.testloader = DataLoader(
+                test_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2
             )
+            if self.hparams.use_validation:
+                total_size = len(full_train_set)
+                val_size = 2000
+                train_size = total_size - val_size
+                train_set, val_set = random_split(full_train_set, [train_size, val_size])
+                self.trainloader = DataLoader(
+                    train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
+                )
+                self.valloader = DataLoader(
+                    val_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2
+                )
+            else:
+                self.trainloader = DataLoader(
+                    full_train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
+                )
+        except Exception as e:
+            print(f"Could not load data due to: {e}")
+            return None
 
     def forward(self, x):
         return self.model(x)

@@ -51,9 +51,9 @@ models = [
         "model": "resnet supervised"
     },
     {
-        "encoder_ckpt": "models/resnet_pretrained_models/resnet50_imagenet_bs2k_epochs600.pth.tar",
+        "encoder_ckpt": "models/resnet/finetune_resnet_barlow_bs_512_lr_0.001.pt",
         "load_classifier": True,
-        "model": "resnet ssl no finetune"
+        "model": "resnet cl barlow"
     },
     {
         "encoder_ckpt": "models/resnet_pretrained_models/finetune_1_resnet50_cifar10_bs1024_epochs1000.pth.tar",
