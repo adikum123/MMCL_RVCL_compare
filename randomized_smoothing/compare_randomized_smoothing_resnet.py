@@ -102,8 +102,8 @@ def update_results(
     rs_label, radius = verifier.certify(
         image, args.N0, args.N, args.alpha, args.batch
     )
-    print(f"\nModel: {model_name}, true_label: {true_label}, predicted_label: {predicted_label}, rs_label: {rs_label}, radius: {radius}")
     predicted_label = get_ori_model_predicition(ori_model, image)
+    print(f"\nModel: {model_name}, true_label: {true_label}, predicted_label: {predicted_label}, rs_label: {rs_label}, radius: {radius}")
     results[model_name].append({
         "sigma": verifier.sigma,
         "radius": radius,
