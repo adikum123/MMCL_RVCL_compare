@@ -126,6 +126,7 @@ for model in models:
     if not model["load_classifier"]:
         params_dict = {"resnet_supervised_ckpt": model["encoder_ckpt"], "finetune": True}
         hparams = SimpleNamespace(**params_dict)
+        print(f"Loaded supervised classifier from: {model['encoder_ckpt']}")
         model["base_classifier"] = ResnetSupervised(hparams=hparams, device=device)
         model["test_accuracy"] = get_test_set_accuracy(model["base_classifier"])
         print(f"Test accuracy for model {model['model']}: {model['test_accuracy']}")
@@ -135,8 +136,10 @@ for model in models:
     hparams = SimpleNamespace(**params_dict)
     encoder = ResnetEncoder(hparams=hparams, device=device)
     # load classifier
+    classifier_ckpt = f"linear_{os.path.basename(model['encoder_ckpt'])}"
+    print(f"Loaded encoder from: {model['encoder_ckpt']}\nclassifier from: {classifier_ckpt}")
     params_dict = {
-        "resnet_classifier_ckpt": os.path.join("models", "linear_evaluate", f"linear_{os.path.basename(model['encoder_ckpt'])}"),
+        "resnet_classifier_ckpt": os.path.join("models", "linear_evaluate", classifier_ckpt),
         "finetune": True
     }
     hparams = SimpleNamespace(**params_dict)
