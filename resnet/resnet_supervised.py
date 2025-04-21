@@ -22,15 +22,27 @@ class ResnetSupervised(nn.Module):
         self.set_model()
         self.set_data_loader()
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(
-            self.model.parameters(), lr=self.hparams.lr
-        )
-        self.scheduler = optim.lr_scheduler.StepLR(
-            self.optimizer,
-            step_size=self.hparams.step_size,
-            gamma=self.hparams.scheduler_gamma,
-        )
+        self.set_optimizer()
+        self.set_scheduler()
         self.min_epochs = 80
+
+    def set_optimizer(self):
+        try:
+            self.optimizer = optim.Adam(
+                self.model.parameters(), lr=self.hparams.lr
+            )
+        except Exception as e:
+            self.optimizer = None
+
+    def set_scheduler(self):
+        try:
+            self.scheduler = optim.lr_scheduler.StepLR(
+                self.optimizer,
+                step_size=self.hparams.step_size,
+                gamma=self.hparams.scheduler_gamma,
+            )
+        except Exception as e:
+            self.scheduler = None
 
     def set_model(self):
         self.model = ResNet50(cifar_head=True)

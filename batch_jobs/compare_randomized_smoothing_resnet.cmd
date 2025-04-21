@@ -35,11 +35,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     pip install -r requirements.txt
 
     echo "Computing plots for robust radius..."
-    python -u compare_randomized_smoothing_resnet.py \
-        --resnet_supervised_ckpt models/resnet/resnet_supervised_bs_128_lr_0.001.pt \
-        --resnet_unsupervised_encoder_ckpt models/resnet_pretrained_models/resnet50_imagenet_bs2k_epochs600.pth.tar \
-        --resnet_unsupervised_eval_ckpt models/linear_evaluate/linear_eval_resnet_unsupervised_bs_128_lr_0.001.pt \
-        --dataset cifar-10 \
-        --positives_per_class 50
+    python -u randomized_smoothing/compare_randomized_smoothing_resnet.py \
+        --num_images 2000
 
 EOF

@@ -28,16 +28,28 @@ class ResnetEncoder(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 10)
         ).to(device)
-        self.optimizer = optim.Adam(
-            list(self.convnet.parameters()) + list(self.projection.parameters()),
-            lr=self.hparams.lr
-        )
-        self.scheduler = optim.lr_scheduler.StepLR(
-            self.optimizer,
-            step_size=self.hparams.step_size,
-            gamma=self.hparams.scheduler_gamma,
-        )
+        self.set_optimizer()
+        self.set_scheduler()
         self.min_epochs = 80
+
+    def set_optimizer(self):
+        try:
+            self.optimizer = optim.Adam(
+                list(self.convnet.parameters()) + list(self.projection.parameters()),
+                lr=self.hparams.lr
+            )
+        except Exception as e:
+            self.optimizer = None
+
+    def set_scheduler(self):
+        try:
+            self.scheduler = optim.lr_scheduler.StepLR(
+                self.optimizer,
+                step_size=self.hparams.step_size,
+                gamma=self.hparams.scheduler_gamma,
+            )
+        except Exception as e:
+            self.scheduler = None
 
     def set_covnet_and_projection(self):
         if "resnet_encoder_ckpt" not in vars(self.hparams):

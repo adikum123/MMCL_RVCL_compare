@@ -24,14 +24,9 @@ class ResnetUnsupervisedClassifier(nn.Module):
         self.set_data_loader()
         self.criterion = nn.CrossEntropyLoss()
         self.set_optimizer()
-        self.scheduler = optim.lr_scheduler.StepLR(
-            self.optimizer,
-            step_size=self.hparams.step_size,
-            gamma=self.hparams.scheduler_gamma,
-        )
+        self.set_scheduler()
         self.best_model_saved = False
         self.min_epochs = 80
-
 
     def set_data_loader(self):
         try:
@@ -69,22 +64,35 @@ class ResnetUnsupervisedClassifier(nn.Module):
                 self.trainloader = DataLoader(
                     full_train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
                 )
-            except Exception as e:
-                print(f"Could not load data loader due to {e}")
+        except Exception as e:
+            print(f"Could not load data loader due to {e}")
 
     def set_optimizer(self):
-        lr = self.hparams.lr
-        params_to_optimize = []
-        if self.hparams.finetune:
-            encoder_params = self.encoder.get_finetune_params()
-            for param in encoder_params:
-                param.requires_grad = True
-            params_to_optimize = self.encoder.get_finetune_params()
-        else:
-            for param in self.encoder.parameters():
-                param.requires_grad = False
-        params_to_optimize += list(self.classifier.parameters())
-        self.optimizer = torch.optim.Adam(params_to_optimize, lr=lr)
+        try:
+            lr = self.hparams.lr
+            params_to_optimize = []
+            if self.hparams.finetune:
+                encoder_params = self.encoder.get_finetune_params()
+                for param in encoder_params:
+                    param.requires_grad = True
+                params_to_optimize = self.encoder.get_finetune_params()
+            else:
+                for param in self.encoder.parameters():
+                    param.requires_grad = False
+            params_to_optimize += list(self.classifier.parameters())
+            self.optimizer = torch.optim.Adam(params_to_optimize, lr=lr)
+        except Exception as e:
+            return None
+
+    def set_scheduler(self):
+        try:
+            self.scheduler = optim.lr_scheduler.StepLR(
+                self.optimizer,
+                step_size=self.hparams.step_size,
+                gamma=self.hparams.scheduler_gamma,
+            )
+        except Exception as e:
+            return None
 
     def set_classifier(self):
         if "resnet_classifier_ckpt" in vars(self.hparams) and self.hparams.resnet_classifier_ckpt:
