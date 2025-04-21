@@ -127,6 +127,8 @@ for model in models:
         params_dict = {"resnet_supervised_ckpt": model["encoder_ckpt"], "finetune": True}
         hparams = SimpleNamespace(**params_dict)
         model["base_classifier"] = ResnetSupervised(hparams=hparams, device=device)
+        model["test_accuracy"] = get_test_set_accuracy(model["base_classifier"])
+        print(f"Test accuracy for model {model['model']}: {model['test_accuracy']}")
         continue
     # load encoder
     params_dict = {"resnet_encoder_ckpt": model["encoder_ckpt"], "finetune": True}
