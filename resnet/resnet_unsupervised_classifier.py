@@ -20,11 +20,7 @@ class ResnetUnsupervisedClassifier(nn.Module):
         self.hparams = hparams
         self.device = device
         self.encoder = encoder
-        self.classifier = nn.Sequential(
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, 10)
-        ).to(self.device)
+        self.set_classifier()
         self.set_data_loader()
         self.criterion = nn.CrossEntropyLoss()
         self.set_optimizer()
@@ -38,40 +34,43 @@ class ResnetUnsupervisedClassifier(nn.Module):
 
 
     def set_data_loader(self):
-        transform_train = transforms.Compose([
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-        ])
-        transform_test = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-        ])
-        full_train_set = torchvision.datasets.CIFAR10(
-            root='./data', train=True, download=True, transform=transform_train
-        )
-        test_set = torchvision.datasets.CIFAR10(
-                root='./data', train=False, download=True, transform=transform_test
-        )
-        self.testloader = DataLoader(
-            test_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2
-        )
-        if self.hparams.use_validation:
-            total_size = len(full_train_set)
-            val_size = 2000
-            train_size = total_size - val_size
-            train_set, val_set = random_split(full_train_set, [train_size, val_size])
-            self.trainloader = DataLoader(
-                train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
+        try:
+            transform_train = transforms.Compose([
+                transforms.RandomCrop(32, padding=4),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            ])
+            transform_test = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+            ])
+            full_train_set = torchvision.datasets.CIFAR10(
+                root='./data', train=True, download=True, transform=transform_train
             )
-            self.valloader = DataLoader(
-                val_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2
+            test_set = torchvision.datasets.CIFAR10(
+                    root='./data', train=False, download=True, transform=transform_test
             )
-        else:
-            self.trainloader = DataLoader(
-                full_train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
+            self.testloader = DataLoader(
+                test_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2
             )
+            if self.hparams.use_validation:
+                total_size = len(full_train_set)
+                val_size = 2000
+                train_size = total_size - val_size
+                train_set, val_set = random_split(full_train_set, [train_size, val_size])
+                self.trainloader = DataLoader(
+                    train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
+                )
+                self.valloader = DataLoader(
+                    val_set, batch_size=self.hparams.batch_size, shuffle=False, num_workers=2
+                )
+            else:
+                self.trainloader = DataLoader(
+                    full_train_set, batch_size=self.hparams.batch_size, shuffle=True, num_workers=2
+                )
+            except Exception as e:
+                print(f"Could not load data loader due to {e}")
 
     def set_optimizer(self):
         lr = self.hparams.lr
@@ -86,6 +85,22 @@ class ResnetUnsupervisedClassifier(nn.Module):
                 param.requires_grad = False
         params_to_optimize += list(self.classifier.parameters())
         self.optimizer = torch.optim.Adam(params_to_optimize, lr=lr)
+
+    def set_classifier(self):
+        if "resnet_classifier_ckpt" in vars(self.hparams) and self.hparams.resnet_classifier_ckpt:
+            print(f"Loading classifier from checkpoint: {self.hparams.resnet_classifier_ckpt}")
+            self.classifier = nn.Sequential(
+                nn.Linear(128, 64),
+                nn.ReLU(),
+                nn.Linear(64, 10)
+            ).to(self.device)
+            self.classifier.load_state_dict(torch.load(self.hparams.resnet_classifier_ckpt, map_location=self.device))
+        else:
+            self.classifier = nn.Sequential(
+                nn.Linear(128, 64),
+                nn.ReLU(),
+                nn.Linear(64, 10)
+            ).to(self.device)
 
 
     def forward(self, x):

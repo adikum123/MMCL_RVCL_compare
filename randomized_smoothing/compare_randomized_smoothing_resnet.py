@@ -1,28 +1,22 @@
 import argparse
-import copy
-import gc
 import json
 import os
 import random
-import sys
-import time
 from collections import defaultdict
+from types import SimpleNamespace
 
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torchvision
-import torchvision.models as vision_models
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from randomized_smoothing.core import Smooth
 from resnet.resnet import ResNet50
-from resnet.resnet_unsupervised import ResnetUnsupervised, SimCLRModel
+from resnet.resnet_supervised import ResnetSupervised
+from resnet.resnet_unsupervised_classifier import ResnetUnsupervisedClassifier
+from resnet.resnet_unsupervised_encoder import ResnetEncoder
 
 parser = argparse.ArgumentParser(description="Randomized smoothing ResNet")
 parser.add_argument("--batch_size", type=int, default=256, help='batch size')
@@ -51,19 +45,19 @@ models = [
         "model": "resnet supervised"
     },
     {
-        "encoder_ckpt": "models/resnet/finetune_resnet_barlow_bs_512_lr_0.001.pt",
+        "encoder_ckpt": "models/resnet/finetune_resnet_info_nce_bs_512_lr_0.001.pt",
         "load_classifier": True,
-        "model": "resnet cl barlow"
+        "model": "resnet cl"
     },
     {
-        "encoder_ckpt": "models/resnet_pretrained_models/finetune_1_resnet50_cifar10_bs1024_epochs1000.pth.tar",
+        "encoder_ckpt": "models/resnet/finetune_adv_resnet_info_nce_bs_512_lr_0.001.pt",
         "load_classifier": True,
-        "model": "resnet ssl 1 layer finetune"
+        "model": "resnet adversarial cl"
     },
     {
-        "encoder_ckpt": "models/resnet_pretrained_models/finetune_2_resnet50_cifar10_bs1024_epochs1000.pth.tar",
+        "encoder_ckpt": "models/resnet/finetune_resnet_mmcl_rbf_C_1.0_bs_512_lr_0.001.pt",
         "load_classifier": True,
-        "model": "resnet ssl 2 layer finetune"
+        "model": "resnet mmcl"
     }
 ]
 transform_test = transforms.Compose([
@@ -98,41 +92,23 @@ class CombinedModel(nn.Module):
             output = self.eval_(features)
             return output
 
-
-
-
-for config in models:
-    encoder_ckpt = config["encoder_ckpt"]
-    load_classifier = config["load_classifier"]
-    model_name = config["model"]
+for model in models:
     if not load_classifier:
-        print(f"Loading supervised model: {model_name}")
-        # Create supervised model architecture
-        model = vision_models.resnet50(weights=vision_models.ResNet50_Weights.IMAGENET1K_V1)
-        model.fc = nn.Linear(2048, 10)
-        model.load_state_dict(torch.load(encoder_ckpt, map_location=device))
-        model = model.to(device)
-        model.eval()
-        encoder = model
-        config["base_verifier"] = encoder
+        params_dict = {"resnet_supervised_ckpt": model["encoder_ckpt"]}
+        hparams = SimpleNamespace(**params_dict)
+        model["base_verifier"] = ResnetSupervised(hparams=hparams)
         continue
-    print(f"Loading SimCLR encoder: {model_name}")
-    encoder = SimCLRModel(checkpoint_path=encoder_ckpt).to(device)
-    encoder.set_eval()
-    classifier_ckpt = os.path.join(
-        "models", "linear_evaluate", f"linear_{os.path.basename(encoder_ckpt)}"
-    )
-    print(f"Loading classifier from: {classifier_ckpt}")
-    classifier = torch.nn.Sequential(
-        torch.nn.Linear(128, 10)
-    ).to(device)
-    classifier.load_state_dict(torch.load(classifier_ckpt, map_location=device))
-    classifier.eval()
-    config["base_verifier"] = CombinedModel(encoder=encoder, eval_=classifier)
-
-
-
-
+    # load encoder
+    params_dict = {"resnet_encoder_ckpt": model["encoder_ckpt"]}
+    hparams = SimpleNamespace(**params_dict)
+    encoder = ResnetEncoder(hparams=hparams)
+    # load classifier
+    params_dict = {
+        "resnet_classifier_ckpt": os.path.join("models", "linear_evaluate", f"linear_{os.path.basename(model["encoder_ckpt"])}")
+    }
+    hparams = SimpleNamespace(**params_dict)
+    classifier = ResnetUnsupervisedClassifier(hparams=hparams)
+    model["base_verifier"] = CombinedModel(encoder=encoder, eval_=classifier)
 
 def get_ori_model_predicition(model, x):
     return torch.argmax(model(x.unsqueeze(0)), dim=-1).item()
