@@ -120,6 +120,10 @@ class ResnetUnsupervisedClassifier(nn.Module):
         logits = self.classifier(features)
         return logits
 
+    def set_eval(self):
+        self.encoder.eval()
+        self.classifier.eval()
+
     def train(self):
         best_val_loss = float("inf")
         patience_counter = 0
