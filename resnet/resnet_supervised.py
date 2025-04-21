@@ -99,6 +99,9 @@ class ResnetSupervised(nn.Module):
             print(f"Could not load data due to: {e}")
             return None
 
+    def set_eval(self):
+        self.model.eval()
+
     def forward(self, x):
         return self.model(x)
 
