@@ -121,7 +121,10 @@ class ResnetUnsupervisedClassifier(nn.Module):
         return logits
 
     def set_eval(self):
-        self.encoder.eval()
+        try:
+            self.encoder.eval()
+        except Exception:
+            self.encoder.set_eval()
         self.classifier.eval()
 
     def train(self):
