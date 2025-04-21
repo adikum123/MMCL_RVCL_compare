@@ -102,6 +102,7 @@ def update_results(
     rs_label, radius = verifier.certify(
         image, args.N0, args.N, args.alpha, args.batch
     )
+    print(f"\nModel: {model_name}, true_label: {true_label}, predicted_label: {predicted_label}, rs_label: {rs_label}, radius: {radius}")
     predicted_label = get_ori_model_predicition(ori_model, image)
     results[model_name].append({
         "sigma": verifier.sigma,
@@ -149,7 +150,7 @@ for model in models:
     print(f"Test accuracy for model {model['model']}: {model['test_accuracy']}")
 
 results = defaultdict(list)
-sigma_values = [0.12, 0.25, 0.5, 0.6]
+sigma_values = [0.12, 0.25, 0.5, 0.6, 1]
 for sigma in sigma_values:
 # create verifiers
     for model in models:
