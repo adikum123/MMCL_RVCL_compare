@@ -33,7 +33,6 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --batch_size 512 \
         --num_iters 200 \
         --lr 1e-3 \
-        --use_validation \
         --scheduler_gamma 0.5 \
         --loss_type mmcl \
         --kernel_type rbf \
