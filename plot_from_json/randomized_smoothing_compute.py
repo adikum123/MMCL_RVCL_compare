@@ -44,7 +44,7 @@ def plot_one_certified_accuracy_per_sigma(data):
             y_vals = []
             for r in x_vals:
                 count = sum(
-                    1 for rec in records if rec["radius"] >= r and rec["true_label"] == rec["rs_label"]
+                    1 for rec in records if rec["radius"] >= r and rec["true_label"] == rec["rs_label"] == rec["predicted_label"]
                 )
                 y_vals.append(count / total if total > 0 else 0)
             # Construct legend label with test accuracy

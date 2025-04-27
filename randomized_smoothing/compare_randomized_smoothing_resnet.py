@@ -103,7 +103,7 @@ def update_results(
         image, args.N0, args.N, args.alpha, args.batch
     )
     predicted_label = get_ori_model_predicition(ori_model, image)
-    print(f"\nModel: {model_name}, true_label: {true_label}, predicted_label: {predicted_label}, rs_label: {rs_label}, radius: {radius}")
+    print(f"\nModel: {model_name}, true_label: {true_label}, predicted_label: {predicted_label}, rs_label: {rs_label}, radius: {radius}, sigma: {verifier.sigma}")
     results[model_name].append({
         "sigma": verifier.sigma,
         "radius": radius,
@@ -114,7 +114,7 @@ def update_results(
 
 def get_test_set_accuracy(model):
     total_correct, total_samples = 0, 0
-    for images, targets in testloader:
+    for images, targets in tqdm(testloader):
         images, targets = images.to(device), targets.to(device)
         logits = model(images)
         predictions = torch.argmax(logits, dim=1)
