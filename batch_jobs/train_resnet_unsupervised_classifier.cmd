@@ -36,6 +36,6 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --scheduler_gamma 0.5 \
         --step_size 25 \
         --finetune \
-        --resnet_encoder_ckpt models/resnet/resnet_mmcl_rbf_C_1.0_bs_512_lr_0.001.pt
+        --resnet_encoder_ckpt models/resnet/finetune_resnet_barlow_bs_512_lr_0.001.pt
 
 EOF
