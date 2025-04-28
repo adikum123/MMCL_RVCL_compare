@@ -41,24 +41,24 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 models = [
     {
-        "encoder_ckpt": "models/resnet/resnet_supervised_bs_256_lr_0.001.pt",
-        "load_classifier": False,
-        "model": "resnet supervised"
+        "encoder_ckpt": "models/resnet/finetune_resnet_nce_bs_512_lr_0.001.pt",
+        "load_classifier": True,
+        "model": "resnet cl nce"
+    },
+    {
+        "encoder_ckpt": "models/resnet/finetune_resnet_barlow_bs_512_lr_0.001.pt",
+        "load_classifier": True,
+        "model": "resnet cl barlow"
+    },
+    {
+        "encoder_ckpt": "models/resnet/finetune_resnet_cosine_bs_512_lr_0.001.pt",
+        "load_classifier": True,
+        "model": "resnet cl cosine"
     },
     {
         "encoder_ckpt": "models/resnet/finetune_resnet_info_nce_bs_512_lr_0.001.pt",
         "load_classifier": True,
-        "model": "resnet cl"
-    },
-    {
-        "encoder_ckpt": "models/resnet/finetune_adv_resnet_info_nce_bs_512_lr_0.001.pt",
-        "load_classifier": True,
-        "model": "resnet adversarial cl"
-    },
-    {
-        "encoder_ckpt": "models/resnet/finetune_resnet_mmcl_rbf_C_1.0_bs_512_lr_0.001.pt",
-        "load_classifier": True,
-        "model": "resnet mmcl"
+        "model": "resnet cl info nce"
     }
 ]
 transform_test = transforms.Compose([

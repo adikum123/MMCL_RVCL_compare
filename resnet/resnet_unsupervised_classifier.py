@@ -262,4 +262,3 @@ class ResnetUnsupervisedClassifier(nn.Module):
             os.makedirs(save_dir, exist_ok=True)
             save_path = os.path.join(save_dir, f"{self.get_model_save_name()}")
             torch.save(self.classifier.state_dict(), save_path)
-            torch.save(self.classifier.state_dict(), save_path)
