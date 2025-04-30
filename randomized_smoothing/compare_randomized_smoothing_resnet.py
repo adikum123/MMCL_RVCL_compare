@@ -114,14 +114,16 @@ def update_results(
 
 def get_test_set_accuracy(model):
     total_correct, total_samples = 0, 0
-    for images, targets in tqdm(testloader):
-        images, targets = images.to(device), targets.to(device)
-        logits = model(images)
-        predictions = torch.argmax(logits, dim=1)
-        correct = (predictions == targets).sum().item()
-        total_correct += correct
-        total_samples += targets.size(0)
-    return total_correct / total_samples
+    model.set_eval()
+    with torch.no_grad():
+        for images, targets in tqdm(testloader):
+            images, targets = images.to(device), targets.to(device)
+            logits = model(images)
+            predictions = torch.argmax(logits, dim=1)
+            correct = (predictions == targets).sum().item()
+            total_correct += correct
+            total_samples += targets.size(0)
+        return total_correct / total_samples
 
 for model in models:
     if not model["load_classifier"]:
