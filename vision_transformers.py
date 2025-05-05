@@ -22,6 +22,7 @@ class VisionTransformerModel(nn.Module):
         self.model = models.vit_b_16(pretrained=True)
         print(self.model.heads)
         self.model.heads = nn.Linear(768, 10)
+        self.model.to(self.device)
         # set data loader
         self.set_data_loader()
         # set loss fn and optimizer

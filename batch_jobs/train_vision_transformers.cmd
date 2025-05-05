@@ -2,8 +2,8 @@
 #SBATCH -p lrz-hgx-h100-94x4
 #SBATCH --gres=gpu:1
 #SBATCH --time=5:00:00
-#SBATCH -o outs/supervised.out
-#SBATCH -e outs/supervised.out
+#SBATCH -o outs/vision_transformers.out
+#SBATCH -e outs/vision_transformers.out
 
 #!/bin/bash
 echo "Creating and starting the container..."
