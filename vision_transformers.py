@@ -169,8 +169,6 @@ class VisionTransformerModel(nn.Module):
         plt.savefig(save_path)
         plt.close()
         print(f"\nLoss plot saved to {save_path}")
-        if self.hparams.finetune:
-            self.encoder.save_finetune()
 
     def test(self):
         """Evaluate the model on the test dataset."""
