@@ -208,9 +208,12 @@ class VisionTransformerModel(nn.Module):
         print(f"Test Results: {json.dumps(metrics, indent=4)}")
         return metrics
 
+    def get_model_save_name(self):
+        return f"vision_transformer_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}"
+
     def save(self):
         save_dir = "models/vision_transformer"
         os.makedirs(save_dir, exist_ok=True)
-        save_path = os.path.join(save_dir, f"vision_transformer_bs_{self.hparams.batch_size}_lr_{self.hparams.lr}.pth")
+        save_path = os.path.join(save_dir, f"{self.get_model_save_name()}.pth")
         torch.save(self.model.state_dict(), save_path)
 
