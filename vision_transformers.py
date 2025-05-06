@@ -35,6 +35,8 @@ class VisionTransformerModel(nn.Module):
             step_size=self.hparams.step_size,
             gamma=self.hparams.scheduler_gamma,
         )
+        # min train epochs
+        self.min_epochs = 50
 
     def set_data_loader(self):
         transform_train = transforms.Compose([
