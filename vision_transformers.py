@@ -50,7 +50,7 @@ class VisionTransformerModel(nn.Module):
 
     def set_data_loader(self):
         transform_train = transforms.Compose([
-            transforms.RandomCrop(224, padding=4),
+            transforms.RandomCrop(32, padding=4),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             transforms.Normalize(
