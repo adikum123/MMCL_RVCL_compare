@@ -10,6 +10,7 @@ import torchvision.models as models
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
+from vit_pytorch import ViT
 
 
 class VisionTransformerModel(nn.Module):
@@ -19,9 +20,18 @@ class VisionTransformerModel(nn.Module):
         self.hparams = hparams
         self.device = device
         # set device
-        self.model = models.vit_b_16(pretrained=True)
-        print(self.model.heads)
-        self.model.heads = nn.Linear(768, 10)
+        self.model = ViT(
+            image_size  = 32,     # CIFAR‑10 resolution
+            patch_size  = 4,      # (32/4)^2 = 64 patches > 16
+            num_classes = 10,     # CIFAR‑10 has 10 classes
+            dim         = 512,    # embedding dimension
+            depth       = 6,      # number of transformer blocks
+            heads       = 8,      # must divide dim (512/8 = 64 per head)
+            mlp_dim     = 1024,   # feed-forward network size
+            dropout     = 0.1,    # classifier dropout
+            emb_dropout = 0.1     # embedding dropout
+        )
+        print(f"Model: {self.model} with param number: {sum(p.numel() for p in self.model.parameters())}")
         self.model.to(self.device)
         # set data loader
         self.set_data_loader()
