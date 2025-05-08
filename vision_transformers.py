@@ -21,15 +21,15 @@ class VisionTransformerModel(nn.Module):
         self.device = device
         # set device
         self.model = ViT(
-            image_size  = 32,     # CIFAR‑10 resolution
-            patch_size  = 4,      # (32/4)^2 = 64 patches > 16
-            num_classes = 10,     # CIFAR‑10 has 10 classes
-            dim         = 512,    # embedding dimension
-            depth       = 6,      # number of transformer blocks
-            heads       = 8,      # must divide dim (512/8 = 64 per head)
-            mlp_dim     = 1024,   # feed-forward network size
-            dropout     = 0.1,    # classifier dropout
-            emb_dropout = 0.1     # embedding dropout
+            image_size=32,
+            patch_size=2,
+            num_classes=10,
+            dim=768,
+            depth=12,
+            heads=12,
+            mlp_dim=3072,
+            dropout=0.1,
+            emb_dropout=0.1
         )
         print(f"Model: {self.model} with param number: {sum(p.numel() for p in self.model.parameters())}")
         self.model.to(self.device)
