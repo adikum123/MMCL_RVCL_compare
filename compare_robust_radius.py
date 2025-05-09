@@ -123,7 +123,7 @@ def compute_radius(verifier, ori_image, target_image):
 # for each sample in class we compute the average radius
 average_robust_radius = defaultdict(list)
 for class_index, (class_name, class_ori_images) in enumerate(original_images.items()):
-    print(f'Processing class: {class_name}, already processed: {class_index}/{len(class_names)} classes')
+    print(f'Processing class: {class_name}, already processed: {class_index+1}/{len(class_names)} classes')
     for retry in range(args.num_retries):
         print(f"Processing retry: {retry+1}")
         target_images = [image for k, v in per_class_sampler.items() for image in random.sample(v, args.negatives_per_class)]
@@ -183,7 +183,7 @@ def get_model_name_from_ckpt(ckpt):
 save_dir = "radius_results"
 # Ensure the directory exists
 os.makedirs(save_dir, exist_ok=True)
-file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}"
+output_file_name = "-".join([x.replace(" ", "_") for x in [args.mmcl_model, args.rvcl_model, args.regular_cl_model]])
 with open(os.path.join(save_dir, f"{file_name}.json"), "w") as f:
     json.dump(per_model_mean_std, f, indent=4)
 
@@ -191,40 +191,3 @@ num_images = len(class_names) * args.positives_per_class
 assert len(per_model_mean_std.keys()) == len(class_names) * args.positives_per_class, (
     f"Lengths do not match:\n{len(per_model_mean_std.keys())}\n{len(class_names)},{args.positives_per_class}"
 )
-mmcl_means, mmcl_stds = [0] * num_images, [0] * num_images
-rvcl_means, rvcl_stds = [0] * num_images, [0] * num_images
-regular_cl_means, regular_cl_stds = [0] * num_images, [0] * num_images
-
-for image_index, value in per_model_mean_std.items():
-    if isinstance(image_index, str):
-        image_index = int(image_index)
-    mmcl_mean, mmcl_std = per_model_mean_std[str(image_index)]["mmcl"]
-    rvcl_mean, rvcl_std = per_model_mean_std[str(image_index)]["rvcl"]
-    regular_cl_mean, regular_cl_std = per_model_mean_std[str(image_index)]["regular_cl"]
-
-    mmcl_means[image_index] = mmcl_mean
-    mmcl_stds[image_index] = mmcl_std
-    rvcl_means[image_index] = rvcl_mean
-    rvcl_stds[image_index] = rvcl_std
-    regular_cl_means[image_index] = regular_cl_mean
-    regular_cl_stds[image_index] = regular_cl_std
-
-x = list(range(num_images))
-
-plt.figure(figsize=(12, 6))
-
-# MMCL model
-plt.errorbar(x, mmcl_means, yerr=mmcl_stds, fmt='o', color='blue', label="MMCL", capsize=3)
-
-# RVCL model
-plt.errorbar(x, rvcl_means, yerr=rvcl_stds, fmt='s', color='green', label="RVCL", capsize=3)
-
-# Regular CL model
-plt.errorbar(x, regular_cl_means, yerr=regular_cl_stds, fmt='^', color='red', label="Regular CL", capsize=3)
-
-plt.xlabel("Image Index")
-plt.ylabel("Robust Radius (Mean ± Std)")
-plt.title("Robust Radius Comparison Across Models")
-plt.legend()
-plt.grid(True)
-plt.show()
