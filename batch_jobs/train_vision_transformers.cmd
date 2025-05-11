@@ -28,7 +28,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     export PYTHONPATH=$(pwd):$PYTHONPATH
     echo "Training supervised model"
     python -u train_models/train_vision_transformers.py \
-        --batch_size 256 \
+        --batch_size 128 \
         --num_iters 200 \
         --lr 1e-3 \
         --scheduler_gamma 0.1 \
