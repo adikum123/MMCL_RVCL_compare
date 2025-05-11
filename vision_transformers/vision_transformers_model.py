@@ -21,6 +21,16 @@ class VisionTransformerModel(nn.Module):
         super(VisionTransformerModel, self).__init__()
         self.hparams = hparams
         self.device = device
+        self.set_model()
+        # set data loader
+        self.set_data_loader()
+        # set loss fn with label smoothing
+        self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+        # set optimizer with weight decay
+        self.set_optimizer()
+        self.set_scheduler()
+
+    def set_model(self):
         # set model
         self.model = ViT(
             in_c=3,             # RGB images
@@ -35,37 +45,48 @@ class VisionTransformerModel(nn.Module):
             is_cls_token=True   # use [CLS] token
         )
         print(f"Model: {self.model} with param number: {sum(p.numel() for p in self.model.parameters())}")
+        if hasattr(self.hparams, "vit_ckpt") and self.hparams.vit_ckpt:
+            print(f"Loading model checkpoint from {self.hparams.vit_ckpt}")
+            ckpt = torch.load(self.hparams.vit_ckpt, map_location=self.device)
+            self.model.load_state_dict(ckpt)
         self.model.to(self.device)
-        # set data loader
-        self.set_data_loader()
-        # set loss fn with label smoothing
-        self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
-        # set optimizer with weight decay
-        self.optimizer = optim.AdamW(
-            self.model.parameters(), lr=self.hparams.lr, weight_decay=5e-5
-        )
-        # learning rate schedule: warmup + cosine annealing
-        warmup_epochs = 5
-        total_epochs = self.hparams.num_iters
-        cosine_epochs = total_epochs - warmup_epochs
-        self.scheduler = optim.lr_scheduler.SequentialLR(
-            self.optimizer,
-            schedulers=[
-                optim.lr_scheduler.LinearLR(
-                    self.optimizer,
-                    start_factor=1e-6,
-                    total_iters=warmup_epochs
-                ),
-                optim.lr_scheduler.CosineAnnealingLR(
-                    self.optimizer,
-                    T_max=cosine_epochs,
-                    eta_min=1e-5
-                )
-            ],
-            milestones=[warmup_epochs]
-        )
-        # minimum train epochs before early stopping
-        self.min_epochs = 50
+        return None
+
+    def set_optimizer(self):
+        try:
+            # set optimizer with weight decay
+            self.optimizer = optim.AdamW(
+                self.model.parameters(), lr=self.hparams.lr, weight_decay=5e-5
+            )
+        except Exception:
+            return None
+
+    def set_scheduler(self):
+        try:
+            # learning rate schedule: warmup + cosine annealing
+            warmup_epochs = 5
+            total_epochs = self.hparams.num_iters
+            cosine_epochs = total_epochs - warmup_epochs
+            self.scheduler = optim.lr_scheduler.SequentialLR(
+                self.optimizer,
+                schedulers=[
+                    optim.lr_scheduler.LinearLR(
+                        self.optimizer,
+                        start_factor=1e-6,
+                        total_iters=warmup_epochs
+                    ),
+                    optim.lr_scheduler.CosineAnnealingLR(
+                        self.optimizer,
+                        T_max=cosine_epochs,
+                        eta_min=1e-5
+                    )
+                ],
+                milestones=[warmup_epochs]
+            )
+            # minimum train epochs before early stopping
+            self.min_epochs = 50
+        except Exception:
+            return None
 
     def set_data_loader(self):
         transform_train = transforms.Compose([
