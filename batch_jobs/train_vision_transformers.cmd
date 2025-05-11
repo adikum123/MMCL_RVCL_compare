@@ -32,7 +32,6 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --num_iters 200 \
         --lr 1e-3 \
         --scheduler_gamma 0.1 \
-        --use_validation \
         --step_size 20
 
 EOF
