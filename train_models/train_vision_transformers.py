@@ -3,7 +3,8 @@ import argparse
 import torch
 
 from beta_crown.utils import print_args
-from vision_transformers import VisionTransformerModel
+from vision_transformers.vision_transformers_model import \
+    VisionTransformerModel
 
 parser = argparse.ArgumentParser(description="Resnet unsupervised classifier")
 

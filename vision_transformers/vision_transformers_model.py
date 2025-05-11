@@ -10,26 +10,29 @@ import torchvision.models as models
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
-from vit_pytorch import ViT
+
+from vision_transformers.vit import ViT
 
 
+# Based on: https://github.com/omihub777/ViT-CIFAR/tree/main
 class VisionTransformerModel(nn.Module):
 
     def __init__(self, hparams, device):
         super(VisionTransformerModel, self).__init__()
         self.hparams = hparams
         self.device = device
-        # set device
+        # set model
         self.model = ViT(
-            image_size=32,
-            patch_size=2,
-            num_classes=10,
-            dim=768,
-            depth=12,
-            heads=12,
-            mlp_dim=3072,
-            dropout=0.1,
-            emb_dropout=0.1
+            in_c=3,             # RGB images
+            num_classes=10,     # CIFAR-10
+            img_size=32,        # 32×32 pixels
+            patch=8,            # 8×8 patches → (32/8)²=16 tokens
+            dropout=0.0,        # no dropout
+            num_layers=7,       # transformer depth
+            hidden=384,         # embedding dim
+            mlp_hidden=384*4,   # 1536
+            head=12,            # attention heads
+            is_cls_token=True   # use [CLS] token
         )
         print(f"Model: {self.model} with param number: {sum(p.numel() for p in self.model.parameters())}")
         self.model.to(self.device)
