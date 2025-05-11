@@ -46,22 +46,30 @@ class VisionTransformerModel(nn.Module):
         )
         # learning rate schedule: warmup + cosine annealing
         warmup_epochs = 5
-        cosine_epochs = self.hparams.num_iters - warmup_epochs
+        total_epochs = self.hparams.num_iters
+        cosine_epochs = total_epochs - warmup_epochs
         self.scheduler = optim.lr_scheduler.SequentialLR(
             self.optimizer,
             schedulers=[
-                optim.lr_scheduler.LinearLR(self.optimizer, start_factor=1e-6, total_iters=warmup_epochs),
-                optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=cosine_epochs, eta_min=1e-5)
+                optim.lr_scheduler.LinearLR(
+                    self.optimizer,
+                    start_factor=1e-6,
+                    total_iters=warmup_epochs
+                ),
+                optim.lr_scheduler.CosineAnnealingLR(
+                    self.optimizer,
+                    T_max=cosine_epochs,
+                    eta_min=1e-5
+                )
             ],
             milestones=[warmup_epochs]
         )
-        # mixed precision scaler
-        self.scaler = torch.cuda.amp.GradScaler()
         # minimum train epochs before early stopping
-        self.min_epochs = 200
+        self.min_epochs = 50
 
     def set_data_loader(self):
         transform_train = transforms.Compose([
+            transforms.AutoAugment(policy=transforms.AutoAugmentPolicy.CIFAR10),
             transforms.RandomCrop(32, padding=4),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
@@ -125,13 +133,11 @@ class VisionTransformerModel(nn.Module):
             train_bar = tqdm(self.trainloader, desc=f"Train Epoch {epoch + 1}")
             for images, targets in train_bar:
                 images, targets = images.to(self.device), targets.to(self.device)
+                logits = self(images)
+                loss = self.criterion(logits, targets)
                 self.optimizer.zero_grad()
-                with torch.cuda.amp.autocast():
-                    logits = self(images)
-                    loss = self.criterion(logits, targets)
-                self.scaler.scale(loss).backward()
-                self.scaler.step(self.optimizer)
-                self.scaler.update()
+                loss.backward()
+                self.optimizer.step()
                 batch_size = images.size(0)
                 total_loss += loss.item() * batch_size
                 total_num += batch_size
@@ -144,7 +150,7 @@ class VisionTransformerModel(nn.Module):
                 self.model.eval()
                 total_loss, total_num = 0.0, 0
                 val_bar = tqdm(self.valloader, desc=f"Val Epoch {epoch + 1}")
-                with torch.no_grad(), torch.cuda.amp.autocast():
+                with torch.no_grad():
                     for images, targets in val_bar:
                         images, targets = images.to(self.device), targets.to(self.device)
                         logits = self(images)
