@@ -1,4 +1,5 @@
 import json
+import math
 import os
 
 import matplotlib.pyplot as plt
@@ -6,7 +7,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
-import torchvision.models as models
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
@@ -38,18 +38,27 @@ class VisionTransformerModel(nn.Module):
         self.model.to(self.device)
         # set data loader
         self.set_data_loader()
-        # set loss fn and optimizer
-        self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(
-            self.model.parameters(), lr=self.hparams.lr
+        # set loss fn with label smoothing
+        self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+        # set optimizer with weight decay
+        self.optimizer = optim.AdamW(
+            self.model.parameters(), lr=self.hparams.lr, weight_decay=5e-5
         )
-        self.scheduler = optim.lr_scheduler.StepLR(
+        # learning rate schedule: warmup + cosine annealing
+        warmup_epochs = 5
+        cosine_epochs = self.hparams.num_iters - warmup_epochs
+        self.scheduler = optim.lr_scheduler.SequentialLR(
             self.optimizer,
-            step_size=self.hparams.step_size,
-            gamma=self.hparams.scheduler_gamma,
+            schedulers=[
+                optim.lr_scheduler.LinearLR(self.optimizer, start_factor=1e-6, total_iters=warmup_epochs),
+                optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=cosine_epochs, eta_min=1e-5)
+            ],
+            milestones=[warmup_epochs]
         )
-        # min train epochs
-        self.min_epochs = 50
+        # mixed precision scaler
+        self.scaler = torch.cuda.amp.GradScaler()
+        # minimum train epochs before early stopping
+        self.min_epochs = 200
 
     def set_data_loader(self):
         transform_train = transforms.Compose([
@@ -111,17 +120,18 @@ class VisionTransformerModel(nn.Module):
         train_losses = []
         val_losses = []
         for epoch in range(self.hparams.num_iters):
-            self.set_eval()
+            self.model.train()
             total_loss, total_num = 0.0, 0
             train_bar = tqdm(self.trainloader, desc=f"Train Epoch {epoch + 1}")
-            for iii, (images, targets) in enumerate(train_bar):
+            for images, targets in train_bar:
                 images, targets = images.to(self.device), targets.to(self.device)
-                logits = self.forward(x=images)
-                loss = self.criterion(logits, targets)
                 self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
-                # Logging
+                with torch.cuda.amp.autocast():
+                    logits = self(images)
+                    loss = self.criterion(logits, targets)
+                self.scaler.scale(loss).backward()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
                 batch_size = images.size(0)
                 total_loss += loss.item() * batch_size
                 total_num += batch_size
@@ -129,45 +139,39 @@ class VisionTransformerModel(nn.Module):
             train_loss = total_loss / total_num
             train_losses.append(train_loss)
             print(f"Epoch [{epoch+1}/{self.hparams.num_iters}] - Train Loss: {train_loss:.4f}")
-            # validation
+
             if self.hparams.use_validation:
-                val_bar = tqdm(self.valloader, desc=f"Val Epoch {epoch + 1}")
-                self.set_eval()
+                self.model.eval()
                 total_loss, total_num = 0.0, 0
-                with torch.no_grad():
-                    for iii, (images, targets) in enumerate(val_bar):
+                val_bar = tqdm(self.valloader, desc=f"Val Epoch {epoch + 1}")
+                with torch.no_grad(), torch.cuda.amp.autocast():
+                    for images, targets in val_bar:
                         images, targets = images.to(self.device), targets.to(self.device)
-                        logits = self.forward(x=images)
+                        logits = self(images)
                         loss = self.criterion(logits, targets)
                         batch_size = images.size(0)
-                        total_num += batch_size
                         total_loss += loss.item() * batch_size
+                        total_num += batch_size
                 val_loss = total_loss / total_num
                 val_losses.append(val_loss)
-                # Early Stopping Check
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
                     patience_counter = 0
-                    print(
-                        f"\nValidation loss improved to {val_loss:.4e}. Saving model..."
-                    )
+                    print(f"\nValidation loss improved to {val_loss:.4e}. Saving model...")
                     self.save()
                 else:
                     patience_counter += 1
-                    print(
-                        f"\nValidation loss did not improve. Patience: {patience_counter}/{max_patience}"
-                    )
+                    print(f"\nValidation loss did not improve. Patience: {patience_counter}/{max_patience}")
                 if patience_counter >= max_patience and epoch >= self.min_epochs - 1:
                     print("\nEarly stopping triggered. Training terminated.")
                     break
-            # Step the learning rate scheduler at the end of each epoch
+
             self.scheduler.step()
+
         # Plot and save the training and validation loss
-        save_dir = "plots/resnet_unsupervised"
+        save_dir = "plots/vision_transformer"
         os.makedirs(save_dir, exist_ok=True)
-        save_path = os.path.join(
-            save_dir, f"{self.get_model_save_name()}.png"
-        )
+        save_path = os.path.join(save_dir, f"{self.get_model_save_name()}.png")
         plt.figure(figsize=(10, 6))
         plt.plot(range(1, len(train_losses) + 1), train_losses, label="Training Loss")
         if self.hparams.use_validation:
@@ -187,27 +191,21 @@ class VisionTransformerModel(nn.Module):
         total_correct, total_num = 0, 0
         total_loss = 0.0
         test_bar = tqdm(self.testloader, desc="Testing")
-        with torch.no_grad():  # No gradients required during evaluation
+        with torch.no_grad():
             for images, targets in test_bar:
-                # Move data to device
                 images, targets = images.to(self.device), targets.to(self.device)
-                # Forward pass
-                logits = self.forward(images)
+                logits = self(images)
                 loss = self.criterion(logits, targets)
-                # Predictions
                 predictions = torch.argmax(logits, dim=1)
                 correct = (predictions == targets).sum().item()
-                # Update metrics
                 total_correct += correct
                 total_num += targets.size(0)
                 total_loss += loss.item() * targets.size(0)
-                # Update progress bar
                 test_bar.set_description(
                     "Test: Loss: {:.4e}, Acc: {:.2f}%".format(
                         total_loss / total_num, 100 * total_correct / total_num
                     )
                 )
-        # Final metrics
         metrics = {
             "accuracy": total_correct / total_num,
             "loss": total_loss / total_num,
@@ -225,4 +223,3 @@ class VisionTransformerModel(nn.Module):
         os.makedirs(save_dir, exist_ok=True)
         save_path = os.path.join(save_dir, f"{self.get_model_save_name()}.pth")
         torch.save(self.model.state_dict(), save_path)
-
