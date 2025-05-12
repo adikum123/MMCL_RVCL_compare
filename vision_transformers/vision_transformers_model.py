@@ -46,7 +46,6 @@ class VisionTransformerModel(nn.Module):
         )
         print(f"Model: {self.model} with param number: {sum(p.numel() for p in self.model.parameters())}")
         if hasattr(self.hparams, "vit_ckpt") and self.hparams.vit_ckpt:
-            print(f"Loading model checkpoint from {self.hparams.vit_ckpt}")
             ckpt = torch.load(self.hparams.vit_ckpt, map_location=self.device)
             self.model.load_state_dict(ckpt)
         self.model.to(self.device)

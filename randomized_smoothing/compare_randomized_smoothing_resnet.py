@@ -18,6 +18,8 @@ from resnet.resnet import ResNet50
 from resnet.resnet_supervised import ResnetSupervised
 from resnet.resnet_unsupervised_classifier import ResnetUnsupervisedClassifier
 from resnet.resnet_unsupervised_encoder import ResnetEncoder
+from vision_transformers.vision_transformers_model import \
+    VisionTransformerModel
 
 parser = argparse.ArgumentParser(description="Randomized smoothing ResNet")
 parser.add_argument("--batch_size", type=int, default=256, help='batch size')
@@ -41,24 +43,29 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 models = [
     {
-        "encoder_ckpt": "models/resnet/finetune_resnet_nce_bs_512_lr_0.001.pt",
-        "load_classifier": True,
-        "model": "resnet cl nce"
+        "encoder_ckpt": "models/resnet/resnet_supervised_bs_256_lr_0.001.pt",
+        "load_classifier": False,
+        "model": "resnet supervised"
     },
     {
-        "encoder_ckpt": "models/resnet/finetune_resnet_barlow_bs_512_lr_0.001.pt",
-        "load_classifier": True,
-        "model": "resnet cl barlow"
+        "encoder_ckpt": "models/vit/vision_transformer_bs_128_lr_0.001.pth",
+        "load_classifier": False,
+        "model": "vit supervised"
     },
     {
-        "encoder_ckpt": "models/resnet/finetune_resnet_cosine_bs_512_lr_0.001.pt",
+        "encoder_ckpt": "models/resnet/finetune_resnet_barlow_512_lr_0.001.pt",
         "load_classifier": True,
-        "model": "resnet cl cosine"
+        "model": "resnet cl"
     },
     {
-        "encoder_ckpt": "models/resnet/finetune_resnet_info_nce_bs_512_lr_0.001.pt",
+        "encoder_ckpt": "models/resnet/finetune_adv_resnet_info_nce_bs_512_lr_0.001.pt",
         "load_classifier": True,
-        "model": "resnet cl info nce"
+        "model": "resnet adversarial cl"
+    },
+    {
+        "encoder_ckpt": "models/resnet/finetune_resnet_mmcl_rbf_C_1.0_bs_512_lr_0.001.pt",
+        "load_classifier": True,
+        "model": "resnet mmcl"
     }
 ]
 transform_test = transforms.Compose([
@@ -127,13 +134,23 @@ def get_test_set_accuracy(model):
 
 for model in models:
     if not model["load_classifier"]:
-        params_dict = {"resnet_supervised_ckpt": model["encoder_ckpt"], "finetune": True}
-        hparams = SimpleNamespace(**params_dict)
-        print(f"Loaded supervised classifier from: {model['encoder_ckpt']}")
-        model["base_classifier"] = ResnetSupervised(hparams=hparams, device=device)
-        model["test_accuracy"] = get_test_set_accuracy(model["base_classifier"])
-        print(f"Test accuracy for model {model['model']}: {model['test_accuracy']}")
-        continue
+        if "resnet" in model["model"]:
+            params_dict = {"resnet_supervised_ckpt": model["encoder_ckpt"], "finetune": True}
+            hparams = SimpleNamespace(**params_dict)
+            print(f"Loaded supervised classifier from: {model['encoder_ckpt']}")
+            model["base_classifier"] = ResnetSupervised(hparams=hparams, device=device)
+            # model["test_accuracy"] = get_test_set_accuracy(model["base_classifier"])
+            # print(f"Test accuracy for model {model['model']}: {model['test_accuracy']}")
+            continue
+        if "vit" in model["model"]:
+            params_dict = {"vit_ckpt": model["encoder_ckpt"], "finetune": True}
+            hparams = SimpleNamespace(**params_dict)
+            print(f"Loaded supervised vit from: {model['encoder_ckpt']}")
+            model["base_classifier"] = VisionTransformerModel(hparams=hparams, device=device)
+            model["test_accuracy"] = get_test_set_accuracy(model["base_classifier"])
+            print(f"Test accuracy for model {model['model']}: {model['test_accuracy']}")
+            continue
+        raise ValueError(f"Unknown model type: {model['model']}")
     # load encoder
     params_dict = {"resnet_encoder_ckpt": model["encoder_ckpt"], "finetune": True}
     hparams = SimpleNamespace(**params_dict)

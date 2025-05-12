@@ -44,7 +44,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --regular_cl_checkpoint models/regular_cl/finetune_regular_cl_info_nce_bs_512_lr_0.001.pkl \
         --dataset cifar-10 \
         --max_steps 100 \
-        --positives_per_class 30 \
+        --positives_per_class 15 \
         --negatives_per_class 2 \
         --num_retries 3
 

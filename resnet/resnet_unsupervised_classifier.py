@@ -96,7 +96,6 @@ class ResnetUnsupervisedClassifier(nn.Module):
 
     def set_classifier(self):
         if "resnet_classifier_ckpt" in vars(self.hparams) and self.hparams.resnet_classifier_ckpt:
-            print(f"Loading classifier from checkpoint: {self.hparams.resnet_classifier_ckpt}")
             self.classifier = nn.Sequential(
                 nn.Linear(128, 64),
                 nn.ReLU(),

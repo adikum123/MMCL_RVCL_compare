@@ -166,7 +166,6 @@ class ResnetEncoder(nn.Module):
             new_state_dict[k] = v
 
         self.load_state_dict(new_state_dict, strict=False)
-        print("[Info] Checkpoint loaded successfully.")
 
     def set_eval(self):
         self.convnet.eval()
