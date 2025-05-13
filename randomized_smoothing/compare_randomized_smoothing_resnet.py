@@ -53,7 +53,7 @@ models = [
         "model": "vit supervised"
     },
     {
-        "encoder_ckpt": "models/resnet/finetune_resnet_barlow_512_lr_0.001.pt",
+        "encoder_ckpt": "models/resnet/finetune_resnet_barlow_bs_512_lr_0.001.pt",
         "load_classifier": True,
         "model": "resnet cl"
     },
