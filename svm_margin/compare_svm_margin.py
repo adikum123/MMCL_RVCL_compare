@@ -179,37 +179,3 @@ file_path = os.path.join(save_dir, f"{file_name}.json")
 # Save dictionary as JSON
 with open(file_path, "w") as f:
     json.dump(per_model_mean_std, f, indent=4)
-
-# Extract means and standard deviations
-mmcl_means = [per_model_mean_std[c]["mmcl"][0] for c in per_model_mean_std.keys()]
-mmcl_stds = [per_model_mean_std[c]["mmcl"][1] for c in per_model_mean_std.keys()]
-
-rvcl_means = [per_model_mean_std[c]["rvcl"][0] for c in per_model_mean_std.keys()]
-rvcl_stds = [per_model_mean_std[c]["rvcl"][1] for c in per_model_mean_std.keys()]
-
-regular_means = [per_model_mean_std[c]["regular_cl"][0] for c in per_model_mean_std.keys()]
-regular_stds = [per_model_mean_std[c]["regular_cl"][1] for c in per_model_mean_std.keys()]
-
-# Improved visualization
-plt.figure(figsize=(20, 6))
-
-# Define x-axis positions
-image_labels = [f"Image {idx}" for idx in sorted(per_model_mean_std.keys(), key=int)]
-x = np.arange(len(image_labels))
-
-# Plot the error bars with smaller markers and thinner lines
-plt.errorbar(x, mmcl_means, yerr=mmcl_stds, fmt='o-', markersize=3, linewidth=1, capsize=3, label="MMCL", alpha=0.8)
-plt.errorbar(x, rvcl_means, yerr=rvcl_stds, fmt='s-', markersize=3, linewidth=1, capsize=3, label="RVCL", alpha=0.8)
-plt.errorbar(x, regular_means, yerr=regular_stds, fmt='d-', markersize=3, linewidth=1, capsize=3, label="Regular CL", alpha=0.8)
-
-# Formatting the plot
-plt.xticks(x[::5], image_labels[::5], rotation=45, fontsize=10)  # Show every 5th label for better readability
-plt.xlabel("Image")
-plt.ylabel("Margin Mean ± Std")
-plt.title("SVM Margin Comparison Across Images", fontsize=14)
-plt.legend(fontsize=10)
-plt.grid(True, linestyle="--", alpha=0.6)
-
-# Save and show the plot
-plt.savefig(os.path.join("plots/svm_margin", f"{file_name}.jpg"), bbox_inches="tight", dpi=300)
-plt.show()

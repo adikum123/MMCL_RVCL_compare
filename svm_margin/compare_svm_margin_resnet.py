@@ -21,6 +21,12 @@ parser = argparse.ArgumentParser(description="Margin comparisson")
 parser.add_argument("--train_type", default="test", type=str, help="Must be test")
 parser.add_argument("--batch_size", default=256, type=int, help="Batch size")
 parser.add_argument("--dataset", default="cifar-10", type=str, help="cifar-10/mnist")
+parser.add_argument(
+    "--color_jitter_strength",
+    default=0.0,
+    type=float,
+    help="0.5 for CIFAR, 1.0 for ImageNet",
+)
 parser.add_argument("--C", type=float, default=1.0, help="C value for SVM algorithm")
 parser.add_argument("--kernel_type", default="rbf", type=str, help="Kernel Type")
 parser.add_argument("--seed", default=1, type=int, help="random seed")
@@ -31,6 +37,7 @@ parser.add_argument("--num_negatives", type=int, default=100)
 parser.add_argument("--num_retries", default=5, type=int, help="Number of retries for negative sampling")
 
 args = parser.parse_args()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 models = [
     {
@@ -51,8 +58,8 @@ for model in models:
     params_dict = {"resnet_encoder_ckpt": model["encoder_ckpt"], "finetune": True}
     hparams = SimpleNamespace(**params_dict)
     model["encoder"] = ResnetEncoder(hparams=hparams, device=device)
+    model["encoder"].set_eval()
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # load test dataset
 _, _, _, _, testloader, testdst = data_loader.get_train_val_test_dataset(args)
 class_names = testdst.classes
@@ -76,6 +83,7 @@ def encode_inputs_and_compute_margin(model, positive, negatives):
     model = model.to(device)
     positive = positive.to(device)
     negatives = [neg.to(device) for neg in negatives]
+    print(f"Encoding positive: {positive.shape}, negatives: {[neg.shape for neg in negatives]}")
     positive_encoding = model(positive.unsqueeze(0).to(device))
     negative_encodings = torch.stack([model(neg.unsqueeze(0)) for neg in negatives]).squeeze(1)
     return compute_margin(positive=positive_encoding, negatives=negative_encodings, args=args)
@@ -105,56 +113,32 @@ print(f"Obtained following per_image_values dict")
 # get mean and std per class
 per_model_mean_std = {}
 for image_index, values in per_image_values.items():
-    mmcl_values = [x["mmcl"] for x in values]
-    rvcl_values = [x["rvcl"] for x in values]
-    regular_cl_values = [x["regular_cl"] for x in values]
-    # CHANGE THIS
+    for model in models:
+        model_values = [v[model["model"]] for v in values]
+        mean = np.mean(model_values)
+        std = np.std(model_values)
+        per_model_mean_std[image_index] = {
+            model["model"]: (mean, std)
+        }
 
+per_model_mean_std = {
+    "metadata": {
+        "dataset": args.dataset,
+        "positives_per_class": args.positives_per_class,
+        "num_negatives": args.num_negatives,
+        "num_retries": args.num_retries,
+        "kernel_type": args.kernel_type,
+        "kernel_gamma": args.kernel_gamma,
+        "C": args.C
+    },
+}
 print(f"Obtained following mean and std per class dict:\n{per_model_mean_std}")
 # Ensure the directory exists
 save_dir = "margin_results"
 os.makedirs(save_dir, exist_ok=True)
-file_name = f"mmcl_{args.mmcl_model}_rvcl_{args.rvcl_model}_regular_cl_{args.regular_cl_model}_kernel_type_{args.kernel_type}_C_{args.C}"
-if args.kernel_type == 'rbf':
-    file_name += f"_gamma_{args.kernel_gamma}"
-elif args.kernel_type == 'poly':
-    file_name += f"_deegre_{args.deegre}"
+file_name = "-".join([x["model"].replace(" ", "_") for x in models])
 # Construct file path
 file_path = os.path.join(save_dir, f"{file_name}.json")
 # Save dictionary as JSON
 with open(file_path, "w") as f:
     json.dump(per_model_mean_std, f, indent=4)
-
-# Extract means and standard deviations
-mmcl_means = [per_model_mean_std[c]["mmcl"][0] for c in per_model_mean_std.keys()]
-mmcl_stds = [per_model_mean_std[c]["mmcl"][1] for c in per_model_mean_std.keys()]
-
-rvcl_means = [per_model_mean_std[c]["rvcl"][0] for c in per_model_mean_std.keys()]
-rvcl_stds = [per_model_mean_std[c]["rvcl"][1] for c in per_model_mean_std.keys()]
-
-regular_means = [per_model_mean_std[c]["regular_cl"][0] for c in per_model_mean_std.keys()]
-regular_stds = [per_model_mean_std[c]["regular_cl"][1] for c in per_model_mean_std.keys()]
-
-# Improved visualization
-plt.figure(figsize=(20, 6))
-
-# Define x-axis positions
-image_labels = [f"Image {idx}" for idx in sorted(per_model_mean_std.keys(), key=int)]
-x = np.arange(len(image_labels))
-
-# Plot the error bars with smaller markers and thinner lines
-plt.errorbar(x, mmcl_means, yerr=mmcl_stds, fmt='o-', markersize=3, linewidth=1, capsize=3, label="MMCL", alpha=0.8)
-plt.errorbar(x, rvcl_means, yerr=rvcl_stds, fmt='s-', markersize=3, linewidth=1, capsize=3, label="RVCL", alpha=0.8)
-plt.errorbar(x, regular_means, yerr=regular_stds, fmt='d-', markersize=3, linewidth=1, capsize=3, label="Regular CL", alpha=0.8)
-
-# Formatting the plot
-plt.xticks(x[::5], image_labels[::5], rotation=45, fontsize=10)  # Show every 5th label for better readability
-plt.xlabel("Image")
-plt.ylabel("Margin Mean ± Std")
-plt.title("SVM Margin Comparison Across Images", fontsize=14)
-plt.legend(fontsize=10)
-plt.grid(True, linestyle="--", alpha=0.6)
-
-# Save and show the plot
-plt.savefig(os.path.join("plots/svm_margin", f"{file_name}.jpg"), bbox_inches="tight", dpi=300)
-plt.show()
