@@ -33,7 +33,7 @@ parser.add_argument("--seed", default=1, type=int, help="random seed")
 parser.add_argument("--kernel_gamma", type=str, default="auto")
 parser.add_argument("--normalize", action="store_true")
 parser.add_argument("--positives_per_class", type=int, default=10)
-parser.add_argument("--num_negatives", type=int, default=100)
+parser.add_argument("--negatives_per_class", type=int, default=100)
 parser.add_argument("--num_retries", default=5, type=int, help="Number of retries for negative sampling")
 
 args = parser.parse_args()
@@ -83,7 +83,6 @@ def encode_inputs_and_compute_margin(model, positive, negatives):
     model = model.to(device)
     positive = positive.to(device)
     negatives = [neg.to(device) for neg in negatives]
-    print(f"Encoding positive: {positive.shape}, negatives: {[neg.shape for neg in negatives]}")
     positive_encoding = model(positive.unsqueeze(0).to(device))
     negative_encodings = torch.stack([model(neg.unsqueeze(0)) for neg in negatives]).squeeze(1)
     return compute_margin(positive=positive_encoding, negatives=negative_encodings, args=args)
@@ -91,7 +90,7 @@ def encode_inputs_and_compute_margin(model, positive, negatives):
 # compute margin for each class
 for class_index, class_name in enumerate(class_names):
     print(f"Processing items for class: {class_name} already processed: {class_index}/{len(class_names)} classes")
-    for image_index_in_class, item in enumerate(positives[class_name]):
+    for image_index_in_class, item in enumerate(tqdm(positives[class_name])):
         image_index = class_index * args.positives_per_class + image_index_in_class
         # Select one random image as positive and other images as negatives
         positive = item
@@ -99,8 +98,7 @@ for class_index, class_name in enumerate(class_names):
             result_dct = {}
             for model in models:
                 print(f"Processing image: {image_index}, retry: {retry+1}")
-                indices = random.sample(range(len(testdst)), args.num_negatives)
-                negatives = [testdst[i][0] for i in indices]
+                negatives = [image for k, v in per_class_sampler.items() for image in random.sample(v, args.negatives_per_class)]
                 margin = encode_inputs_and_compute_margin(model=model["encoder"], positive=positive, negatives=negatives)
                 result_dct[model["model"]] = margin
             margins[f"{image_index}|{retry}"].append(result_dct)
