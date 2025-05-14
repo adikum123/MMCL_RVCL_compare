@@ -8,8 +8,8 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Font
 
-file_name = "resnet_supervised-resnet_cl-resnet_adversarial_cl-resnet_mmcl"
-with open(f"../rs_results/{file_name}.json", "r") as f:
+file_name = "resnet_supervised-vit_supervised-resnet_cl-resnet_adversarial_cl-resnet_mmcl"
+with open(f"rs_results/{file_name}.json", "r") as f:
     data = json.load(f)
 models_info = data["models_info"]
 model_names = [x["model"] for x in models_info]
@@ -59,7 +59,7 @@ def plot_one_certified_accuracy_per_sigma(data):
         plt.title(f"Certified Accuracy vs Radius (sigma = {sigma})")
         plt.legend()
         plt.grid(True)
-        output_dir = os.path.join("..", "plots", "randomized_smoothing", "resnet", "reg")
+        output_dir = os.path.join("plots", "randomized_smoothing", "resnet_vt")
         os.makedirs(output_dir, exist_ok=True)
         output_filename = f"ca_sigma_{sigma}.png"
         plt.tight_layout()
@@ -112,7 +112,7 @@ def plot_one_unchanged_percentage_per_sigma(data):
         plt.title(f"Unchanged Percentage vs Radius (sigma = {sigma})")
         plt.legend()
         plt.grid(True)
-        output_dir = os.path.join("..", "plots", "randomized_smoothing", "resnet", "reg")
+        output_dir = os.path.join("plots", "randomized_smoothing", "resnet_vt")
         os.makedirs(output_dir, exist_ok=True)
         output_filename = f"up_sigma_{sigma}.png"
         plt.tight_layout()
