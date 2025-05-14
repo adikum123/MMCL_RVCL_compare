@@ -32,7 +32,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --C 1 \
         --kernel_type rbf \
         --positives_per_class 20 \
-        --num_negatives 1000 \
+        --negatives_per_class 100 \
         --num_retries 10
 
 EOF
