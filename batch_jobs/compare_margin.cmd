@@ -26,6 +26,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     pip install -r requirements.txt
 
     echo "Computing plots for svm margin"
+    export PYTHONPATH=$(pwd):$PYTHONPATH
     python svm_margin/compare_svm_margin_resnet.py \
         --dataset cifar-10 \
         --C 1 \
