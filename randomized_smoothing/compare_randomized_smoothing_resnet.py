@@ -139,8 +139,8 @@ for model in models:
             hparams = SimpleNamespace(**params_dict)
             print(f"Loaded supervised classifier from: {model['encoder_ckpt']}")
             model["base_classifier"] = ResnetSupervised(hparams=hparams, device=device)
-            # model["test_accuracy"] = get_test_set_accuracy(model["base_classifier"])
-            # print(f"Test accuracy for model {model['model']}: {model['test_accuracy']}")
+            model["test_accuracy"] = get_test_set_accuracy(model["base_classifier"])
+            print(f"Test accuracy for model {model['model']}: {model['test_accuracy']}")
             continue
         if "vit" in model["model"]:
             params_dict = {"vit_ckpt": model["encoder_ckpt"], "finetune": True}
