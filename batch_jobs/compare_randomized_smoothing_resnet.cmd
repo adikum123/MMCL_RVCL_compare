@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -p lrz-hgx-a100-80x4
 #SBATCH --gres=gpu:1
-#SBATCH --time=50:00:00
+#SBATCH --time=40:00:00
 #SBATCH -o outs/randomized_smoothing_resnet.out
 #SBATCH -e outs/randomized_smoothing_resnet.out
 
