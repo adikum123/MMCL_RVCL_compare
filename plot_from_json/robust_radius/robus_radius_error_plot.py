@@ -5,8 +5,8 @@ import os
 import matplotlib.pyplot as plt
 
 # Load data
-file_name = "mmcl_cnn_4layer_b_rvcl_cnn_4layer_b_adv_regular_cl_cnn_4layer_b"
-with open(f"../radius_results/{file_name}.json", "r") as f:
+file_name = "mmcl_rbf-adversarial_cl-cl_info_nce"
+with open(f"radius_results/{file_name}.json", "r") as f:
     data = json.load(f)
 
 # Initialize lists
@@ -45,7 +45,7 @@ plt.errorbar(x, mmcl_means, yerr=mmcl_ste,
 plt.errorbar(x, regular_cl_means, yerr=regular_cl_ste,
              fmt="s--", capsize=4, label="Regular CL")
 plt.errorbar(x, rvcl_means, yerr=rvcl_ste,
-             fmt="^-.", capsize=4, label="RVCL")
+             fmt="^-.", capsize=4, label="Adversarial CL")
 
 # Formatting
 plt.xticks(x, sorted_indices)  # Show actual image indices on x-axis
@@ -57,5 +57,5 @@ plt.grid(alpha=0.3)
 plt.tight_layout()
 
 # Save and show
-plt.savefig(os.path.join("../plots/robust_radius", f"{file_name}_error_plot.png"), dpi=300)
+plt.savefig(os.path.join("plots/robust_radius", f"{file_name}_error_plot.png"), dpi=300)
 plt.show()

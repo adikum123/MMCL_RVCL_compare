@@ -121,12 +121,11 @@ for image_index, values in per_image_values.items():
 
 per_model_mean_std = {
     "metadata": {
-        "dataset": args.dataset,
         "positives_per_class": args.positives_per_class,
-        "num_negatives": args.num_negatives,
+        "negatives_per_class": args.negatives_per_class,
         "num_retries": args.num_retries,
         "kernel_type": args.kernel_type,
-        "kernel_gamma": args.kernel_gamma,
+        "kernel_gamma": args.kernel_gamma if "kernel_gamma" in vars(args) else None,
         "C": args.C
     },
 }

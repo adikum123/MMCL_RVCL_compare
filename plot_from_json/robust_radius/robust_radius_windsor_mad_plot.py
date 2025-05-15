@@ -6,18 +6,22 @@ import numpy as np
 from scipy.stats import median_abs_deviation as mad
 
 # Load data
-file_name = "mmcl_cnn_4layer_b_rvcl_cnn_4layer_b_adv_regular_cl_cnn_4layer_b"
-with open(f"../radius_results/{file_name}.json", "r") as f:
+file_name = "mmcl_rbf-adversarial_cl-cl_info_nce"
+with open(f"radius_results/{file_name}.json", "r") as f:
     data = json.load(f)
 
 # Initialize dictionaries to store robust stats
-models = ["mmcl", "regular_cl", "rvcl"]
+models = ["mmcl", "adversarial_cl", "regular_cl"]
 model_data = {model: {"means": []} for model in models}
 
 # Collect all means first
 for image_index in data:
     for model in models:
+        if model == "adversarial_cl":
+            model_data[model]["means"].append(data[image_index]["rvcl"][0])
+            continue
         model_data[model]["means"].append(data[image_index][model][0])
+
 
 # Calculate robust statistics for each model
 robust_stats = {}
@@ -65,5 +69,5 @@ plt.grid(axis="y", alpha=0.3)
 plt.tight_layout()
 
 # Save and show
-plt.savefig(os.path.join("../plots/robust_radius", f"{file_name}_windsor_mad.png"), dpi=300)
+plt.savefig(os.path.join("plots/robust_radius", f"{file_name}_windsor_mad.png"), dpi=300)
 plt.show()

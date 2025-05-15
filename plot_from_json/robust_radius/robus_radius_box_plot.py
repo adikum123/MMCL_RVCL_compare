@@ -3,8 +3,8 @@ import os
 
 import matplotlib.pyplot as plt
 
-file_name = "mmcl_cnn_4layer_b_rvcl_cnn_4layer_b_adv_regular_cl_cnn_4layer_b"
-with open("../radius_results/mmcl_cnn_4layer_b_rvcl_cnn_4layer_b_adv_regular_cl_cnn_4layer_b.json", "r") as f:
+file_name = "mmcl_rbf-adversarial_cl-cl_info_nce"
+with open(f"radius_results/{file_name}.json", "r") as f:
     data = json.load(f)
 
 mmcl_values, regular_cl_values, rvcl_values = [], [], []
@@ -23,7 +23,7 @@ for image_index, models_values in data.items():
 
 # Prepare data for plotting
 data_to_plot = [mmcl_values, rvcl_values, regular_cl_values]
-labels = ["MMCL", "RVCL", "Regular CL"]
+labels = ["MMCL", "Adversarial CL", "Regular CL"]
 colors = ["blue", "green", "red"]
 
 # Create and configure plot
@@ -44,5 +44,5 @@ plt.ylabel("Values", fontsize=12)
 plt.grid(True, linestyle="--", alpha=0.7)
 
 # Save and show plot
-plt.savefig(os.path.join("../plots/robust_radius", f"{file_name}_boxplot_comparison.png"), dpi=300, bbox_inches="tight")
+plt.savefig(os.path.join("plots/robust_radius", f"{file_name}_boxplot_comparison.png"), dpi=300, bbox_inches="tight")
 plt.show()
