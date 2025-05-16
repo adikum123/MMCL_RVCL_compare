@@ -1,0 +1,10 @@
+{
+    "metadata": {
+        "positives_per_class": 20,
+        "negatives_per_class": 100,
+        "num_retries": 10,
+        "kernel_type": "rbf",
+        "kernel_gamma": "auto",
+        "C": 1.0
+    }
+}
