@@ -35,7 +35,8 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     pip install -r requirements.txt
 
     echo "Computing plots for robust radius..."
-    python -u compare_robust_radius.py \
+    export PYTHONPATH=$(pwd):$PYTHONPATH
+    python -u robust_radius/compare_robust_radius.py \
         --max_steps 100 \
         --positives_per_class 10 \
         --negatives_per_class 3 \
