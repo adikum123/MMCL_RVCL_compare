@@ -38,7 +38,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     python -u compare_robust_radius.py \
         --max_steps 100 \
         --positives_per_class 10 \
-        --negatives_per_class 2 \
+        --negatives_per_class 3 \
         --num_retries 3
 
 EOF
