@@ -3,8 +3,8 @@ import os
 
 import matplotlib.pyplot as plt
 
-file_name = "mmcl_cnn_4layer_b_rvcl_cnn_4layer_b_regular_cl_cnn_4layer_b_kernel_type_rbf_C_1.0_gamma_auto"
-with open(f"../margin_results/{file_name}.json", "r") as f:
+file_name = "resnet_cl-resnet_adversarial_cl-resnet_mmcl"
+with open(f"margin_results/{file_name}.json", "r") as f:
     data = json.load(f)
 
 mmcl_values, regular_cl_values, rvcl_values = [], [], []

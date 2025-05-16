@@ -119,15 +119,13 @@ for image_index, values in per_image_values.items():
             model["model"]: (mean, std)
         }
 
-per_model_mean_std = {
-    "metadata": {
-        "positives_per_class": args.positives_per_class,
-        "negatives_per_class": args.negatives_per_class,
-        "num_retries": args.num_retries,
-        "kernel_type": args.kernel_type,
-        "kernel_gamma": args.kernel_gamma if "kernel_gamma" in vars(args) else None,
-        "C": args.C
-    },
+per_model_mean_std ["metadata"] = {
+    "positives_per_class": args.positives_per_class,
+    "negatives_per_class": args.negatives_per_class,
+    "num_retries": args.num_retries,
+    "kernel_type": args.kernel_type,
+    "kernel_gamma": args.kernel_gamma if "kernel_gamma" in vars(args) else None,
+    "C": args.C
 }
 print(f"Obtained following mean and std per class dict:\n{per_model_mean_std}")
 # Ensure the directory exists
