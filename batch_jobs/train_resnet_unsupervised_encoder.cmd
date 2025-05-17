@@ -30,13 +30,11 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     echo "Training unsupervised model"
     python -u train_models/train_resnet_unsupervised_encoder.py \
         --dataset cifar-10 \
-        --batch_size 512 \
+        --batch_size 128 \
         --num_iters 200 \
         --lr 1e-3 \
         --scheduler_gamma 0.5 \
-        --loss_type mmcl \
-        --kernel_type rbf \
-        --C 1\
+        --loss_type barlow \
         --step_size 25
 
 EOF
