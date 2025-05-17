@@ -98,7 +98,12 @@ for class_index, class_name in enumerate(class_names):
             result_dct = {}
             for model in models:
                 print(f"Processing image: {image_index}, retry: {retry+1}")
-                negatives = [image for k, v in per_class_sampler.items() for image in random.sample(v, args.negatives_per_class)]
+                negatives = [
+                    image
+                    for k, v in per_class_sampler.items()
+                    for image in random.sample(v, args.negatives_per_class)
+                    if k != class_name
+                ]
                 margin = encode_inputs_and_compute_margin(model=model["encoder"], positive=positive, negatives=negatives)
                 result_dct[model["model"]] = margin
             # Store the results in the margins dictionary
