@@ -101,6 +101,7 @@ for class_index, class_name in enumerate(class_names):
                 negatives = [image for k, v in per_class_sampler.items() for image in random.sample(v, args.negatives_per_class)]
                 margin = encode_inputs_and_compute_margin(model=model["encoder"], positive=positive, negatives=negatives)
                 result_dct[model["model"]] = margin
+            # Store the results in the margins dictionary
             margins[f"{image_index}|{retry}"].append(result_dct)
 
 per_image_values = defaultdict(list)
@@ -115,10 +116,9 @@ for image_index, values in per_image_values.items():
         model_values = [v[model["model"]] for v in values]
         mean = np.mean(model_values)
         std = np.std(model_values)
-        per_model_mean_std[image_index] = {
-            model["model"]: (mean, std)
-        }
-
+        if image_index not in per_model_mean_std:
+            per_model_mean_std[image_index] = {}
+        per_model_mean_std[image_index][model["model"]] = (mean, std)
 per_model_mean_std ["metadata"] = {
     "positives_per_class": args.positives_per_class,
     "negatives_per_class": args.negatives_per_class,
