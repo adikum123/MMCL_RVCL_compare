@@ -7,7 +7,10 @@ file_name = "mmcl_rbf-adversarial_cl-cl_info_nce"
 with open(f"radius_results/{file_name}.json", "r") as f:
     data = json.load(f)
 
-mmcl_values, regular_cl_values, rvcl_values = [], [], []
+for item in data.values():
+    item["adversarial_cl"] = item.pop("rvcl")
+
+mmcl_values, adversarial_cl_values, regular_cl_values = [], [], []
 for image_index, models_values in data.items():
     for model_name, values in models_values.items():
         if model_name == "mmcl":
@@ -16,14 +19,14 @@ for image_index, models_values in data.items():
         if model_name == "regular_cl":
             regular_cl_values.append(values[0])
             continue
-        if model_name == "rvcl":
-            rvcl_values.append(values[0])
+        if model_name == "adversarial_cl":
+            adversarial_cl_values.append(values[0])
             continue
         raise ValueError(f"Unknown model name: {model_name}")
 
 # Prepare data for plotting
-data_to_plot = [mmcl_values, rvcl_values, regular_cl_values]
-labels = ["MMCL", "Adversarial CL", "Regular CL"]
+data_to_plot = [mmcl_values, adversarial_cl_values, regular_cl_values]
+labels = ["MMCL", "Adversarial CL", "CL"]
 colors = ["blue", "green", "red"]
 
 # Create and configure plot
