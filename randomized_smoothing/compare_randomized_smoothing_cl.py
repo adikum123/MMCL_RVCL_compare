@@ -138,7 +138,7 @@ for model in models:
 
 # conduct experiments
 results = defaultdict(list)
-sigma_values = [0.12, 0.25, 0.5, 0.67, 1]
+sigma_values = [0.12, 0.25, 0.5, 0.6]
 for sigma in sigma_values:
     print(f"Processing sigma: {sigma}")
     # create verifiers
