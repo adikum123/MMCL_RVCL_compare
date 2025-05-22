@@ -31,6 +31,7 @@ class ResnetEncoder(nn.Module):
         self.set_optimizer()
         self.set_scheduler()
         self.min_epochs = 80
+        self.lambda_weight = 1/256
 
     def set_optimizer(self):
         try:
@@ -222,10 +223,15 @@ class ResnetEncoder(nn.Module):
         Compute contrastive loss using clean or adversarial views.
         """
         if self.hparams.adversarial and self.is_in_train_mode():
-            # Generate adversarial versions of both views
             pos_1_adv = self.generate_adversarial_example(pos_1)
-            pos_2_adv = self.generate_adversarial_example(pos_2)
-            return self.compute_loss_submethod(pos_1_adv, pos_2_adv)
+            z_pos1 = self.forward(pos_1)         # Clean anchor
+            z_pos2 = self.forward(pos_2)         # Clean positive
+            z_adv = self.forward(pos_1_adv)      # Adversarial view of anchor
+            # Main RoCL loss: anchor z_pos1 should align with both z_pos2 and z_adv
+            loss_main = self.crit(z_pos1, z_pos2, positive_extra=z_adv)
+            # Regularization term: z_adv should align with z_pos2
+            loss_reg = self.crit(z_adv, z_pos2)
+            return loss_main + self.lambda_weight * loss_reg
         return self.compute_loss_submethod(pos_1, pos_2)
 
     def train(self):

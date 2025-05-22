@@ -29,34 +29,40 @@ class ContrastiveLoss(nn.Module):
         self.temperature = temperature
         self.lambda_param = lambda_param
 
-    def forward(self, f1, f2):
+    def forward(self, f1, f2, positive_extra=None):
         if self.loss_type == "info_nce":
-            return self.info_nce_loss(f1, f2)
-        elif self.loss_type == "nce":
+            return self.info_nce_loss(f1, f2, positive_extra)
+        if self.loss_type == "nce":
             return self.nce_loss(f1, f2)
-        elif self.loss_type == "cosine":
+        if self.loss_type == "cosine":
             return self.cosine_similarity_loss(f1, f2)
-        elif self.loss_type == "barlow":
+        if self.loss_type == "barlow":
             return self.barlow_twins_loss(f1, f2)
-        else:
-            raise ValueError(f"Unknown loss type: {self.loss_type}")
+        raise ValueError(f"Unknown loss type: {self.loss_type}")
 
-    def info_nce_loss(self, f1, f2):
-        """
-        Computes the InfoNCE (NT-Xent) loss.
-        """
+    def info_nce_loss(self, f1, f2, positive_extra=None):
         batch_size = f1.size(0)
         f1 = F.normalize(f1, dim=1)
         f2 = F.normalize(f2, dim=1)
-        features = torch.cat([f1, f2], dim=0)  # (2N, d)
-        similarity_matrix = torch.matmul(features, features.T)  # (2N, 2N)
-        logits = similarity_matrix / self.temperature
-        # Mask self-similarity by setting diagonal to a very low value
-        mask = torch.eye(2 * batch_size, device=logits.device).bool()
-        logits.masked_fill_(mask, -1e9)
-        # For each sample, the positive is the corresponding augmented view.
-        positive_indices = (torch.arange(2 * batch_size, device=logits.device) + batch_size) % (2 * batch_size)
-        loss = F.cross_entropy(logits, positive_indices)
+
+        if positive_extra is not None:
+            positive_extra = F.normalize(positive_extra, dim=1)
+            anchors = torch.cat([f1, f1], dim=0)  # (2N, d)
+            positives = torch.cat([f2, positive_extra], dim=0)  # (2N, d)
+        else:
+            anchors = f1
+            positives = f2
+
+        features = torch.cat([anchors, positives], dim=0)  # (4N or 2N, d)
+        sim_matrix = torch.matmul(anchors, features.T) / self.temperature  # (2N, 4N or N, 2N)
+
+        labels = torch.arange(anchors.size(0), device=f1.device)
+        positive_indices = labels + anchors.size(0)  # match each anchor to its positive in features
+
+        mask = torch.eye(anchors.size(0), device=sim_matrix.device).bool()
+        sim_matrix.masked_fill_(mask, -1e9)
+
+        loss = F.cross_entropy(sim_matrix, positive_indices)
         return loss
 
     def nce_loss(self, f1, f2):
