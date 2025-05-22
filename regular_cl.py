@@ -41,27 +41,39 @@ class ContrastiveLoss(nn.Module):
         raise ValueError(f"Unknown loss type: {self.loss_type}")
 
     def info_nce_loss(self, f1, f2, positive_extra=None):
+        """
+        Computes the InfoNCE (NT-Xent) loss with optional additional positive examples
+        (e.g. adversarial augmentations) as in RoCL.
+        """
         batch_size = f1.size(0)
         f1 = F.normalize(f1, dim=1)
         f2 = F.normalize(f2, dim=1)
 
         if positive_extra is not None:
             positive_extra = F.normalize(positive_extra, dim=1)
-            anchors = torch.cat([f1, f1], dim=0)  # (2N, d)
+            anchors = torch.cat([f1, f1], dim=0)         # (2N, d)
             positives = torch.cat([f2, positive_extra], dim=0)  # (2N, d)
         else:
             anchors = f1
             positives = f2
 
+        # Total features for similarity calculation
         features = torch.cat([anchors, positives], dim=0)  # (4N or 2N, d)
-        sim_matrix = torch.matmul(anchors, features.T) / self.temperature  # (2N, 4N or N, 2N)
+        sim_matrix = torch.matmul(anchors, features.T) / self.temperature  # (2N, 4N) or (N, 2N)
 
+        # Construct positive indices: anchor[i] matches positive[i]
         labels = torch.arange(anchors.size(0), device=f1.device)
-        positive_indices = labels + anchors.size(0)  # match each anchor to its positive in features
+        positive_indices = labels + anchors.size(0)  # offset by number of anchors
 
-        mask = torch.eye(anchors.size(0), device=sim_matrix.device).bool()
+        # Mask self-similarity in the anchor block (anchors compared to anchors)
+        mask = torch.zeros_like(sim_matrix, dtype=torch.bool)  # (2N, 4N)
+        num_anchors = anchors.size(0)
+        mask[:, :num_anchors] = torch.eye(num_anchors, device=f1.device).bool()
+
+        # Apply mask
         sim_matrix.masked_fill_(mask, -1e9)
 
+        # Compute loss
         loss = F.cross_entropy(sim_matrix, positive_indices)
         return loss
 
