@@ -2805,6 +2805,7 @@
         "num_retries": 10,
         "kernel_type": "rbf",
         "kernel_gamma": "auto",
-        "C": 1.0
+        "C": 1.0,
+        "normalize": true,
     }
 }
