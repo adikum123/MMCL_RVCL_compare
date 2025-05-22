@@ -199,40 +199,102 @@ class ResnetEncoder(nn.Module):
             return loss
         return self.crit(feature_1, feature_2)
 
-    def generate_adversarial_example(self, x, epsilon=4/255, alpha=1/255, num_iter=10):
-        x = x.to(self.device)
-        x_adv = x.clone().detach().to(self.device)
-        x_adv.requires_grad = True
+    def generate_adversarial_example(self, anchor_img, positive_img, negatives, epsilon=4/255, alpha=1/255, num_iter=10):
+        """
+        Generates an instance-wise adversarial example from anchor_img (t(x))
+        by maximizing the contrastive loss against positive_img (t0(x)) and negatives.
+
+        Args:
+            anchor_img (Tensor): t(x), the anchor view to perturb
+            positive_img (Tensor): t0(x), the positive view of the same instance
+            negatives (Tensor): Batch of negative embeddings
+            epsilon (float): Perturbation bound
+            alpha (float): Step size
+            num_iter (int): Number of PGD steps
+
+        Returns:
+            adv_img (Tensor): The generated adversarial version of anchor_img
+        """
+        anchor_img = anchor_img.to(self.device)
+        positive_img = positive_img.to(self.device)
+        negatives = negatives.to(self.device)
+        # Initial adversarial image is a copy of anchor
+        adv_img = anchor_img.clone().detach().requires_grad_(True)
+        # Compute target positive embeddings (no grad)
         with torch.no_grad():
-            target_features = self.forward(x)  # No grad tracking here
+            target_pos = self.forward(positive_img)
         for _ in range(num_iter):
-            outputs = self.forward(x_adv)
-            loss = self.crit(outputs, target_features)  # Now valid
+            adv_embed = self.forward(adv_img)
+            # Compute contrastive loss w.r.t. target_pos and negatives
+            loss = self.contrastive_loss(adv_embed, positives=[target_pos], negatives=negatives)
+            # Backprop and take a PGD step
             self.convnet.zero_grad()
             self.projection.zero_grad()
             loss.backward()
-            grad = x_adv.grad.data
-            x_adv = x_adv.detach() + alpha * torch.sign(grad)
-            eta = torch.clamp(x_adv - x, min=-epsilon, max=epsilon)
-            x_adv = torch.clamp(x + eta, 0, 1).detach_()
-            x_adv.requires_grad = True
-        return x_adv
+
+            # Update adversarial image
+            grad = adv_img.grad.data
+            adv_img = adv_img.detach() + alpha * torch.sign(grad)
+            eta = torch.clamp(adv_img - anchor_img, min=-epsilon, max=epsilon)
+            adv_img = torch.clamp(anchor_img + eta, 0, 1).detach()
+            adv_img.requires_grad_()
+        return adv_img
 
     def compute_loss(self, pos_1, pos_2):
         """
         Compute contrastive loss using clean or adversarial views.
         """
         if self.hparams.adversarial and self.is_in_train_mode():
-            pos_1_adv = self.generate_adversarial_example(pos_1)
-            z_pos1 = self.forward(pos_1)         # Clean anchor
-            z_pos2 = self.forward(pos_2)         # Clean positive
-            z_adv = self.forward(pos_1_adv)      # Adversarial view of anchor
-            # Main RoCL loss: anchor z_pos1 should align with both z_pos2 and z_adv
-            loss_main = self.crit(z_pos1, z_pos2, positive_extra=z_adv)
-            # Regularization term: z_adv should align with z_pos2
-            loss_reg = self.crit(z_adv, z_pos2)
-            return loss_main + self.lambda_weight * loss_reg
+            return self.compute_loss_adv(pos_1, pos_2)
         return self.compute_loss_submethod(pos_1, pos_2)
+
+    def compute_loss_adv(self, pos_1, pos_2):
+        pos_1, pos_2 = pos_1.to(self.device), pos_2.to(self.device)
+        z1 = self.forward(pos_1)
+        z2 = self.forward(pos_2)
+        # Use z1 and z2 to build negatives (before generating adv)
+        with torch.no_grad():
+            negatives = torch.cat([z1, z2], dim=0).detach()
+        # Generate adversarial example from pos_1
+        adv_pos_1 = self.generate_adversarial_example(pos_1, pos_2, negatives)
+        # Get embeddings for adversarial examples
+        z1_adv = self.forward(adv_pos_1)
+        # RoCL main loss (anchor: z1, positives: z2, z1_adv)
+        loss_rocl = self.contrastive_loss(z1, positives=[z2, z1_adv], negatives=negatives)
+        # Regularization loss (anchor: z1_adv, positive: z2)
+        loss_reg = self.contrastive_loss(z1_adv, positives=[z2], negatives=negatives)
+        total_loss = loss_rocl + self.lambda_weight * loss_reg
+        return total_loss
+
+    def contrastive_loss(self, anchor, positives, negatives, temperature=0.5):
+        """
+        Compute contrastive loss for an anchor embedding with sets of positive and negative embeddings.
+
+        Args:
+            anchor (Tensor): Anchor embeddings of shape (batch_size, dim)
+            positives (List[Tensor]): List of positive embeddings (each of shape (batch_size, dim))
+            negatives (Tensor): Negative embeddings of shape (num_negatives, dim)
+
+        Returns:
+            loss (Tensor): Scalar contrastive loss
+        """
+        # Normalize all embeddings
+        anchor = F.normalize(anchor, dim=1)
+        positives = [F.normalize(p, dim=1) for p in positives]
+        negatives = F.normalize(negatives, dim=1)
+        # Compute similarities
+        sim_pos = torch.cat([torch.sum(anchor * p, dim=1, keepdim=True) for p in positives], dim=1)  # (batch, n_pos)
+        sim_neg = anchor @ negatives.T  # (batch, n_neg)
+        # Temperature scaling
+        sim_pos /= temperature
+        sim_neg /= temperature
+        # Numerator: exp of positive similarities (sum across positive set)
+        numerator = torch.sum(torch.exp(sim_pos), dim=1)
+        # Denominator: exp of all similarities (positive + negative)
+        denominator = numerator + torch.sum(torch.exp(sim_neg), dim=1)
+        # Contrastive loss
+        loss = -torch.log(numerator / denominator)
+        return loss.mean()
 
     def train(self):
         best_val_loss = float("inf")
