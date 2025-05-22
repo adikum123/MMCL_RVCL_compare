@@ -31,8 +31,8 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
         --dataset cifar-10 \
         --C 1 \
         --kernel_type rbf \
-        --positives_per_class 20 \
-        --negatives_per_class 100 \
-        --num_retries 10
+        --positives_per_class 10 \
+        --negatives_per_class 200 \
+        --num_retries 5
 
 EOF

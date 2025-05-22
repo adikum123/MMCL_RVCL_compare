@@ -35,7 +35,6 @@ parser.add_argument("--normalize", action="store_true")
 parser.add_argument("--positives_per_class", type=int, default=10)
 parser.add_argument("--negatives_per_class", type=int, default=100)
 parser.add_argument("--num_retries", default=5, type=int, help="Number of retries for negative sampling")
-parser.add_argument("--normalize", action="store_true", help="Normalize the input data")
 
 args = parser.parse_args()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
