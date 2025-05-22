@@ -97,7 +97,7 @@ for class_index, class_name in enumerate(class_names):
         for retry in range(args.num_retries):
             result_dct = {}
             for model in models:
-                print(f"Processing image: {image_index}, retry: {retry+1}")
+                print(f"Processing image: {image_index}, retry: {retry+1}, model: {model['model']}")
                 negatives = [
                     image
                     for k, v in per_class_sampler.items()
@@ -107,6 +107,7 @@ for class_index, class_name in enumerate(class_names):
                 margin = encode_inputs_and_compute_margin(model=model["encoder"], positive=positive, negatives=negatives)
                 result_dct[model["model"]] = margin
             # Store the results in the margins dictionary
+            print(json.dumps(result_dct, indent=4))
             margins[f"{image_index}|{retry}"].append(result_dct)
 
 per_image_values = defaultdict(list)
