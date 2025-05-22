@@ -138,6 +138,7 @@ print(f"Obtained following mean and std per class dict:\n{per_model_mean_std}")
 save_dir = "margin_results"
 os.makedirs(save_dir, exist_ok=True)
 file_name = "-".join([x["model"].replace(" ", "_") for x in models])
+file_name = f"{file_name}_{args.kernel_type}"
 # Construct file path
 file_path = os.path.join(save_dir, f"{file_name}.json")
 # Save dictionary as JSON
