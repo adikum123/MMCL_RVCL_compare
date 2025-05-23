@@ -10,99 +10,9 @@ import torchvision
 from tqdm import tqdm
 
 import rocl.data_loader as data_loader
+from cl_utils import ContrastiveLoss, RobustContrastiveLoss
 from mmcl.losses import MMCL_PGD as MMCL_pgd
-from regular_cl import ContrastiveLoss
 from resnet.resnet import ResNet50
-
-
-class RobustContrastiveLoss(nn.Module):
-
-    def __init__(self, base_model, temperature=0.5, lambda_weight=1/256):
-        super().__init__()
-        self.base_model = base_model
-        self.device = base_model.device
-        self.temperature = temperature
-        self.lambda_weight = lambda_weight
-
-    def forward(self, pos_1, pos_2):
-        pos_1, pos_2 = pos_1.to(self.device), pos_2.to(self.device)
-        z1 = self.base_model.forward(pos_1)
-        z2 = self.base_model.forward(pos_2)
-
-        with torch.no_grad():
-            negatives = torch.cat([z1, z2], dim=0).detach()
-
-        adv_pos_1 = self.generate_adversarial_example(pos_1, pos_2, negatives)
-        z1_adv = self.base_model.forward(adv_pos_1)
-
-        loss_rocl = self.contrastive_loss(z1, [z2, z1_adv], negatives)
-        loss_reg = self.contrastive_loss(z1_adv, [z2], negatives)
-        total_loss = loss_rocl + self.lambda_weight * loss_reg
-        return total_loss
-
-    def generate_adversarial_example(self, anchor_img, positive_img, negatives, epsilon=4/255, alpha=1/255, num_iter=10):
-        """
-        Generates an instance-wise adversarial example from anchor_img (t(x))
-        by maximizing the contrastive loss against positive_img (t0(x)) and negatives,
-        following the RoCL approach.
-
-        Args:
-            anchor_img (Tensor): Anchor view t(x), to be perturbed (batch_size, C, H, W)
-            positive_img (Tensor): Positive view t0(x), kept fixed (batch_size, C, H, W)
-            negatives (Tensor): Negative embeddings (num_negatives, dim)
-            epsilon (float): L-infinity perturbation bound
-            alpha (float): PGD step size
-            num_iter (int): Number of PGD steps
-
-        Returns:
-            adv_img (Tensor): The generated adversarial version of anchor_img
-        """
-        anchor_img = anchor_img.clone().detach().to(self.device)
-        positive_img = positive_img.to(self.device)
-        negatives = negatives.to(self.device)
-
-        adv_img = anchor_img.clone().detach().requires_grad_(True)
-
-        # Compute target embedding of the positive image
-        with torch.no_grad():
-            target_pos = self.base_model.forward(positive_img)  # shape: (batch, dim)
-
-        for _ in range(num_iter):
-            adv_embed = self.base_model.forward(adv_img)  # shape: (batch, dim)
-            loss = self.contrastive_loss(adv_embed, positives=[target_pos], negatives=negatives)
-
-            self.base_model.convnet.zero_grad()
-            self.base_model.projection.zero_grad()
-            loss.backward()
-
-            # Gradient step
-            grad = adv_img.grad.data
-            perturbation = alpha * torch.sign(grad)
-            adv_img = adv_img.detach() + perturbation
-
-            # Clamp to ensure within epsilon ball
-            eta = torch.clamp(adv_img - anchor_img, min=-epsilon, max=epsilon)
-            adv_img = torch.clamp(anchor_img + eta, 0, 1).detach()
-            adv_img.requires_grad_()
-
-        return adv_img
-
-    def contrastive_loss(self, anchor, positives, negatives):
-        anchor = F.normalize(anchor, dim=1)
-        positives = [F.normalize(p, dim=1) for p in positives]
-        negatives = F.normalize(negatives, dim=1)
-
-        sim_pos = torch.cat([torch.sum(anchor * p, dim=1, keepdim=True) for p in positives], dim=1)
-        sim_neg = anchor @ negatives.T
-
-        sim_pos /= self.temperature
-        sim_neg /= self.temperature
-
-        numerator = torch.sum(torch.exp(sim_pos), dim=1)
-        denominator = numerator + torch.sum(torch.exp(sim_neg), dim=1)
-
-        loss = -torch.log(numerator / denominator)
-        return loss.mean()
 
 
 class ResnetEncoder(nn.Module):
@@ -141,6 +51,14 @@ class ResnetEncoder(nn.Module):
             )
         except Exception as e:
             self.scheduler = None
+
+    def get_finetune_params(self):
+        return (
+            list(self.projection.parameters())
+            + list(self.convnet.layer4.parameters())
+            + list(self.convnet.layer2.parameters())
+            + list(self.convnet.layer3.parameters())
+        )
 
     def set_covnet_and_projection(self):
         if "resnet_encoder_ckpt" not in vars(self.hparams):
@@ -213,6 +131,10 @@ class ResnetEncoder(nn.Module):
 
     def forward(self, x):
         return self.projection(self.convnet(x))
+
+    def set_zero_grad(self):
+        self.convnet.zero_grad()
+        self.projection.zero_grad()
 
     def load_checkpoint(self):
         print(f"[Info] Loading checkpoint from {self.hparams.resnet_encoder_ckpt}")
