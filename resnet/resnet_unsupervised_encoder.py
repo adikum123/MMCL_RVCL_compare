@@ -15,6 +15,96 @@ from regular_cl import ContrastiveLoss
 from resnet.resnet import ResNet50
 
 
+class RobustContrastiveLoss(nn.Module):
+
+    def __init__(self, base_model, temperature=0.5, lambda_weight=1/256):
+        super().__init__()
+        self.base_model = base_model
+        self.device = base_model.device
+        self.temperature = temperature
+        self.lambda_weight = lambda_weight
+
+    def forward(self, pos_1, pos_2):
+        pos_1, pos_2 = pos_1.to(self.device), pos_2.to(self.device)
+        z1 = self.base_model.forward(pos_1)
+        z2 = self.base_model.forward(pos_2)
+
+        with torch.no_grad():
+            negatives = torch.cat([z1, z2], dim=0).detach()
+
+        adv_pos_1 = self.generate_adversarial_example(pos_1, pos_2, negatives)
+        z1_adv = self.base_model.forward(adv_pos_1)
+
+        loss_rocl = self.contrastive_loss(z1, [z2, z1_adv], negatives)
+        loss_reg = self.contrastive_loss(z1_adv, [z2], negatives)
+        total_loss = loss_rocl + self.lambda_weight * loss_reg
+        return total_loss
+
+    def generate_adversarial_example(self, anchor_img, positive_img, negatives, epsilon=4/255, alpha=1/255, num_iter=10):
+        """
+        Generates an instance-wise adversarial example from anchor_img (t(x))
+        by maximizing the contrastive loss against positive_img (t0(x)) and negatives,
+        following the RoCL approach.
+
+        Args:
+            anchor_img (Tensor): Anchor view t(x), to be perturbed (batch_size, C, H, W)
+            positive_img (Tensor): Positive view t0(x), kept fixed (batch_size, C, H, W)
+            negatives (Tensor): Negative embeddings (num_negatives, dim)
+            epsilon (float): L-infinity perturbation bound
+            alpha (float): PGD step size
+            num_iter (int): Number of PGD steps
+
+        Returns:
+            adv_img (Tensor): The generated adversarial version of anchor_img
+        """
+        anchor_img = anchor_img.clone().detach().to(self.device)
+        positive_img = positive_img.to(self.device)
+        negatives = negatives.to(self.device)
+
+        adv_img = anchor_img.clone().detach().requires_grad_(True)
+
+        # Compute target embedding of the positive image
+        with torch.no_grad():
+            target_pos = self.base_model.forward(positive_img)  # shape: (batch, dim)
+
+        for _ in range(num_iter):
+            adv_embed = self.base_model.forward(adv_img)  # shape: (batch, dim)
+            loss = self.contrastive_loss(adv_embed, positives=[target_pos], negatives=negatives)
+
+            self.base_model.convnet.zero_grad()
+            self.base_model.projection.zero_grad()
+            loss.backward()
+
+            # Gradient step
+            grad = adv_img.grad.data
+            perturbation = alpha * torch.sign(grad)
+            adv_img = adv_img.detach() + perturbation
+
+            # Clamp to ensure within epsilon ball
+            eta = torch.clamp(adv_img - anchor_img, min=-epsilon, max=epsilon)
+            adv_img = torch.clamp(anchor_img + eta, 0, 1).detach()
+            adv_img.requires_grad_()
+
+        return adv_img
+
+    def contrastive_loss(self, anchor, positives, negatives):
+        anchor = F.normalize(anchor, dim=1)
+        positives = [F.normalize(p, dim=1) for p in positives]
+        negatives = F.normalize(negatives, dim=1)
+
+        sim_pos = torch.cat([torch.sum(anchor * p, dim=1, keepdim=True) for p in positives], dim=1)
+        sim_neg = anchor @ negatives.T
+
+        sim_pos /= self.temperature
+        sim_neg /= self.temperature
+
+        numerator = torch.sum(torch.exp(sim_pos), dim=1)
+        denominator = numerator + torch.sum(torch.exp(sim_neg), dim=1)
+
+        loss = -torch.log(numerator / denominator)
+        return loss.mean()
+
+
 class ResnetEncoder(nn.Module):
 
     def __init__(self, hparams, device):
@@ -32,7 +122,6 @@ class ResnetEncoder(nn.Module):
         self.set_optimizer()
         self.set_scheduler()
         self.min_epochs = 80
-        self.lambda_weight = 1/256
 
     def set_optimizer(self):
         try:
@@ -101,11 +190,10 @@ class ResnetEncoder(nn.Module):
             return None
 
     def set_loss_fn(self):
-        """
-            self.hparams.loss_type can be in [mmcl, info_nce, nce, cosine, barlow]
-        """
         try:
-            if self.hparams.loss_type == "mmcl":
+            if self.hparams.adversarial:
+                self.crit = RobustContrastiveLoss(base_model=self)
+            elif self.hparams.loss_type == "mmcl":
                 self.crit = MMCL_pgd(
                     sigma=self.hparams.kernel_gamma,
                     batch_size=self.hparams.batch_size,
@@ -119,8 +207,9 @@ class ResnetEncoder(nn.Module):
                 )
             else:
                 self.crit = ContrastiveLoss(loss_type=self.hparams.loss_type)
-        except Exception:
-            return None
+        except Exception as e:
+            print(f"Error in setting loss function: {e}")
+            self.crit = None
 
     def forward(self, x):
         return self.projection(self.convnet(x))
@@ -180,123 +269,6 @@ class ResnetEncoder(nn.Module):
     def is_in_train_mode(self):
         return self.convnet.training and self.projection.training
 
-    def get_finetune_params(self):
-        return (
-            list(self.projection.parameters())
-            + list(self.convnet.layer4.parameters())
-            + list(self.convnet.layer2.parameters())
-            + list(self.convnet.layer3.parameters())
-        )
-
-    def compute_loss_submethod(self, pos_1, pos_2):
-        pos_1, pos_2 = pos_1.to(self.device), pos_2.to(self.device)
-        feature_1 = self.forward(pos_1)
-        feature_2 = self.forward(pos_2)
-        if self.hparams.loss_type == "mmcl":
-            features = torch.cat(
-                [feature_1.unsqueeze(1), feature_2.unsqueeze(1)], dim=1
-            )
-            loss, _, _, _, _, _ = self.crit(features)
-            return loss
-        return self.crit(feature_1, feature_2)
-
-    def generate_adversarial_example(self, anchor_img, positive_img, negatives, epsilon=4/255, alpha=1/255, num_iter=10):
-        """
-        Generates an instance-wise adversarial example from anchor_img (t(x))
-        by maximizing the contrastive loss against positive_img (t0(x)) and negatives.
-
-        Args:
-            anchor_img (Tensor): t(x), the anchor view to perturb
-            positive_img (Tensor): t0(x), the positive view of the same instance
-            negatives (Tensor): Batch of negative embeddings
-            epsilon (float): Perturbation bound
-            alpha (float): Step size
-            num_iter (int): Number of PGD steps
-
-        Returns:
-            adv_img (Tensor): The generated adversarial version of anchor_img
-        """
-        anchor_img = anchor_img.to(self.device)
-        positive_img = positive_img.to(self.device)
-        negatives = negatives.to(self.device)
-        # Initial adversarial image is a copy of anchor
-        adv_img = anchor_img.clone().detach().requires_grad_(True)
-        # Compute target positive embeddings (no grad)
-        with torch.no_grad():
-            target_pos = self.forward(positive_img)
-        for _ in range(num_iter):
-            adv_embed = self.forward(adv_img)
-            # Compute contrastive loss w.r.t. target_pos and negatives
-            loss = self.contrastive_loss(adv_embed, positives=[target_pos], negatives=negatives)
-            # Backprop and take a PGD step
-            self.convnet.zero_grad()
-            self.projection.zero_grad()
-            loss.backward()
-
-            # Update adversarial image
-            grad = adv_img.grad.data
-            adv_img = adv_img.detach() + alpha * torch.sign(grad)
-            eta = torch.clamp(adv_img - anchor_img, min=-epsilon, max=epsilon)
-            adv_img = torch.clamp(anchor_img + eta, 0, 1).detach()
-            adv_img.requires_grad_()
-        return adv_img
-
-    def compute_loss(self, pos_1, pos_2):
-        """
-        Compute contrastive loss using clean or adversarial views.
-        """
-        if self.hparams.adversarial and self.is_in_train_mode():
-            return self.compute_loss_adv(pos_1, pos_2)
-        return self.compute_loss_submethod(pos_1, pos_2)
-
-    def compute_loss_adv(self, pos_1, pos_2):
-        pos_1, pos_2 = pos_1.to(self.device), pos_2.to(self.device)
-        z1 = self.forward(pos_1)
-        z2 = self.forward(pos_2)
-        # Use z1 and z2 to build negatives (before generating adv)
-        with torch.no_grad():
-            negatives = torch.cat([z1, z2], dim=0).detach()
-        # Generate adversarial example from pos_1
-        adv_pos_1 = self.generate_adversarial_example(pos_1, pos_2, negatives)
-        # Get embeddings for adversarial examples
-        z1_adv = self.forward(adv_pos_1)
-        # RoCL main loss (anchor: z1, positives: z2, z1_adv)
-        loss_rocl = self.contrastive_loss(z1, positives=[z2, z1_adv], negatives=negatives)
-        # Regularization loss (anchor: z1_adv, positive: z2)
-        loss_reg = self.contrastive_loss(z1_adv, positives=[z2], negatives=negatives)
-        total_loss = loss_rocl + self.lambda_weight * loss_reg
-        return total_loss
-
-    def contrastive_loss(self, anchor, positives, negatives, temperature=0.5):
-        """
-        Compute contrastive loss for an anchor embedding with sets of positive and negative embeddings.
-
-        Args:
-            anchor (Tensor): Anchor embeddings of shape (batch_size, dim)
-            positives (List[Tensor]): List of positive embeddings (each of shape (batch_size, dim))
-            negatives (Tensor): Negative embeddings of shape (num_negatives, dim)
-
-        Returns:
-            loss (Tensor): Scalar contrastive loss
-        """
-        # Normalize all embeddings
-        anchor = F.normalize(anchor, dim=1)
-        positives = [F.normalize(p, dim=1) for p in positives]
-        negatives = F.normalize(negatives, dim=1)
-        # Compute similarities
-        sim_pos = torch.cat([torch.sum(anchor * p, dim=1, keepdim=True) for p in positives], dim=1)  # (batch, n_pos)
-        sim_neg = anchor @ negatives.T  # (batch, n_neg)
-        # Temperature scaling
-        sim_pos /= temperature
-        sim_neg /= temperature
-        # Numerator: exp of positive similarities (sum across positive set)
-        numerator = torch.sum(torch.exp(sim_pos), dim=1)
-        # Denominator: exp of all similarities (positive + negative)
-        denominator = numerator + torch.sum(torch.exp(sim_neg), dim=1)
-        # Contrastive loss
-        loss = -torch.log(numerator / denominator)
-        return loss.mean()
-
     def train(self):
         best_val_loss = float("inf")
         patience_counter = 0
@@ -309,7 +281,7 @@ class ResnetEncoder(nn.Module):
             total_loss, total_num = 0.0, 0
             train_bar = tqdm(self.trainloader, desc=f"Train Epoch {epoch + 1}")
             for iii, (ori_image, pos_1, pos_2, target) in enumerate(train_bar):
-                loss = self.compute_loss(pos_1, pos_2)
+                loss = self.crit(pos_1, pos_2)
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
@@ -336,7 +308,7 @@ class ResnetEncoder(nn.Module):
                 total_loss, total_num = 0.0, 0
                 with torch.no_grad():
                     for iii, (ori_image, pos_1, pos_2, target) in enumerate(val_bar):
-                        loss = self.compute_loss(pos_1, pos_2)
+                        loss = self.crit(pos_1, pos_2)
                         batch_size = pos_1.size(0)
                         total_num += batch_size
                         total_loss += loss.item() * batch_size
