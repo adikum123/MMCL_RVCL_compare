@@ -161,7 +161,6 @@ for sigma in sigma_values:
     for model in models:
         for image, label in tqdm(picks):
             image = image.to(device)
-            label = label.to(device)
             update_results(
                 verifier=model["verifier"],
                 ori_model=model["base_classifier"],
