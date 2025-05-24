@@ -45,14 +45,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 models = [
     {
-        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_barlow_bs_512_lr_0.001.pkl",
+        "encoder_ckpt": "models/regular_cl/finetune_adv_regular_cl_info_nce_bs_512_lr_0.001.pkl",
         "load_classifier": True,
-        "model": "cl barlow"
-    },
-    {
-        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_cosine_bs_512_lr_0.001.pkl",
-        "load_classifier": True,
-        "model": "cl cosine"
+        "model": "adversarial cl"
     },
     {
         "encoder_ckpt": "models/regular_cl/finetune_regular_cl_info_nce_bs_512_lr_0.001.pkl",
@@ -60,9 +55,14 @@ models = [
         "model": "cl info_nce"
     },
     {
-        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_nce_bs_512_lr_0.001.pkl",
+        "encoder_ckpt": "models/supervised/supervised_cross_entropy_bs_256_lr_0.001.pkl",
+        "load_classifier": False,
+        "model": "supervised"
+    },
+    {
+        "encoder_ckpt": "models/mmcl/rbf/finetune_mmcl_cnn_4layer_b_C_1.0_bs_512_lr_0.0001.pkl",
         "load_classifier": True,
-        "model": "cl nce"
+        "model": "mmcl rbf"
     }
 ]
 transform_test = transforms.Compose([
