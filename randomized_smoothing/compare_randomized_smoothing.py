@@ -143,6 +143,7 @@ for model in models:
     else:
         print(f"Loaded:\nencoder:{model['encoder_ckpt']}")
         model["base_classifier"] = encoder
+    model["base_classifier"] = model["base_classifier"].to(device)
     model["test_accuracy"] = get_test_set_accuracy(model["base_classifier"])
     print(f"Test accuracy for model {model['model']}: {model['test_accuracy']}")
 
@@ -160,6 +161,7 @@ for sigma in sigma_values:
     for model in models:
         for image, label in tqdm(picks):
             image = image.to(device)
+            label = label.to(device)
             update_results(
                 verifier=model["verifier"],
                 ori_model=model["base_classifier"],
