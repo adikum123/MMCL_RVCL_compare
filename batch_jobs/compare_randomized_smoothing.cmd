@@ -29,7 +29,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
 
     # Install PyTorch 1.13.1 and compatible torchvision/torchaudio
     echo "Installing PyTorch 1.13.1 and compatible libraries..."
-    yes | pip install torch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 --index-url https://download.pytorch.org/whl/cu117
+    yes | pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
     # Install other required dependencies
     pip install -r requirements.txt
