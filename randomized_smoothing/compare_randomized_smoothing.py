@@ -73,7 +73,7 @@ test_set = torchvision.datasets.CIFAR10(
         root='./data', train=False, download=True, transform=transform_test
 )
 testloader = DataLoader(
-    test_set, batch_size=args.batch_size, shuffle=False, num_workers=2
+    test_set, batch_size=args.batch_size, shuffle=False, num_workers=0
 )
 all_test_images = []
 # randomly sample images from the test set
