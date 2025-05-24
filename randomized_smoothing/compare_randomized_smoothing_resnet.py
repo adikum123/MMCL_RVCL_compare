@@ -125,7 +125,7 @@ def get_test_set_accuracy(model):
     with torch.no_grad():
         for images, targets in tqdm(testloader):
             images, targets = images.to(device), targets.to(device)
-            print(f"Images: {images}, shpae:{images.shpae}, targets: {targets}, shape: {targets.shape}")
+            print(f"Images: {images}, shpae:{images.shape}, targets: {targets}, shape: {targets.shape}")
             print(f"Images device: {images.device}, targets device: {targets.device}")
             logits = model(images)
             predictions = torch.argmax(logits, dim=1)
