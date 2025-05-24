@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -p lrz-hgx-a100-80x4
+#SBATCH -p lrz-hgx-h100-94x4
 #SBATCH --gres=gpu:1
 #SBATCH --time=40:00:00
 #SBATCH -o outs/randomized_smoothing.out
@@ -17,7 +17,7 @@ enroot create --name mmcl_rvcl ../nvidia+tensorflow+20.12-tf1-py3.sqsh
 echo "Container created"
 echo "Starting container"
 
-enroot start --nv --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
+enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     echo "Setting up the environment..."
 
     # Upgrade pip
