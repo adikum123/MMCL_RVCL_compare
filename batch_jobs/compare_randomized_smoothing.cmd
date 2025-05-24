@@ -17,7 +17,7 @@ enroot create --name mmcl_rvcl ../nvidia+tensorflow+20.12-tf1-py3.sqsh
 echo "Container created"
 echo "Starting container"
 
-enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
+enroot start --nv --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     echo "Setting up the environment..."
 
     # Upgrade pip
@@ -33,7 +33,6 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
 
     # Install other required dependencies
     pip install -r requirements.txt
-
     export PYTHONPATH=$(pwd):$PYTHONPATH
 
     echo "Computing plots for robust radius..."
