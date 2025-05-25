@@ -74,10 +74,11 @@ for cls, imgs in class_to_images.items():
 # Structure: results[seed_idx] = { model_name: [avg_radius_retry1, avg_radius_retry2, ...] }
 results = dict()
 total_seeds = len(seed_images)
-for seed_idx, (cls, ori_img) in enumerate(seed_images):
+for seed_idx, (class_label, ori_img) in enumerate(seed_images):
+    print(f"Processing seed {seed_idx + 1}/{total_seeds} for class {class_label}")
     # Initialize per-model list
     model_avgs = {m["model"]: [] for m in models}
-    for retry in range(args.num_retries):
+    for retry in tqdm(range(args.num_retries)):
         # Build a pool of target images (negatives)
         negatives = []
         for imgs in class_to_images.values():
