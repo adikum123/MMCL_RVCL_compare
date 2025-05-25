@@ -85,8 +85,9 @@ for seed_idx, (class_label, ori_img) in enumerate(seed_images):
             negatives.extend(random.sample(imgs, args.negatives_per_class))
         # For each model, compute radii list and then average
         for m in models:
+            print(f"Evaluating model: {m['model']}")
             radii = []
-            for tgt_img in negatives:
+            for tgt_img in tqdm(negatives):
                 radius = m["verifier"].verify(ori_img, tgt_img)
                 radii.append(radius)
             avg_radius = sum(radii) / len(radii)
