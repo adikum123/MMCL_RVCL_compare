@@ -5,8 +5,8 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 
-file_name = "mmcl_rbf-adversarial_cl-cl_info_nce-supervised_cross_entropy"
-with open(f"../rs_results/{file_name}.json", "r") as f:
+file_name = "adversarial_cl-cl_info_nce-supervised-mmcl_rbf"
+with open(f"rs_results/{file_name}.json", "r") as f:
     data = json.load(f)
 
 models_info = data["models_info"]
@@ -57,7 +57,7 @@ def plot_one_certified_accuracy_per_sigma(data):
         plt.title(f"Certified Accuracy vs Radius (sigma = {sigma})")
         plt.legend()
         plt.grid(True)
-        output_dir = os.path.join("..", "plots", "randomized_smoothing", "cnn_4_layer_b")
+        output_dir = os.path.join("plots", "randomized_smoothing", "cnn_4_layer_b")
         os.makedirs(output_dir, exist_ok=True)
         output_filename = f"ca_sigma_{sigma}.png"
         plt.tight_layout()
@@ -110,7 +110,7 @@ def plot_one_unchanged_percentage_per_sigma(data):
         plt.title(f"Unchanged Percentage vs Radius (sigma = {sigma})")
         plt.legend()
         plt.grid(True)
-        output_dir = os.path.join("..", "plots", "randomized_smoothing", "cnn_4_layer_b")
+        output_dir = os.path.join("plots", "randomized_smoothing", "cnn_4_layer_b")
         os.makedirs(output_dir, exist_ok=True)
         output_filename = f"up_sigma_{sigma}.png"
         plt.tight_layout()

@@ -8,7 +8,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Font
 
-file_name = "resnet_supervised-vit_supervised-resnet_cl-resnet_adversarial_cl-resnet_mmcl"
+file_name = "resnet_cl_nce-resnet_cl_barlow-resnet_cl_cosine-resnet_cl_info_nce"
 with open(f"rs_results/{file_name}.json", "r") as f:
     data = json.load(f)
 models_info = data["models_info"]
@@ -46,7 +46,7 @@ def plot_one_certified_accuracy_per_sigma(data):
             y_vals = []
             for r in x_vals:
                 count = sum(
-                    1 for rec in records if rec["radius"] >= r and rec["true_label"] == rec["rs_label"] == rec["predicted_label"]
+                    1 for rec in records if rec["radius"] >= r and rec["true_label"] == rec["rs_label"]
                 )
                 y_vals.append(count / total if total > 0 else 0)
             # Construct legend label with test accuracy
@@ -59,7 +59,7 @@ def plot_one_certified_accuracy_per_sigma(data):
         plt.title(f"Certified Accuracy vs Radius (sigma = {sigma})")
         plt.legend()
         plt.grid(True)
-        output_dir = os.path.join("plots", "randomized_smoothing", "resnet_vt")
+        output_dir = os.path.join("plots", "randomized_smoothing", "resnet_cl")
         os.makedirs(output_dir, exist_ok=True)
         output_filename = f"ca_sigma_{sigma}.png"
         plt.tight_layout()
@@ -112,7 +112,7 @@ def plot_one_unchanged_percentage_per_sigma(data):
         plt.title(f"Unchanged Percentage vs Radius (sigma = {sigma})")
         plt.legend()
         plt.grid(True)
-        output_dir = os.path.join("plots", "randomized_smoothing", "resnet_vt")
+        output_dir = os.path.join("plots", "randomized_smoothing", "resnet_cl")
         os.makedirs(output_dir, exist_ok=True)
         output_filename = f"up_sigma_{sigma}.png"
         plt.tight_layout()
