@@ -35,19 +35,20 @@ def compute_radius(verifier, ori_image, target_image):
 # Load models
 models = [
     {
-        "encoder_ckpt": "models/mmcl/rbf/finetune_mmcl_cnn_4layer_b_C_1.0_bs_512_lr_0.0001.pkl",
-        "load_classifier": True,
-        "model": "mmcl rbf"
+        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_barlow_bs_512_lr_0.001.pkl",
+        "model": "barlow"
     },
     {
-        "encoder_ckpt": "models/regular_cl/finetune_adv_regular_cl_info_nce_bs_512_lr_0.001.pkl",
-        "load_classifier": True,
-        "model": "adversarial cl"
+        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_cosine_bs_512_lr_0.001.pkl",
+        "model": "cosine"
     },
     {
         "encoder_ckpt": "models/regular_cl/finetune_regular_cl_info_nce_bs_512_lr_0.001.pkl",
-        "load_classifier": True,
-        "model": "cl info_nce"
+        "model": "info nce"
+    },
+    {
+        "encoder_ckpt": "models/regular_cl/finetune_regular_cl_nce_bs_512_lr_0.001.pkl",
+        "model": "nce"
     }
 ]
 for model in models:
