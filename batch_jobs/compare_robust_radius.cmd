@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -p lrz-hgx-h100-94x4
 #SBATCH --gres=gpu:1
-#SBATCH --time=40:00:00
+#SBATCH --time=50:00:00
 #SBATCH -o outs/robust_radius.out
 #SBATCH -e outs/robust_radius.out
 
@@ -38,7 +38,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     export PYTHONPATH=$(pwd):$PYTHONPATH
     python -u robust_radius/compare_robust_radius.py \
         --max_steps 100 \
-        --positives_per_class 10 \
+        --positives_per_class 8 \
         --negatives_per_class 2 \
         --num_retries 3
 
