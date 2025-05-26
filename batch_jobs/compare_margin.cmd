@@ -27,7 +27,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
 
     echo "Computing plots for svm margin"
     export PYTHONPATH=$(pwd):$PYTHONPATH
-    python -u svm_margin/compare_svm_margin_resnet.py \
+    python -u svm_margin/compare_svm_margin.py \
         --dataset cifar-10 \
         --C 1 \
         --kernel_type linear \

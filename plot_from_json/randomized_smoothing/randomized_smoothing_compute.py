@@ -5,7 +5,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 
-file_name = "adversarial_cl-cl_info_nce-supervised-mmcl_rbf"
+file_name = "adversarial_cl-cl_barlow-supervised-mmcl_rbf"
 with open(f"rs_results/{file_name}.json", "r") as f:
     data = json.load(f)
 
