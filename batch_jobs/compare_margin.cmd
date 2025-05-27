@@ -30,7 +30,7 @@ enroot start --mount $(pwd):/workspace mmcl_rvcl <<'EOF'
     python -u svm_margin/compare_svm_margin.py \
         --dataset cifar-10 \
         --C 1 \
-        --kernel_type linear \
+        --kernel_type rbf \
         --positives_per_class 10 \
         --negatives_per_class 200 \
         --num_retries 5
