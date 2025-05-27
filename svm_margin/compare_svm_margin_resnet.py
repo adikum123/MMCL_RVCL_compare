@@ -144,3 +144,4 @@ file_path = os.path.join(save_dir, f"{file_name}.json")
 # Save dictionary as JSON
 with open(file_path, "w") as f:
     json.dump(per_model_mean_std, f, indent=4)
+print(f"Results saved to {file_path}")
