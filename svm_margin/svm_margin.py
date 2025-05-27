@@ -34,19 +34,8 @@ def compute_margin(positive, negatives, args):
             svm_params["gamma"] = 1 / X.shape[1]
         else:
             svm_params["gamma"] = float(svm_params["gamma"])
-        kernel_params = {"gamma": svm_params["gamma"]}
-        print(svm_params)
-    elif kernel_type == "poly" or kernel_type == "sigmoid":
-        kernel_params = {
-            "gamma": svm_params["gamma"],
-            "degree": svm_params["degree"],
-            "coef0": svm_params["coef0"],
-        }
-    elif kernel_type == "linear":
-        kernel_params = {}
-    else:
-        raise ValueError(f"Unsupported kernel type: {kernel_type}")
     # Train SVM
+    print(f"Training SVM with parameters: {svm_params}")
     model = SVC(**svm_params)
     model.fit(X, Y)
 
