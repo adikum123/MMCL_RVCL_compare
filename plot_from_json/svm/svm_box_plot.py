@@ -5,7 +5,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 
-file_name = "resnet_cl-resnet_adversarial_cl-resnet_mmcl_linear"
+file_name = "cl_info_nce-adversarial_cl-resnet_mmcl_rbf"
 input_path = f"margin_results/{file_name}.json"
 output_dir = "plots/svm_margin"
 output_path = os.path.join(output_dir, f"{file_name}_boxplot_comparison.png")
@@ -14,7 +14,7 @@ output_path = os.path.join(output_dir, f"{file_name}_boxplot_comparison.png")
 os.makedirs(output_dir, exist_ok=True)
 
 # Load JSON data
-with open("margin_results/resnet_cl-resnet_adversarial_cl-resnet_mmcl_rbf.json", "r") as f:
+with open(input_path, "r") as f:
     data = json.load(f)
 
 # Dynamically collect model values

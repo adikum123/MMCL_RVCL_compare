@@ -27,14 +27,6 @@ def compute_margin(positive, negatives, args):
         "coef0": getattr(args, "coef0", 0.0),
     }
 
-    # Train SVM
-    model = SVC(**svm_params)
-    model.fit(X, Y)
-
-    # Extract support vectors and dual coefficients
-    support_vectors = model.support_vectors_
-    dual_coefs = model.dual_coef_[0]
-
     # Compute kernel parameters
     kernel_type = svm_params["kernel"]
     if kernel_type in {"rbf", "poly"}:
@@ -43,6 +35,7 @@ def compute_margin(positive, negatives, args):
         else:
             svm_params["gamma"] = float(svm_params["gamma"])
         kernel_params = {"gamma": svm_params["gamma"]}
+        print(svm_params)
     elif kernel_type == "poly" or kernel_type == "sigmoid":
         kernel_params = {
             "gamma": svm_params["gamma"],
@@ -53,6 +46,13 @@ def compute_margin(positive, negatives, args):
         kernel_params = {}
     else:
         raise ValueError(f"Unsupported kernel type: {kernel_type}")
+    # Train SVM
+    model = SVC(**svm_params)
+    model.fit(X, Y)
+
+    # Extract support vectors and dual coefficients
+    support_vectors = model.support_vectors_
+    dual_coefs = model.dual_coef_[0]
     # Compute kernel matrix
     kernel_matrix = pairwise_kernels(X=support_vectors, metric=kernel_type, **kernel_params)
     # Compute ||w||^2
