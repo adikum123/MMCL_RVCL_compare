@@ -5,7 +5,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 
-file_name = "cl_info_nce-adversarial_cl-resnet_mmcl_rbf"
+file_name = "cl_info_nce-adversarial_cl-resnet_mmcl_linear"
 input_path = f"margin_results/{file_name}.json"
 output_dir = "plots/svm_margin"
 output_path = os.path.join(output_dir, f"{file_name}_boxplot_comparison.png")
@@ -49,7 +49,7 @@ for patch, color in zip(bp["boxes"], colors):
     patch.set(facecolor=color, alpha=0.6)
 
 # Add title and labels
-plt.title("Model Performance Comparison", fontsize=14)
+plt.title(f"Model Performance Comparison for {data['metadata']['kernel_type']} kernel", fontsize=14)
 plt.ylabel("Values", fontsize=12)
 plt.grid(True, linestyle="--", alpha=0.7)
 
