@@ -123,6 +123,7 @@ for image_index, values in per_image_values.items():
         std = np.std(model_values)
         if image_index not in per_model_mean_std:
             per_model_mean_std[image_index] = {}
+        print(f"Image index: {image_index}, model: {model['model']}, mean: {mean}, std: {std}")
         per_model_mean_std[image_index][model["model"]] = (mean, std)
 per_model_mean_std ["metadata"] = {
     "positives_per_class": args.positives_per_class,
@@ -143,3 +144,4 @@ file_path = os.path.join(save_dir, f"{file_name}.json")
 # Save dictionary as JSON
 with open(file_path, "w") as f:
     json.dump(per_model_mean_std, f, indent=4)
+print(f"Results saved to {file_path}")
