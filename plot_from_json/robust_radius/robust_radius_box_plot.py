@@ -1,51 +1,58 @@
 import json
 import os
+from collections import defaultdict
 
 import matplotlib.pyplot as plt
+import numpy as np
 
-file_name = "mmcl_rbf-adversarial_cl-cl_info_nce"
-with open(f"radius_results/{file_name}.json", "r") as f:
+file_name = "barlow-cosine-info_nce-nce"
+input_path = f"radius_results/{file_name}.json"
+output_dir = "plots/robust_radius"
+output_path = os.path.join(output_dir, f"{file_name}_boxplot_comparison.png")
+
+# Ensure output directory exists
+os.makedirs(output_dir, exist_ok=True)
+
+# Load JSON data
+with open(input_path, "r") as f:
     data = json.load(f)
 
-for item in data.values():
-    item["adversarial_cl"] = item.pop("rvcl")
+# Dynamically collect model values
+model_data = defaultdict(list)
 
-mmcl_values, adversarial_cl_values, regular_cl_values = [], [], []
 for image_index, models_values in data.items():
+    if image_index == "metadata":
+        continue
     for model_name, values in models_values.items():
-        if model_name == "mmcl":
-            mmcl_values.append(values[0])
-            continue
-        if model_name == "regular_cl":
-            regular_cl_values.append(values[0])
-            continue
-        if model_name == "adversarial_cl":
-            adversarial_cl_values.append(values[0])
-            continue
-        raise ValueError(f"Unknown model name: {model_name}")
+        if not isinstance(values, list) or not values:
+            raise ValueError(f"Skipping invalid values for {model_name} at image {image_index}")
+        model_data[model_name].append(values[0])
 
-# Prepare data for plotting
-data_to_plot = [mmcl_values, adversarial_cl_values, regular_cl_values]
-labels = ["MMCL", "Adversarial CL", "CL"]
-colors = ["blue", "green", "red"]
+# Sort model names for consistent order
+sorted_model_names = sorted(model_data.keys())
+data_to_plot = [model_data[name] for name in sorted_model_names]
+
+# Generate distinct colors
+num_models = len(sorted_model_names)
+colors = plt.cm.tab10(np.linspace(0, 1, num_models))
 
 # Create and configure plot
 plt.figure(figsize=(10, 7))
 bp = plt.boxplot(data_to_plot,
-                patch_artist=True,
-                vert=True,
-                labels=labels,
-                medianprops={"color": "black", "linewidth": 1.5})
+                 patch_artist=True,
+                 vert=True,
+                 labels=sorted_model_names,
+                 medianprops={"color": "black", "linewidth": 1.5})
 
 # Customize colors
 for patch, color in zip(bp["boxes"], colors):
     patch.set(facecolor=color, alpha=0.6)
 
 # Add title and labels
-plt.title("Model Performance Comparison", fontsize=14)
+plt.title(f"Robust radius comparisson", fontsize=14)
 plt.ylabel("Values", fontsize=12)
 plt.grid(True, linestyle="--", alpha=0.7)
 
 # Save and show plot
-plt.savefig(os.path.join("plots/robust_radius", f"{file_name}_boxplot_comparison.png"), dpi=300, bbox_inches="tight")
+plt.savefig(output_path, dpi=300, bbox_inches="tight")
 plt.show()
