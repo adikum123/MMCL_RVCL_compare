@@ -50,7 +50,7 @@ models = [
     },
     {
         "encoder_ckpt": "models/mmcl/rbf/finetune_mmcl_cnn_4layer_b_C_1.0_bs_512_lr_0.0001.pkl",
-        "model": "resnet mmcl"
+        "model": "mmcl rbf"
     }
 ]
 for model in models:

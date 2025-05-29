@@ -5,7 +5,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 
-file_name = "resnet_cl-resnet_adversarial_cl-resnet_mmcl_rbf"
+file_name = "resnet_cl-resnet_adversarial_cl-resnet_mmcl_linear"
 input_path = f"margin_results/{file_name}.json"
 output_dir = "plots/svm_margin"
 output_path = os.path.join(output_dir, f"{file_name}_boxplot_comparison.png")
